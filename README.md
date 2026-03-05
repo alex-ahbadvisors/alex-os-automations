@@ -18,8 +18,21 @@ aoasave
 | Command | What it does |
 |---------|-------------|
 | `aoa` | Opens this repo in Claude Code (pulls first) |
-| `aosfull` | Opens alex-os with this repo added (both repos, one session) |
-| `aoasave` | Quick commit + push |
+| `aosfull` | Opens both repos in one Claude session (use for cross-repo work) |
+| `aoasave` | Quick commit + push this repo |
+| `aos` | Opens alex-os only (agents, skills, client context) |
+| `aosave` | Quick commit + push alex-os |
+
+### Which command do I use?
+
+| I want to... | Use |
+|--------------|-----|
+| Edit n8n workflow JSON only | `aoa` |
+| Edit n8n JSON + the agent/skill that uses it | `aosfull` |
+| Save automations mid-session (say this to Claude) | "commit and push automations" |
+| Save alex-os mid-session (say this to Claude) | "commit and push alex-os" |
+
+**Note**: You cannot add a repo mid-session. If you started with `aoa` and realize you need to edit a skill in alex-os, exit and restart with `aosfull`. Claude can always *read* files from either repo — it just can't *write* outside the session scope.
 
 ## Structure
 
