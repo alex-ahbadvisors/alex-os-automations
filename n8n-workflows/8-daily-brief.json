@@ -1,0 +1,1013 @@
+{
+  "name": "[8] Daily Brief",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7,
+              "triggerAtMinute": 45,
+              "triggerAtDay": [1, 2, 3, 4, 5]
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 600],
+      "id": "trigger-8-001",
+      "name": "7:45 AM Weekday Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "alex@ahbadvisors.com",
+          "mode": "id"
+        },
+        "returnAll": true,
+        "options": {
+          "timeMin": "={{ DateTime.now().setZone('America/New_York').startOf('day').toISO() }}",
+          "timeMax": "={{ DateTime.now().setZone('America/New_York').endOf('day').toISO() }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [320, 0],
+      "id": "gcal-today-001",
+      "name": "GCal: Today's Events",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_GOOGLE_CAL_CRED_ID",
+          "name": "AHB Google Calendar"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const events = $input.all().map(item => {\n  const e = item.json;\n  const start = e.start?.dateTime || e.start?.date;\n  const isAllDay = !e.start?.dateTime;\n  const attendees = (e.attendees || [])\n    .filter(a => a.email !== 'alex@ahbadvisors.com')\n    .map(a => ({\n      email: a.email,\n      name: a.displayName || a.email.split('@')[0],\n      responseStatus: a.responseStatus\n    }));\n\n  return {\n    json: {\n      eventId: e.id,\n      title: e.summary || '(No title)',\n      startTime: start,\n      endTime: e.end?.dateTime || e.end?.date,\n      isAllDay,\n      location: e.location || null,\n      attendees,\n      attendeeCount: attendees.length,\n      calendarLink: e.htmlLink,\n      description: e.description || ''\n    }\n  };\n});\n\nreturn events.length > 0 ? events : [{ json: { events: [], message: 'No events today' } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [560, 0],
+      "id": "code-format-cal-001",
+      "name": "Format Calendar",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "getAll",
+        "list": "901107582941",
+        "filters": {
+          "statuses": ["to do", "in progress", "not started"],
+          "includeClosed": false,
+          "dueDateGt": "={{ DateTime.now().setZone('America/New_York').startOf('day').toMillis() }}",
+          "dueDateLt": "={{ DateTime.now().setZone('America/New_York').endOf('day').toMillis() }}"
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [320, 160],
+      "id": "cu-agendas-001",
+      "name": "CU: Meeting Agendas",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Native ClickUp node returns each task as a separate item\nconst items = $input.all();\nconst agendas = items.map(item => {\n  const t = item.json;\n  return {\n    taskId: t.id,\n    name: t.name,\n    description: (t.description || '').substring(0, 500),\n    dueDate: t.due_date,\n    url: t.url,\n    tags: (t.tags || []).map(tag => tag.name)\n  };\n}).filter(a => a.taskId);\n\nreturn [{ json: { agendas } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [560, 160],
+      "id": "code-format-agendas-001",
+      "name": "Format Agendas",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.clickup.com/api/v2/team/9011763462/task",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "clickUpOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "assignees[]", "value": "120026283" },
+            { "name": "statuses[]", "value": "to do" },
+            { "name": "statuses[]", "value": "in progress" },
+            { "name": "statuses[]", "value": "not started" },
+            { "name": "statuses[]", "value": "blocked" },
+            { "name": "include_closed", "value": "false" },
+            { "name": "subtasks", "value": "true" },
+            { "name": "order_by", "value": "due_date" },
+            { "name": "reverse", "value": "true" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [320, 320],
+      "id": "cu-my-tasks-001",
+      "name": "CU: My Tasks (Alex)",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const tasks = $input.first().json.tasks || [];\nconst now = Date.now();\nconst todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);\nconst todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999);\nconst todayEndMs = todayEnd.getTime();\nconst threeDaysMs = todayEndMs + 3 * 86400000;\n\nconst categorized = {\n  overdue: [],\n  dueToday: [],\n  upcoming: [],\n  noDueDate: []\n};\n\nfor (const t of tasks) {\n  const due = t.due_date ? parseInt(t.due_date) : null;\n  const daysOverdue = due ? Math.floor((now - due) / 86400000) : 0;\n\n  const task = {\n    taskId: t.id,\n    name: t.name,\n    status: t.status?.status || 'unknown',\n    dueDate: t.due_date,\n    dueDateFormatted: due ? new Date(due).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No date',\n    daysOverdue: daysOverdue > 0 ? daysOverdue : 0,\n    priority: t.priority?.priority || 'normal',\n    list: t.list?.name || 'Unknown',\n    url: t.url,\n    tags: (t.tags || []).map(tag => tag.name)\n  };\n\n  if (!due) {\n    categorized.noDueDate.push(task);\n  } else if (due < todayStart.getTime()) {\n    categorized.overdue.push(task);\n  } else if (due <= todayEndMs) {\n    categorized.dueToday.push(task);\n  } else if (due <= threeDaysMs) {\n    categorized.upcoming.push(task);\n  }\n  // Tasks due >3 days out are excluded from the brief\n}\n\nreturn [{ json: { myTasks: categorized } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [560, 320],
+      "id": "code-categorize-tasks-001",
+      "name": "Categorize My Tasks",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "getAll",
+        "list": "901113252663",
+        "filters": {
+          "includeClosed": false,
+          "orderBy": "created",
+          "reverse": true
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [320, 480],
+      "id": "cu-weekly-goals-001",
+      "name": "CU: Weekly Goals",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Native ClickUp node returns each task as a separate item\nconst items = $input.all();\nconst current = items[0]?.json;\nif (!current || !current.id) return [{ json: { weeklyGoals: null, message: 'No weekly goals task found' } }];\n\nconst checklists = current.checklists || [];\nlet totalItems = 0;\nlet completedItems = 0;\nconst goals = [];\n\nfor (const cl of checklists) {\n  for (const item of (cl.items || [])) {\n    totalItems++;\n    if (item.resolved) completedItems++;\n    goals.push({\n      name: item.name,\n      resolved: item.resolved,\n      section: cl.name\n    });\n  }\n}\n\nreturn [{\n  json: {\n    weeklyGoals: {\n      taskId: current.id,\n      taskName: current.name,\n      url: current.url,\n      totalItems,\n      completedItems,\n      completionPct: totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0,\n      goals\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [560, 480],
+      "id": "code-parse-goals-001",
+      "name": "Parse Weekly Goals",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.clickup.com/api/v2/team/9011763462/task",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "clickUpOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "assignees[]", "value": "248566802" },
+            { "name": "statuses[]", "value": "to do" },
+            { "name": "statuses[]", "value": "in progress" },
+            { "name": "statuses[]", "value": "not started" },
+            { "name": "include_closed", "value": "false" },
+            { "name": "due_date_lt", "value": "={{ DateTime.now().setZone('America/New_York').endOf('day').toMillis() }}" },
+            { "name": "order_by", "value": "due_date" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [320, 640],
+      "id": "cu-kendra-tasks-001",
+      "name": "CU: Kendra Tasks",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const tasks = $input.first().json.tasks || [];\nreturn [{\n  json: {\n    kendraTasks: tasks.map(t => ({\n      taskId: t.id,\n      name: t.name,\n      status: t.status?.status || 'unknown',\n      dueDate: t.due_date,\n      list: t.list?.name || 'Unknown',\n      url: t.url\n    }))\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [560, 640],
+      "id": "code-format-kendra-001",
+      "name": "Format Kendra",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.clickup.com/api/v2/team/9011763462/task",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "clickUpOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "assignees[]", "value": "87390158" },
+            { "name": "statuses[]", "value": "to do" },
+            { "name": "statuses[]", "value": "in progress" },
+            { "name": "statuses[]", "value": "not started" },
+            { "name": "include_closed", "value": "false" },
+            { "name": "due_date_lt", "value": "={{ DateTime.now().setZone('America/New_York').endOf('day').toMillis() }}" },
+            { "name": "order_by", "value": "due_date" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [320, 800],
+      "id": "cu-tyler-tasks-001",
+      "name": "CU: Tyler Tasks",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const tasks = $input.first().json.tasks || [];\nreturn [{\n  json: {\n    tylerTasks: tasks.map(t => ({\n      taskId: t.id,\n      name: t.name,\n      status: t.status?.status || 'unknown',\n      dueDate: t.due_date,\n      list: t.list?.name || 'Unknown',\n      url: t.url\n    }))\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [560, 800],
+      "id": "code-format-tyler-001",
+      "name": "Format Tyler",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.clickup.com/api/v2/team/9011763462/task",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "clickUpOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "statuses[]", "value": "to do" },
+            { "name": "statuses[]", "value": "in progress" },
+            { "name": "statuses[]", "value": "not started" },
+            { "name": "include_closed", "value": "false" },
+            { "name": "due_date_lt", "value": "={{ DateTime.now().setZone('America/New_York').plus({days: 3}).endOf('day').toMillis() }}" },
+            { "name": "order_by", "value": "due_date" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [320, 960],
+      "id": "cu-others-tasks-001",
+      "name": "CU: Others' Tasks",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const tasks = $input.first().json.tasks || [];\nconst excludeIds = ['120026283', '248566802', '87390158'];\n\nconst othersTasks = tasks.filter(t => {\n  const assignees = (t.assignees || []).map(a => String(a.id));\n  return !assignees.some(id => excludeIds.includes(id));\n});\n\nreturn [{\n  json: {\n    othersTasks: othersTasks.map(t => ({\n      taskId: t.id,\n      name: t.name,\n      assignees: (t.assignees || []).map(a => a.username || a.email || 'User ' + a.id),\n      dueDate: t.due_date,\n      dueDateFormatted: t.due_date ? new Date(parseInt(t.due_date)).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No date',\n      list: t.list?.name || 'Unknown',\n      url: t.url\n    }))\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [560, 960],
+      "id": "code-filter-others-001",
+      "name": "Filter to Others",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://www.googleapis.com/drive/v3/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "q", "value": "=name contains 'Daily Notification summary' and name contains '{{ DateTime.now().setZone('America/New_York').minus({days: 1}).toFormat('yyyy-MM-dd') }}' and '1arc_Rw0BBZ3coI6oXc4tDu1J2H0Sr2mg' in parents and trashed = false" },
+            { "name": "fields", "value": "files(id,name,webViewLink,modifiedTime)" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [320, 1120],
+      "id": "gdrive-notifs-001",
+      "name": "GDrive: Yesterday Notifications",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "REPLACE_WITH_GDRIVE_CRED_ID",
+          "name": "Google Drive OAuth2"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const files = $input.first().json.files || [];\nif (files.length === 0) {\n  return [{ json: { notificationDoc: null, message: 'No notification doc found for yesterday' } }];\n}\nconst f = files[0];\nreturn [{\n  json: {\n    notificationDoc: {\n      name: f.name,\n      url: f.webViewLink || 'https://drive.google.com/file/d/' + f.id + '/view',\n      id: f.id,\n      modifiedTime: f.modifiedTime\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [560, 1120],
+      "id": "code-format-notif-001",
+      "name": "Format Notif Doc",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://www.googleapis.com/drive/v3/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "q", "value": "=name contains 'Daily News Brief' and name contains '{{ DateTime.now().setZone('America/New_York').toFormat('yyyy-MM-dd') }}' and '1MhMre0WOCFbpVsl5r6yYkoyxOTJBFfXJ' in parents and trashed = false" },
+            { "name": "fields", "value": "files(id,name,webViewLink,modifiedTime)" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [320, 1280],
+      "id": "gdrive-news-001",
+      "name": "GDrive: Today News Brief",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "REPLACE_WITH_GDRIVE_CRED_ID",
+          "name": "Google Drive OAuth2"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const files = $input.first().json.files || [];\nif (files.length === 0) {\n  return [{ json: { newsBriefDoc: null, message: 'No news brief found for today' } }];\n}\nconst f = files[0];\nreturn [{\n  json: {\n    newsBriefDoc: {\n      name: f.name,\n      url: f.webViewLink || 'https://drive.google.com/file/d/' + f.id + '/view',\n      id: f.id,\n      modifiedTime: f.modifiedTime\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [560, 1280],
+      "id": "code-format-news-001",
+      "name": "Format News Doc",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://public.missiveapp.com/v1/conversations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "shared_label", "value": "3e3278ae-b809-4579-90f2-49046133b615" },
+            { "name": "closed", "value": "false" },
+            { "name": "limit", "value": "20" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [320, 1440],
+      "id": "missive-needs-reply-001",
+      "name": "Missive: Needs Reply",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://public.missiveapp.com/v1/conversations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "shared_label", "value": "e5c96ca9-e940-4667-b5ee-0fb58e337916" },
+            { "name": "closed", "value": "false" },
+            { "name": "limit", "value": "20" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [320, 1560],
+      "id": "missive-todo-001",
+      "name": "Missive: To-Do",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://public.missiveapp.com/v1/conversations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "closed", "value": "false" },
+            { "name": "modified_after", "value": "={{ Math.floor(DateTime.now().minus({hours: 24}).toSeconds()) }}" },
+            { "name": "limit", "value": "30" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [320, 1680],
+      "id": "missive-recent-001",
+      "name": "Missive: Recent Open",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const needsReply = $('Missive: Needs Reply').all().flatMap(i => i.json.conversations || []);\nconst todo = $('Missive: To-Do').all().flatMap(i => i.json.conversations || []);\nconst recent = $('Missive: Recent Open').all().flatMap(i => i.json.conversations || []);\n\nconst knownConvoIds = new Set([\n  ...needsReply.map(c => c.id),\n  ...todo.map(c => c.id)\n]);\n\nconst possiblyMissed = recent.filter(c => {\n  if (knownConvoIds.has(c.id)) return false;\n  return true;\n});\n\nconst formatConvo = (c) => ({\n  id: c.id,\n  subject: c.subject || '(no subject)',\n  from: c.latest_message?.from_field?.name || c.latest_message?.from_field?.address || 'Unknown',\n  fromEmail: c.latest_message?.from_field?.address || '',\n  snippet: c.latest_message?.preview?.substring(0, 150) || '',\n  receivedAt: c.latest_message?.delivered_at,\n  age: c.latest_message?.delivered_at\n    ? Math.floor((Date.now() / 1000 - c.latest_message.delivered_at) / 3600) + 'h'\n    : 'unknown',\n  missiveUrl: 'https://public.missiveapp.com/conversations/' + c.id\n});\n\nreturn [{\n  json: {\n    emails: {\n      needsReply: needsReply.map(formatConvo),\n      todo: todo.map(formatConvo),\n      possiblyMissed: possiblyMissed.slice(0, 10).map(formatConvo)\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [560, 1560],
+      "id": "code-filter-emails-001",
+      "name": "Filter & Format Emails",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "get",
+        "id": "868hqzpqw",
+        "includeMarkdownDescription": true
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [320, 1840],
+      "id": "cu-brief-prompt-001",
+      "name": "Daily Brief Prompt",
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.github.com/repos/alex-ahbadvisors/alex-os/contents/CLAUDE.md",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Accept", "value": "application/vnd.github.raw+json" }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [320, 2000],
+      "id": "github-claude-md-001",
+      "name": "GitHub: CLAUDE.md",
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "githubOAuth2Api": {
+          "id": "VsAQA7Ut5keA6h7X",
+          "name": "GitHub account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse CLAUDE.md into structured sections for the daily brief.\n// Extracts: Current Priorities, Communication Style, Companies, Open Commitments.\n\nconst raw = $input.first().json.data || $input.first().json.body || $input.first().json || '';\nconst md = typeof raw === 'string' ? raw : JSON.stringify(raw);\n\nfunction extractSection(text, heading) {\n  const pattern = new RegExp('## ' + heading + '\\\\n([\\\\s\\\\S]*?)(?=\\\\n## |$)');\n  const match = text.match(pattern);\n  return match ? match[1].trim() : '';\n}\n\nfunction extractSubSection(text, heading) {\n  const pattern = new RegExp('\\\\*\\\\*' + heading + '\\\\*\\\\*[:\\\\s]*\\\\n([\\\\s\\\\S]*?)(?=\\\\n\\\\*\\\\*|\\\\n## |$)');\n  const match = text.match(pattern);\n  return match ? match[1].trim() : '';\n}\n\nconst priorities = extractSection(md, 'Current Priorities');\nconst comms = extractSection(md, 'How to Communicate with Me');\nconst companies = extractSection(md, 'Companies');\n\nreturn [{\n  json: {\n    currentPriorities: priorities,\n    communicationStyle: comms,\n    companies: companies,\n    fullContext: md.substring(0, 8000)\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [560, 2000],
+      "id": "code-parse-claude-md-001",
+      "name": "Parse CLAUDE.md",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// === DETERMINISTIC ASSEMBLY ===\n// Builds the entire daily brief from structured data. All links, tables,\n// formatting are deterministic. AI only adds COS Assessment afterward.\n\n// Safe wrappers — if an upstream node hasn't executed or failed, return default\nfunction safeFirst(nodeName, defaultVal = {}) {\n  try { return $(nodeName).first()?.json || defaultVal; } catch(e) { return defaultVal; }\n}\nfunction safeAll(nodeName) {\n  try { return $(nodeName).all().map(i => i.json); } catch(e) { return []; }\n}\n\nconst calendar = safeAll('Format Calendar');\nconst agendas = safeFirst('Format Agendas', { agendas: [] }).agendas || [];\nconst myTasks = safeFirst('Categorize My Tasks', { myTasks: {} }).myTasks || {};\nconst weeklyGoals = safeFirst('Parse Weekly Goals', { weeklyGoals: null }).weeklyGoals || null;\nconst kendraTasks = safeFirst('Format Kendra', { kendraTasks: [] }).kendraTasks || [];\nconst tylerTasks = safeFirst('Format Tyler', { tylerTasks: [] }).tylerTasks || [];\nconst othersTasks = safeFirst('Filter to Others', { othersTasks: [] }).othersTasks || [];\nconst notifDoc = safeFirst('Format Notif Doc', { notificationDoc: null }).notificationDoc || null;\nconst newsDoc = safeFirst('Format News Doc', { newsBriefDoc: null }).newsBriefDoc || null;\nconst emails = safeFirst('Filter & Format Emails', { emails: {} }).emails || {};\n\nconst today = DateTime.now().setZone('America/New_York');\nconst dateStr = today.toFormat('yyyy-MM-dd');\nconst dateFmt = today.toFormat('MMMM d, yyyy');\nconst dayOfWeek = today.toFormat('EEEE');\n\nlet md = '# Daily Brief \\u2014 ' + dateFmt + ', ' + dayOfWeek + '\\n\\n';\n\n// --- COS Assessment placeholder (AI inserts here) ---\nmd += '{{COS_ASSESSMENT}}\\n\\n';\n\n// --- Current Priorities (from CLAUDE.md via GitHub) ---\nconst claudeCtx = safeFirst('Parse CLAUDE.md', {});\nif (claudeCtx.currentPriorities) {\n  md += '## Current Priorities\\n\\n' + claudeCtx.currentPriorities + '\\n\\n';\n}\nif (claudeCtx.communicationStyle) {\n  md += '## Communication Style\\n\\n' + claudeCtx.communicationStyle + '\\n\\n';\n}\n\n// --- News & Notifications ---\nmd += '## News & Notifications\\n';\nmd += '- **Notification Brief** (yesterday): ' + (notifDoc ? '[' + notifDoc.name + '](' + notifDoc.url + ')' : 'Not available') + '\\n';\nmd += '- **News Brief** (today): ' + (newsDoc ? '[' + newsDoc.name + '](' + newsDoc.url + ')' : 'Not available') + '\\n\\n';\n\n// --- Calendar ---\nmd += '## Today\\'s Calendar\\n';\nconst meetings = calendar.filter(e => !e.isAllDay && e.title);\nif (meetings.length === 0) {\n  md += 'Clear calendar \\u2014 protect for deep work.\\n\\n';\n} else {\n  md += '| Time | Meeting | Attendees | Key Context | Agenda |\\n';\n  md += '|------|---------|-----------|-------------|--------|\\n';\n  for (const e of meetings) {\n    const time = e.startTime ? new Date(e.startTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }) : 'TBD';\n    const names = (e.attendees || []).map(a => a.name).join(', ') || '\\u2014';\n    const agenda = agendas.find(a => e.title.toLowerCase().includes(a.name.toLowerCase()) || a.name.toLowerCase().includes(e.title.toLowerCase()));\n    const agendaCell = agenda ? '[Agenda](https://app.clickup.com/t/' + agenda.taskId + ')' : 'No agenda';\n    const context = agenda ? (agenda.description || '').substring(0, 100).replace(/\\n/g, ' ') : (e.description || '').substring(0, 100).replace(/\\n/g, ' ');\n    md += '| ' + time + ' | ' + e.title + ' | ' + names + ' | ' + (context || '\\u2014') + ' | ' + agendaCell + ' |\\n';\n  }\n  md += '\\n';\n}\n\n// --- Capacity ---\nlet meetingMinutes = 0;\nfor (const e of meetings) {\n  if (e.startTime && e.endTime) {\n    meetingMinutes += (new Date(e.endTime) - new Date(e.startTime)) / 60000;\n  }\n}\nconst meetingHours = Math.round(meetingMinutes / 60 * 10) / 10;\nconst workWindowHours = 10;\nconst freeHours = Math.max(0, Math.round((workWindowHours - meetingHours) * 10) / 10);\n\nconst sortedMeetings = [...meetings].filter(e => e.startTime).sort((a, b) => new Date(a.startTime) - new Date(b.startTime));\nconst workStart = new Date(); workStart.setHours(8, 0, 0, 0);\nconst workEnd = new Date(); workEnd.setHours(18, 0, 0, 0);\nlet maxGapMin = 0;\nlet maxGapStart = workStart;\nlet maxGapEnd = workEnd;\nlet prevEnd = workStart;\nfor (const e of sortedMeetings) {\n  const s = new Date(e.startTime);\n  const en = new Date(e.endTime);\n  const gap = (s - prevEnd) / 60000;\n  if (gap > maxGapMin) { maxGapMin = gap; maxGapStart = prevEnd; maxGapEnd = s; }\n  if (en > prevEnd) prevEnd = en;\n}\nconst finalGap = (workEnd - prevEnd) / 60000;\nif (finalGap > maxGapMin) { maxGapMin = finalGap; maxGapStart = prevEnd; maxGapEnd = workEnd; }\nconst fmtTime = (d) => d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' });\n\nmd += '## Today\\'s Capacity\\n';\nmd += '- **' + meetings.length + '** meetings (' + meetingHours + ' hours)\\n';\nmd += '- **' + freeHours + '** hours free (8 AM \\u2013 6 PM work window)\\n';\nif (maxGapMin >= 30) {\n  md += '- Largest free block: ' + fmtTime(maxGapStart) + ' \\u2013 ' + fmtTime(maxGapEnd) + ' (' + Math.round(maxGapMin / 60 * 10) / 10 + ' hours)\\n';\n}\nmd += '\\n';\n\n// --- My Action Items ---\nconst overdue = myTasks.overdue || [];\nconst dueToday = myTasks.dueToday || [];\nconst upcoming = myTasks.upcoming || [];\n\nmd += '## My Action Items\\n\\n';\n\nmd += '**Due Today:**\\n';\nif (dueToday.length === 0) md += 'None\\n\\n';\nelse {\n  for (const t of dueToday) md += '- ' + t.name + ' \\u2014 ' + t.list + ' \\u2014 [ClickUp](https://app.clickup.com/t/' + t.taskId + ')\\n';\n  md += '\\n';\n}\n\nmd += '**Overdue:**\\n';\nif (overdue.length === 0) md += 'None\\n\\n';\nelse {\n  for (const t of overdue) md += '- ' + t.name + ' \\u2014 ' + t.daysOverdue + ' days overdue \\u2014 [ClickUp](https://app.clickup.com/t/' + t.taskId + ')\\n';\n  md += '\\n';\n}\n\nmd += '**Possible Today** (upcoming 1-3 days):\\n';\nif (upcoming.length === 0) md += 'None\\n\\n';\nelse {\n  for (const t of upcoming) md += '- ' + t.name + ' \\u2014 due ' + t.dueDateFormatted + ' \\u2014 [ClickUp](https://app.clickup.com/t/' + t.taskId + ')\\n';\n  md += '\\n';\n}\n\n// --- Weekly Goals ---\nmd += '## Weekly Goals\\n';\nif (!weeklyGoals) {\n  md += 'No weekly goals set this week.\\n\\n';\n} else {\n  md += '**' + weeklyGoals.taskName + '** \\u2014 ' + weeklyGoals.completedItems + ' of ' + weeklyGoals.totalItems + ' complete (' + weeklyGoals.completionPct + '%) \\u2014 [ClickUp](https://app.clickup.com/t/' + weeklyGoals.taskId + ')\\n';\n  for (const g of weeklyGoals.goals) md += '- ' + (g.resolved ? '\\u2705' : '\\u2b1c') + ' ' + g.name + ' \\u2014 ' + g.section + '\\n';\n  md += '\\n';\n}\n\n// --- Email ---\nconst nr = emails.needsReply || [];\nconst td = emails.todo || [];\nconst pm = emails.possiblyMissed || [];\n\nmd += '## Email Attention Needed\\n\\n';\n\nmd += '**Needs Reply:**\\n';\nif (nr.length === 0) md += 'None\\n\\n';\nelse {\n  for (const e of nr) md += '- ' + e.subject + ' \\u2014 from ' + e.from + ' \\u2014 ' + e.age + ' \\u2014 [Missive](' + e.missiveUrl + ')\\n';\n  md += '\\n';\n}\n\nmd += '**To-Do:**\\n';\nif (td.length === 0) md += 'None\\n\\n';\nelse {\n  for (const e of td) md += '- ' + e.subject + ' \\u2014 [Missive](' + e.missiveUrl + ')\\n';\n  md += '\\n';\n}\n\nmd += '**Possibly Missed:**\\n';\nif (pm.length === 0) md += 'None\\n\\n';\nelse {\n  for (const e of pm) md += '- ' + e.subject + ' \\u2014 from ' + e.from + ' \\u2014 [Missive](' + e.missiveUrl + ')\\n';\n  md += '\\n';\n}\n\n// --- Team ---\nmd += '## Team Accountability\\n\\n';\n\nmd += '**Kendra (EA):**\\n';\nif (kendraTasks.length === 0) md += 'No tasks due today.\\n\\n';\nelse {\n  for (const t of kendraTasks) md += '- [ ] ' + t.name + ' \\u2014 ' + t.list + ' \\u2014 [ClickUp](https://app.clickup.com/t/' + t.taskId + ')\\n';\n  md += '\\n';\n}\n\nmd += '**Tyler (Home Manager):**\\n';\nif (tylerTasks.length === 0) md += 'No tasks due today.\\n\\n';\nelse {\n  for (const t of tylerTasks) md += '- [ ] ' + t.name + ' \\u2014 [ClickUp](https://app.clickup.com/t/' + t.taskId + ')\\n';\n  md += '\\n';\n}\n\nmd += '**Others \\u2014 Due Within 3 Days:**\\n';\nif (othersTasks.length === 0) md += 'None\\n\\n';\nelse {\n  for (const t of othersTasks) md += '- [ ] ' + t.name + ' \\u2014 assigned to ' + (t.assignees || []).join(', ') + ' \\u2014 due ' + t.dueDateFormatted + ' \\u2014 [ClickUp](https://app.clickup.com/t/' + t.taskId + ')\\n';\n  md += '\\n';\n}\n\n// --- Compute deterministic metrics ---\nconst now = Date.now() / 1000;\nconst oldThreshold = 48 * 3600;\nconst oldEmails = nr.filter(e => e.receivedAt && (now - e.receivedAt) > oldThreshold);\n\nreturn [{\n  json: {\n    date: dateStr,\n    dateFormatted: dateFmt,\n    dayOfWeek,\n    briefMarkdown: md,\n    metrics: {\n      meetingCount: meetings.length,\n      meetingHours,\n      freeHours,\n      largestFreeBlockMin: maxGapMin,\n      totalTaskCount: overdue.length + dueToday.length + upcoming.length,\n      totalEmailCount: nr.length + td.length + pm.length,\n      overdueTaskCount: overdue.length,\n      needsReplyCount: nr.length,\n      oldEmailCount: oldEmails.length,\n      weeklyGoalPct: weeklyGoals ? weeklyGoals.completionPct : 0,\n      newsBriefLink: newsDoc?.url || '',\n      notificationBriefLink: notifDoc?.url || ''\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [840, 600],
+      "id": "code-deterministic-assembly-001",
+      "name": "Deterministic Assembly"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Deterministic Assembly').first().json.briefMarkdown }}",
+        "hasOutputParser": false,
+        "options": {
+          "systemMessage": "={{ $json.markdown_description }}",
+          "maxTokens": 1000,
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [1080, 600],
+      "id": "cos-agent-001",
+      "name": "COS Assessment Agent",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 500
+    },
+    {
+      "parameters": {
+        "model": "claude-sonnet-4-6",
+        "options": {
+          "temperature": 0.3,
+          "maxTokensToSample": 1000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.1,
+      "position": [1088, 824],
+      "id": "claude-model-001",
+      "name": "Claude Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "PdQDpy0E1BohbFDv",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine deterministic brief with AI assessment\nconst assembly = $('Deterministic Assembly').first().json;\nconst assessment = $input.first().json.output || $input.first().json.text || '';\n\n// Replace placeholder with AI assessment\nconst finalBrief = assembly.briefMarkdown.replace(\n  '{{COS_ASSESSMENT}}',\n  '## COS Assessment\\n\\n' + assessment + '\\n\\n---'\n);\n\nreturn [{\n  json: {\n    date: assembly.date,\n    dateFormatted: assembly.dateFormatted,\n    dayOfWeek: assembly.dayOfWeek,\n    briefMarkdown: finalBrief,\n    metrics: assembly.metrics\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 600],
+      "id": "code-build-metadata-001",
+      "name": "Build Metadata"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.clickup.com/api/v2/list/901113252145/task",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "clickUpOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"name\": \"{{ $json.date }} Daily Brief\",\n  \"markdown_description\": {{ JSON.stringify($json.briefMarkdown) }},\n  \"assignees\": [120026283],\n  \"tags\": [\"daily-brief\", \"abel\"],\n  \"priority\": 3,\n  \"status\": \"to do\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1560, 360],
+      "id": "cu-create-brief-001",
+      "name": "CU: Create Brief Task",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "contentType": "multipart-form-data",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "metadata",
+              "value": "={{ JSON.stringify({ name: 'Daily Brief — ' + $json.date, mimeType: 'application/vnd.google-apps.document', parents: ['1jJHZSfUUBfXnHQyAFqAxP4n76MOwZf20'] }) }}"
+            },
+            {
+              "name": "file",
+              "value": "={{ $json.briefMarkdown }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1560, 540],
+      "id": "gdrive-create-doc-001",
+      "name": "GDrive: Create Brief Doc",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "REPLACE_WITH_GDRIVE_CRED_ID",
+          "name": "Google Drive OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const brief = $json.briefMarkdown;\nconst maxLen = 3500;\nconst truncated = brief.length > maxLen\n  ? brief.substring(0, maxLen) + '\\n\\n_... truncated. See full brief in ClickUp or Google Drive._'\n  : brief;\n\nreturn [{ json: { ...$json, slackBrief: truncated } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 720],
+      "id": "code-truncate-slack-001",
+      "name": "Truncate for Slack"
+    },
+    {
+      "parameters": {
+        "channel": "C0AJQH5NFPS",
+        "text": "=:clipboard: *Daily Brief — {{ $json.dateFormatted }} ({{ $json.dayOfWeek }})*\n\n:calendar: *{{ $json.metrics.meetingCount }}* meetings | :warning: *{{ $json.metrics.overdueTaskCount }}* overdue | :email: *{{ $json.metrics.needsReplyCount }}* needs reply | :dart: Weekly goals: *{{ $json.metrics.weeklyGoalPct }}%*\n\n{{ $json.slackBrief }}\n\n---\n<{{ $('CU: Create Brief Task').first().json.url }}|Open in ClickUp>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [1800, 720],
+      "id": "slack-post-001",
+      "name": "Slack: Post to #cos",
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://public.missiveapp.com/v1/drafts",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"drafts\": {\n    \"subject\": \"Daily Brief — {{ $json.dateFormatted }}\",\n    \"body\": {{ JSON.stringify('<html><body>' + $json.briefMarkdown.replace(/\\n/g, '<br>') + '</body></html>') }},\n    \"from_field\": {\n      \"address\": \"alex@ahbadvisors.com\",\n      \"account\": \"b3b0e508-8571-4866-b736-2c6f39283e18\"\n    },\n    \"to_fields\": [\n      { \"address\": \"alex@ahbadvisors.com\" }\n    ],\n    \"send\": true\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1560, 900],
+      "id": "missive-send-brief-001",
+      "name": "Missive: Email Brief",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1drgYKl4KU-BjvG9jglGtVWKXto4misU7PnUkgnsYZE8",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date": "={{ $json.date }}",
+            "Doc Link": "={{ $('GDrive: Create Brief Doc').first().json.webViewLink || '' }}",
+            "ClickUp Link": "={{ $('CU: Create Brief Task').first().json.url }}",
+            "# of Meetings": "={{ $json.metrics.meetingCount }}",
+            "# of tasks": "={{ $json.metrics.totalTaskCount }}",
+            "# of emails": "={{ $json.metrics.totalEmailCount }}",
+            "# overdue tasks": "={{ $json.metrics.overdueTaskCount }}",
+            "# old emails": "={{ $json.metrics.oldEmailCount }}",
+            "Daily News Brief Link": "={{ $json.metrics.newsBriefLink }}",
+            "Daily Notification Brief Link": "={{ $json.metrics.notificationBriefLink }}"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1800, 480],
+      "id": "gsheets-append-001",
+      "name": "GSheet: Append Row",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REPLACE_WITH_GSHEETS_CRED_ID",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "7:45 AM Weekday Trigger": {
+      "main": [
+        [
+          { "node": "GCal: Today's Events", "type": "main", "index": 0 },
+          { "node": "CU: Meeting Agendas", "type": "main", "index": 0 },
+          { "node": "CU: My Tasks (Alex)", "type": "main", "index": 0 },
+          { "node": "CU: Weekly Goals", "type": "main", "index": 0 },
+          { "node": "CU: Kendra Tasks", "type": "main", "index": 0 },
+          { "node": "CU: Tyler Tasks", "type": "main", "index": 0 },
+          { "node": "CU: Others' Tasks", "type": "main", "index": 0 },
+          { "node": "GDrive: Yesterday Notifications", "type": "main", "index": 0 },
+          { "node": "GDrive: Today News Brief", "type": "main", "index": 0 },
+          { "node": "Missive: Needs Reply", "type": "main", "index": 0 },
+          { "node": "GitHub: CLAUDE.md", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "GitHub: CLAUDE.md": {
+      "main": [
+        [
+          { "node": "Parse CLAUDE.md", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Parse CLAUDE.md": {
+      "main": [
+        [
+          { "node": "Deterministic Assembly", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "GCal: Today's Events": {
+      "main": [
+        [
+          { "node": "Format Calendar", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "CU: Meeting Agendas": {
+      "main": [
+        [
+          { "node": "Format Agendas", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "CU: My Tasks (Alex)": {
+      "main": [
+        [
+          { "node": "Categorize My Tasks", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "CU: Weekly Goals": {
+      "main": [
+        [
+          { "node": "Parse Weekly Goals", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "CU: Kendra Tasks": {
+      "main": [
+        [
+          { "node": "Format Kendra", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "CU: Tyler Tasks": {
+      "main": [
+        [
+          { "node": "Format Tyler", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "CU: Others' Tasks": {
+      "main": [
+        [
+          { "node": "Filter to Others", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "GDrive: Yesterday Notifications": {
+      "main": [
+        [
+          { "node": "Format Notif Doc", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "GDrive: Today News Brief": {
+      "main": [
+        [
+          { "node": "Format News Doc", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Missive: Needs Reply": {
+      "main": [
+        [
+          { "node": "Missive: To-Do", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Missive: To-Do": {
+      "main": [
+        [
+          { "node": "Missive: Recent Open", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Missive: Recent Open": {
+      "main": [
+        [
+          { "node": "Filter & Format Emails", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Format Calendar": {
+      "main": [
+        [
+          { "node": "Deterministic Assembly", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Format Agendas": {
+      "main": [
+        [
+          { "node": "Deterministic Assembly", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Categorize My Tasks": {
+      "main": [
+        [
+          { "node": "Deterministic Assembly", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Parse Weekly Goals": {
+      "main": [
+        [
+          { "node": "Deterministic Assembly", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Format Kendra": {
+      "main": [
+        [
+          { "node": "Deterministic Assembly", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Format Tyler": {
+      "main": [
+        [
+          { "node": "Deterministic Assembly", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Filter to Others": {
+      "main": [
+        [
+          { "node": "Deterministic Assembly", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Format Notif Doc": {
+      "main": [
+        [
+          { "node": "Deterministic Assembly", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Format News Doc": {
+      "main": [
+        [
+          { "node": "Deterministic Assembly", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Filter & Format Emails": {
+      "main": [
+        [
+          { "node": "Deterministic Assembly", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Deterministic Assembly": {
+      "main": [
+        [
+          { "node": "Daily Brief Prompt", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Daily Brief Prompt": {
+      "main": [
+        [
+          { "node": "COS Assessment Agent", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Claude Chat Model": {
+      "ai_languageModel": [
+        [
+          { "node": "COS Assessment Agent", "type": "ai_languageModel", "index": 0 }
+        ]
+      ]
+    },
+    "COS Assessment Agent": {
+      "main": [
+        [
+          { "node": "Build Metadata", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Build Metadata": {
+      "main": [
+        [
+          { "node": "CU: Create Brief Task", "type": "main", "index": 0 },
+          { "node": "GDrive: Create Brief Doc", "type": "main", "index": 0 },
+          { "node": "Truncate for Slack", "type": "main", "index": 0 },
+          { "node": "Missive: Email Brief", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "CU: Create Brief Task": {
+      "main": [
+        [
+          { "node": "GSheet: Append Row", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Truncate for Slack": {
+      "main": [
+        [
+          { "node": "Slack: Post to #cos", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "America/New_York",
+    "errorWorkflow": "Ka01FqAuhDXin0Kn"
+  },
+  "staticData": null,
+  "tags": [
+    { "name": "daily-brief" },
+    { "name": "abel" }
+  ]
+}

@@ -1,0 +1,548 @@
+{
+  "name": "Tool: Assemble Agenda",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            { "name": "eventId" },
+            { "name": "meetingTitle" },
+            { "name": "meetingTime" },
+            { "name": "attendees" },
+            { "name": "pass" },
+            { "name": "existingAgendaTaskId" },
+            { "name": "existingDescription" },
+            { "name": "clientName" }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 300],
+      "id": "input-001",
+      "name": "Input"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract unique external domains from attendee emails\nconst input = $input.first().json;\nconst attendeesRaw = input.attendees || '[]';\nconst attendees = typeof attendeesRaw === 'string' ? JSON.parse(attendeesRaw) : attendeesRaw;\nconst internalDomains = ['gmail.com','yahoo.com','outlook.com','hotmail.com','3cventures.com','ahbadvisors.com','clientcatalyzer.com','icloud.com','me.com'];\n\nconst domains = [...new Set(\n  attendees\n    .map(a => a.email?.split('@')[1]?.toLowerCase())\n    .filter(d => d && !internalDomains.includes(d))\n)];\n\nconst contactEmails = attendees\n  .filter(a => {\n    const domain = a.email?.split('@')[1]?.toLowerCase();\n    return domain && !internalDomains.includes(domain);\n  })\n  .map(a => a.email.toLowerCase());\n\nreturn {\n  domains: domains,\n  contactEmails: contactEmails,\n  primaryContactEmail: contactEmails[0] || '',\n  attendeeCount: contactEmails.length,\n  meetingTitle: input.meetingTitle,\n  meetingTime: input.meetingTime,\n  eventId: input.eventId,\n  pass: input.pass,\n  existingAgendaTaskId: input.existingAgendaTaskId || '',\n  existingDescription: input.existingDescription || '',\n  providedClientName: input.clientName || ''\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 300],
+      "id": "extract-domains-001",
+      "name": "Extract Domains"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "conditions": [
+            {
+              "id": "check-domains-or-name",
+              "leftValue": "={{ $json.attendeeCount > 0 || $json.providedClientName !== '' }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [440, 300],
+      "id": "has-external-attendees-001",
+      "name": "Has External Attendees?"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "6e6bOgtFJ0DAQVsO",
+          "mode": "list",
+          "cachedResultName": "Clickup Clients",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/6e6bOgtFJ0DAQVsO"
+        },
+        "filters": {
+          "conditions": []
+        },
+        "limit": 50
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [660, 300],
+      "id": "lookup-client-001",
+      "name": "Lookup All Clients",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Match attendee domains against client CRM DataTable\n// Field names: ClickUp_LIst_ID, Email_Domains, missive_label_id, company_name\nconst clientRows = $('Lookup All Clients').all();\nconst inputData = $('Extract Domains').first().json;\n\n// Helper to read field with fallback names\nfunction getField(row, ...names) {\n  for (const n of names) {\n    if (row.json[n] !== undefined && row.json[n] !== null && row.json[n] !== '') return row.json[n];\n  }\n  return '';\n}\n\n// If clientName was provided directly (delta refresh), match by name\nif (inputData.providedClientName && inputData.providedClientName !== '') {\n  const match = clientRows.find(r =>\n    getField(r, 'company_name', 'name').toLowerCase() === inputData.providedClientName.toLowerCase()\n  );\n  if (match) {\n    return {\n      clientName: getField(match, 'company_name', 'name'),\n      clientListId: getField(match, 'ClickUp_LIst_ID', 'clickup_list_id'),\n      missiveLabelId: getField(match, 'missive_label_id'),\n      clientFound: true,\n      ...inputData\n    };\n  }\n}\n\n// Otherwise, match by domain\nconst domains = inputData.domains || [];\nfor (const domain of domains) {\n  const match = clientRows.find(r => {\n    const emailDomains = getField(r, 'Email_Domains', 'email_domains').toLowerCase();\n    return emailDomains.split('|').some(d => d === domain || domain.endsWith('.' + d) || d.endsWith('.' + domain));\n  });\n  if (match) {\n    return {\n      clientName: getField(match, 'company_name', 'name'),\n      clientListId: getField(match, 'ClickUp_LIst_ID', 'clickup_list_id'),\n      missiveLabelId: getField(match, 'missive_label_id'),\n      clientFound: true,\n      matchedDomain: domain,\n      ...inputData\n    };\n  }\n}\n\n// No match found\nreturn {\n  clientName: 'Unknown',\n  clientListId: '',\n  missiveLabelId: '',\n  clientFound: false,\n  ...inputData\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 300],
+      "id": "resolve-client-001",
+      "name": "Resolve Client"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "conditions": [
+            {
+              "id": "has-list-id",
+              "leftValue": "={{ $json.clientListId }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "notEquals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1100, 300],
+      "id": "has-client-list-001",
+      "name": "Has Client List?"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.clickup.com/api/v2/list/{{ $json.clientListId }}/task",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "clickUpOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "statuses[]", "value": "to do" },
+            { "name": "statuses[]", "value": "in progress" },
+            { "name": "statuses[]", "value": "not started" },
+            { "name": "statuses[]", "value": "update required" },
+            { "name": "subtasks", "value": "true" },
+            { "name": "include_closed", "value": "true" },
+            { "name": "order_by", "value": "due_date" },
+            { "name": "page", "value": "0" }
+          ]
+        },
+        "options": {
+          "response": { "response": { "responseFormat": "json" } }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 200],
+      "id": "get-client-tasks-001",
+      "name": "Get Client Tasks",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// No client list — pass empty tasks\nreturn { tasks: [] };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 420],
+      "id": "no-tasks-001",
+      "name": "No Tasks (No List)",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "gbUMm2ADZughCW2a",
+          "mode": "list",
+          "cachedResultName": "Meeting Notes",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/gbUMm2ADZughCW2a"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "name",
+              "condition": "ilike",
+              "keyValue": "={{ '%' + $('Resolve Client').first().json.clientName + '%' }}"
+            }
+          ]
+        },
+        "limit": 3
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [1540, 300],
+      "id": "get-meeting-notes-001",
+      "name": "Get Recent Meeting Notes",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build Missive API URL dynamically\n// Priority: shared_label (precise) > email search > client name search\nconst client = $('Resolve Client').first().json;\nconst missiveLabelId = client.missiveLabelId || '';\nconst primaryEmail = client.primaryContactEmail || '';\nconst clientName = client.clientName || '';\nconst orgId = 'c7be17b4-c416-4d3a-b20d-62a89a261016';\n\nconst params = [];\nparams.push('organization=' + orgId);\nparams.push('limit=10');\n\nif (missiveLabelId) {\n  // Best: filter by client-specific Missive label\n  params.push('shared_label=' + missiveLabelId);\n} else if (primaryEmail) {\n  // Fallback: search by contact email\n  params.push('email=' + encodeURIComponent(primaryEmail));\n} else if (clientName && clientName !== 'Unknown') {\n  // Last resort: search by domain if available\n  const domains = client.domains || [];\n  if (domains.length > 0) {\n    params.push('domain=' + encodeURIComponent(domains[0]));\n  }\n}\n\n// Need at least one mailbox filter when not using shared_label\nif (!missiveLabelId) {\n  params.push('all=true');\n}\n\nreturn {\n  emailApiUrl: 'https://public.missiveapp.com/v1/conversations?' + params.join('&'),\n  searchMethod: missiveLabelId ? 'label' : (primaryEmail ? 'email' : 'domain')\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1760, 300],
+      "id": "build-email-query-001",
+      "name": "Build Email Query"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.emailApiUrl }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendQuery": false,
+        "options": {
+          "response": { "response": { "responseFormat": "json" } }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1980, 300],
+      "id": "get-emails-001",
+      "name": "Get Recent Emails",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "getAll",
+        "team": "9011763462",
+        "space": "90113618058",
+        "folder": "90114444483",
+        "list": "901112698004",
+        "limit": 5,
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [2200, 300],
+      "id": "get-newsletters-001",
+      "name": "Get Newsletter Briefs",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge all context into a single object for the AI synthesizer\n// Separates active tasks from recently closed (last 7 days)\nconst clientData = $('Resolve Client').first().json;\nconst sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;\n\n// Get tasks — separate active vs recently closed\nlet activeTasks = [];\nlet recentlyClosedTasks = [];\ntry {\n  const taskData = $('Get Client Tasks').first().json;\n  const allTasks = taskData.tasks || [];\n  for (const t of allTasks) {\n    const taskObj = {\n      id: t.id,\n      name: t.name,\n      status: t.status?.status || 'unknown',\n      statusType: t.status?.type || 'open',\n      dueDate: t.due_date ? new Date(parseInt(t.due_date)).toISOString().split('T')[0] : 'no due date',\n      priority: t.priority?.priority || 'none',\n      assignees: (t.assignees || []).map(a => a.username || a.email).join(', '),\n      description: (t.description || '').substring(0, 200),\n      dateClosed: t.date_closed || null\n    };\n    if (t.status?.type === 'closed') {\n      const closedTime = parseInt(t.date_closed) || 0;\n      if (closedTime > sevenDaysAgo) {\n        recentlyClosedTasks.push(taskObj);\n      }\n    } else {\n      activeTasks.push(taskObj);\n    }\n  }\n} catch(e) {\n  try {\n    activeTasks = $('No Tasks (No List)').first().json.tasks || [];\n  } catch(e2) {}\n}\n\n// Get meeting notes\nlet meetingNotes = [];\ntry {\n  meetingNotes = $('Get Recent Meeting Notes').all().map(item => ({\n    name: item.json.name,\n    date: item.json.date,\n    overview: item.json.overview,\n    taskId: item.json.taskId,\n    notesUrl: item.json.notesUrl\n  }));\n} catch(e) {}\n\n// Get emails — filter out meeting invites/responses\nconst excludeLabelIds = ['65ead274-5239-4664-af8d-e98ce0009f92', '6fa6d7cf-ed52-481a-a743-561e560d6f17'];\nlet emails = [];\ntry {\n  const emailData = $('Get Recent Emails').first().json;\n  const allConvos = emailData.conversations || [];\n  emails = allConvos\n    .filter(c => {\n      const convLabelIds = (c.shared_labels || []).map(l => l.id);\n      return !excludeLabelIds.some(id => convLabelIds.includes(id));\n    })\n    .slice(0, 10)\n    .map(c => ({\n      subject: c.latest_message_subject || '(no subject)',\n      date: c.last_activity_at,\n      from: (c.external_authors && c.external_authors[0]) ? c.external_authors[0].address : '',\n      fromName: (c.external_authors && c.external_authors[0]) ? c.external_authors[0].name : '',\n      url: c.web_url || ('https://mail.missiveapp.com/#inbox/conversations/' + c.id)\n    }));\n} catch(e) {}\n\n// Get newsletters\nlet newsletters = [];\ntry {\n  newsletters = $('Get Newsletter Briefs').all().map(item => ({\n    name: item.json.name,\n    description: (item.json.description || '').substring(0, 300),\n    dateCreated: item.json.date_created\n  }));\n} catch(e) {}\n\n// Get email search method\nlet emailSearchMethod = 'unknown';\ntry {\n  emailSearchMethod = $('Build Email Query').first().json.searchMethod || 'unknown';\n} catch(e) {}\n\n// Compute hashes for delta detection\nconst allTasksForHash = [...activeTasks, ...recentlyClosedTasks];\nconst tasksHash = allTasksForHash.map(t => t.id + ':' + t.status).sort().join('|');\nconst latestEmailTimestamp = emails.length > 0 ? emails[0].date : '';\nconst latestMeetingNoteId = meetingNotes.length > 0 ? (meetingNotes[0].taskId || '') : '';\n\nreturn {\n  contextJson: JSON.stringify({\n    client: clientData.clientName,\n    meetingTitle: clientData.meetingTitle,\n    meetingTime: clientData.meetingTime,\n    activeTasks: activeTasks,\n    recentlyClosedTasks: recentlyClosedTasks,\n    recentMeetingNotes: meetingNotes,\n    recentEmails: emails,\n    newsletters: newsletters,\n    emailSearchMethod: emailSearchMethod\n  }),\n  clientName: clientData.clientName,\n  clientListId: clientData.clientListId || '',\n  missiveLabelId: clientData.missiveLabelId || '',\n  meetingTitle: clientData.meetingTitle,\n  meetingTime: clientData.meetingTime,\n  eventId: clientData.eventId,\n  pass: clientData.pass,\n  existingAgendaTaskId: clientData.existingAgendaTaskId,\n  existingDescription: clientData.existingDescription,\n  tasksHash: tasksHash,\n  latestEmailTimestamp: latestEmailTimestamp,\n  latestMeetingNoteId: latestMeetingNoteId,\n  taskCount: activeTasks.length,\n  closedTaskCount: recentlyClosedTasks.length,\n  noteCount: meetingNotes.length,\n  emailCount: emails.length,\n  newsletterCount: newsletters.length\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2420, 300],
+      "id": "merge-context-001",
+      "name": "Merge All Context"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.contextJson }}",
+        "options": {
+          "systemMessage": "You are a meeting preparation assistant for Alex Brownstein, a senior management consultant at 3CV and AHB Advisors.\n\nGiven context about an upcoming client meeting, produce meeting prep. The actual tasks, emails, and meeting notes will be listed separately below your output — do NOT repeat them. Focus only on synthesis and recommendations.\n\nFORMAT (use this exact structure):\n\n### Suggested Agenda\n1. [Most important topic — one line]\n2. [Second topic]\n3. [Third topic]\n[3-5 items. Order by priority. One line each. No generic items like \"check in on progress.\"]\n\n### Success for This Meeting\n**Goal:** [One sentence — what does a successful meeting look like?]\n\n**Outputs** (what we leave with):\n- [Concrete deliverable or decision]\n- [Another]\n[2-3 outputs. Max 5 if the meeting is an hour. Must be specific — \"alignment on timeline\" not \"good discussion.\"]\n\n**Inputs** (what we bring in):\n- [Summarized from tasks, prior meetings, emails — what context/materials we need to have ready]\n- [Another]\n\n### Context\n[OPTIONAL — omit entirely if nothing is genuinely relevant. 2-3 bullets max of industry news, market context, or relationship insights that could inform the conversation. Do not force this section.]\n\nRULES:\n- Maximum 200 words total\n- Be specific to THIS client and THIS meeting\n- Outputs = concrete deliverables or decisions, not discussion topics\n- Inputs = synthesize from the actual task data, meeting notes, and emails provided\n- Do not list individual tasks or emails — those appear in the Reference section below\n- If newsletter items are not relevant to this client, omit the Context section entirely\n- No filler, no hedge language, no motivational framing"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [2640, 300],
+      "id": "ai-synthesizer-001",
+      "name": "AI Synthesizer"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {
+          "temperature": 0.3,
+          "maxTokens": 600
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [2660, 520],
+      "id": "openai-model-001",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "FPFFI1NvOtGMoh30",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Section-based merge — protects manual edits and Relay template\n// Includes AI brief + raw reference section with actual tasks, emails, notes\nconst mergeCtx = $('Merge All Context').first().json;\nconst existingDesc = mergeCtx.existingDescription || '';\nconst autoContent = $input.first().json.output || $input.first().json.text || '';\nconst pass = mergeCtx.pass;\nconst now = new Date().toLocaleString('en-US', {\n  timeZone: 'America/New_York',\n  month: 'short', day: 'numeric', year: 'numeric',\n  hour: 'numeric', minute: '2-digit', hour12: true\n});\n\nconst passLabel = {\n  'day-before': 'Day-Before Build',\n  'day-of': 'Day-Of Refresh',\n  'pre-meeting': 'Pre-Meeting Update'\n}[pass] || pass;\n\n// Parse raw context for reference section\nconst ctx = JSON.parse(mergeCtx.contextJson || '{}');\n\n// --- Build raw reference section ---\nlet rawRef = '\\n\\n---\\n\\n### Reference\\n';\n\n// Active + recently closed tasks\nconst activeTasks = ctx.activeTasks || [];\nconst closedTasks = ctx.recentlyClosedTasks || [];\nif (activeTasks.length > 0 || closedTasks.length > 0) {\n  rawRef += '\\n**Tasks** (' + activeTasks.length + ' active';\n  if (closedTasks.length > 0) rawRef += ', ' + closedTasks.length + ' recently closed';\n  rawRef += '):\\n';\n  for (const t of activeTasks) {\n    rawRef += '- [ ] ' + t.name + ' (CU-' + t.id + ') — ' + t.status;\n    if (t.dueDate && t.dueDate !== 'no due date') rawRef += ' — Due ' + t.dueDate;\n    rawRef += '\\n';\n  }\n  for (const t of closedTasks) {\n    rawRef += '- [x] ' + t.name + ' (CU-' + t.id + ') — closed';\n    if (t.dateClosed) {\n      try { rawRef += ' ' + new Date(parseInt(t.dateClosed)).toISOString().split('T')[0]; } catch(e) {}\n    }\n    rawRef += '\\n';\n  }\n}\n\n// Recent emails (3-5, cap at 5)\nconst emails = (ctx.recentEmails || []).slice(0, 5);\nif (emails.length > 0) {\n  rawRef += '\\n**Recent Emails** (' + emails.length + '):\\n';\n  for (const e of emails) {\n    let dateStr = '';\n    if (e.date) {\n      try {\n        const d = typeof e.date === 'number' ? new Date(e.date * 1000) : new Date(e.date);\n        dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });\n      } catch(err) {}\n    }\n    rawRef += '- \\\"' + (e.subject || '(no subject)') + '\\\"';\n    if (e.fromName) rawRef += ' — ' + e.fromName;\n    else if (e.from) rawRef += ' — ' + e.from;\n    if (dateStr) rawRef += ' — ' + dateStr;\n    if (e.url) rawRef += ' [view](' + e.url + ')';\n    rawRef += '\\n';\n  }\n}\n\n// Past meetings (2-3, cap at 3)\nconst notes = (ctx.recentMeetingNotes || []).slice(0, 3);\nif (notes.length > 0) {\n  rawRef += '\\n**Past Meetings** (' + notes.length + '):\\n';\n  for (const n of notes) {\n    rawRef += '- ' + (n.name || 'Meeting');\n    if (n.date) rawRef += ' — ' + n.date;\n    if (n.notesUrl) rawRef += ' [notes](' + n.notesUrl + ')';\n    rawRef += '\\n';\n    if (n.overview) {\n      const overview = n.overview.length > 200 ? n.overview.substring(0, 200) + '...' : n.overview;\n      rawRef += '  > ' + overview + '\\n';\n    }\n  }\n}\n\nconst stats = `${mergeCtx.taskCount} tasks | ${mergeCtx.closedTaskCount} recently closed | ${mergeCtx.noteCount} past meetings | ${mergeCtx.emailCount} emails`;\n\nconst autoSection = `\\n\\n---\\n\\n**Abel Context** — Last updated: ${now} ET (${passLabel}) — ${stats}\\n\\n${autoContent}${rawRef}\\n\\n**— End Abel Context —**`;\n\nconst START_MARKER = '**Abel Context**';\nconst END_MARKER = '**— End Abel Context —**';\n\nconst startIdx = existingDesc.indexOf(START_MARKER);\nconst endIdx = existingDesc.indexOf(END_MARKER);\n\nlet finalDescription;\n\nif (startIdx === -1) {\n  finalDescription = existingDesc + autoSection;\n} else {\n  const before = existingDesc.substring(0, existingDesc.lastIndexOf('\\n', startIdx) > -1 ? existingDesc.lastIndexOf('\\n', startIdx) : startIdx);\n  const after = existingDesc.substring(endIdx + END_MARKER.length);\n  finalDescription = before + autoSection + after;\n}\n\nreturn {\n  description: finalDescription,\n  clientName: mergeCtx.clientName,\n  clientListId: mergeCtx.clientListId,\n  missiveLabelId: mergeCtx.missiveLabelId || '',\n  meetingTitle: mergeCtx.meetingTitle,\n  meetingTime: mergeCtx.meetingTime,\n  eventId: mergeCtx.eventId,\n  pass: mergeCtx.pass,\n  existingAgendaTaskId: mergeCtx.existingAgendaTaskId,\n  tasksHash: mergeCtx.tasksHash,\n  latestEmailTimestamp: mergeCtx.latestEmailTimestamp,\n  latestMeetingNoteId: mergeCtx.latestMeetingNoteId\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2860, 300],
+      "id": "merge-description-001",
+      "name": "Merge Description"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "update",
+        "id": "={{ $json.existingAgendaTaskId }}",
+        "updateFields": {
+          "content": "={{ $json.description }}"
+        }
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [3080, 300],
+      "id": "update-agenda-task-001",
+      "name": "Update Agenda Task",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare output for DataTable tracking and parent workflow\nconst mergeData = $('Merge Description').first().json;\nconst taskId = mergeData.existingAgendaTaskId;\nconst attendees = $('Input').first().json.attendees || '[]';\n\nreturn {\n  eventId: mergeData.eventId,\n  agendaTaskId: taskId,\n  clientName: mergeData.clientName,\n  clientListId: mergeData.clientListId || '',\n  missiveLabelId: mergeData.missiveLabelId || '',\n  meetingTitle: mergeData.meetingTitle,\n  meetingTime: mergeData.meetingTime,\n  attendees: attendees,\n  pass: mergeData.pass,\n  tasksHash: mergeData.tasksHash,\n  latestEmailTimestamp: mergeData.latestEmailTimestamp,\n  latestMeetingNoteId: mergeData.latestMeetingNoteId,\n  lastRefreshed: new Date().toISOString()\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3300, 300],
+      "id": "prepare-output-001",
+      "name": "Prepare Output"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Input": {
+      "main": [
+        [
+          {
+            "node": "Extract Domains",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Domains": {
+      "main": [
+        [
+          {
+            "node": "Has External Attendees?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has External Attendees?": {
+      "main": [
+        [
+          {
+            "node": "Lookup All Clients",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Lookup All Clients": {
+      "main": [
+        [
+          {
+            "node": "Resolve Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Client": {
+      "main": [
+        [
+          {
+            "node": "Has Client List?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Client List?": {
+      "main": [
+        [
+          {
+            "node": "Get Client Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Tasks (No List)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Client Tasks": {
+      "main": [
+        [
+          {
+            "node": "Get Recent Meeting Notes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Tasks (No List)": {
+      "main": [
+        [
+          {
+            "node": "Get Recent Meeting Notes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Recent Meeting Notes": {
+      "main": [
+        [
+          {
+            "node": "Build Email Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Email Query": {
+      "main": [
+        [
+          {
+            "node": "Get Recent Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Recent Emails": {
+      "main": [
+        [
+          {
+            "node": "Get Newsletter Briefs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Newsletter Briefs": {
+      "main": [
+        [
+          {
+            "node": "Merge All Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge All Context": {
+      "main": [
+        [
+          {
+            "node": "AI Synthesizer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Synthesizer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Synthesizer": {
+      "main": [
+        [
+          {
+            "node": "Merge Description",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Description": {
+      "main": [
+        [
+          {
+            "node": "Update Agenda Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Agenda Task": {
+      "main": [
+        [
+          {
+            "node": "Prepare Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "Ka01FqAuhDXin0Kn"
+  },
+  "versionId": "",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "69b353989b2e2524b2186ce2c707a5fca1ffefa89656be27d70fffcaf2744be4"
+  },
+  "tags": []
+}
