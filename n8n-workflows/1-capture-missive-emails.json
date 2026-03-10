@@ -1,8 +1,9 @@
 {
-  "updatedAt": "2026-03-10T00:13:02.473Z",
+  "updatedAt": "2026-02-03T19:29:01.193Z",
   "createdAt": "2025-12-26T15:26:31.241Z",
   "id": "BZpys9OcMz0suz0Y",
   "name": "[1] Capture Missive Emails",
+  "description": null,
   "active": true,
   "isArchived": false,
   "nodes": [
@@ -1429,16 +1430,11 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "versionId": "4ade064d-9d52-43e6-842f-6f87a286170d",
-  "activeVersionId": "4ade064d-9d52-43e6-842f-6f87a286170d",
+  "versionId": "a8f7b2d6-0154-4dbc-bdcd-6467cc0a62bc",
+  "activeVersionId": "a8f7b2d6-0154-4dbc-bdcd-6467cc0a62bc",
+  "versionCounter": 122,
   "triggerCount": 1,
   "tags": [
-    {
-      "updatedAt": "2026-03-10T00:11:31.515Z",
-      "createdAt": "2026-03-10T00:11:31.515Z",
-      "id": "L1wo431MCPrwlBMG",
-      "name": "export"
-    },
     {
       "updatedAt": "2026-01-01T21:31:31.119Z",
       "createdAt": "2026-01-01T21:31:31.119Z",

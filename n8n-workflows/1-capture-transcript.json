@@ -1,8 +1,9 @@
 {
-  "updatedAt": "2026-03-10T00:23:39.003Z",
+  "updatedAt": "2026-02-10T00:53:47.178Z",
   "createdAt": "2025-09-29T18:24:20.615Z",
   "id": "CSUlliGpgb4JDqBE",
   "name": "[1] Capture Transcript",
+  "description": null,
   "active": true,
   "isArchived": false,
   "nodes": [
@@ -82,7 +83,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        2144,
+        2136,
         -128
       ],
       "id": "5165e3e1-ed78-4c62-9fc1-35c18fa84531",
@@ -267,7 +268,7 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
       "position": [
-        2768,
+        2760,
         -352
       ],
       "id": "627a1c03-acdc-419e-9aea-c5d3d784c5b9",
@@ -282,7 +283,7 @@
         "text": "=<MEETING TYPES>\n{{ $json.markdown_description }}\n</MEETING TYPES>\n\n<LIST OF CLIENTS & PROSPECTS>\nFrom clients data table, which has current live clients, prospects, and former clients\n</LIST OF CLIENTS & PROSPECTS>\n\n<TRANSCRIPT>\n{{ $('Transcript').item.json.toJsonString() }}\n</TRANSCRIPT>",
         "hasOutputParser": true,
         "options": {
-          "systemMessage": "You are a precise meeting classifier. Read the meeting type reference and the transcript, then output STRICT JSON (no markdown, no commentary) with exactly this schema:\n\n{\n  \"topLevelBucket\": \"string\",\n  \"categories\": [\"string\"]\n}\n\nINSTRUCTIONS\n1) Parse `meetingTypes` to determine:\n   a) The valid top-level buckets (e.g., \"Internal\", \"Client\", \"Vendor / Partner\", \"Personal\", \"Other External\") — treat whatever appears in meetingTypes as authoritative.\n   b) For each bucket, its allowed subcategory labels (category names only; ignore definitions except for meaning).\n\n2) Choose exactly ONE `topLevelBucket` that best fits the transcript based on:\n   - Attendee composition (internal-only vs client/vendor/external).\n   - Meeting purpose (status, sales, delivery, demo, interview, networking, personal, etc.).\n   If multiple buckets seem plausible, select the single most likely based on strongest textual evidence (attendees > purpose > agenda keywords).\n\n3) `categories` must include ONLY subcategories that belong to the chosen `topLevelBucket`. \n   - Include 1–3 subcategories that best match the transcript. \n   - If none clearly match, return an empty array: [].\n\n4) Do not invent category names. Use exact strings from `meetingTypes`. Prefer precise matches; if synonyms appear in transcript, map them to the closest defined subcategory.\n\n5) If the transcript is fragmentary or ambiguous, still pick the most likely top-level bucket using available cues; keep `categories` minimal and accurate.\n\nOUTPUT RULES\n- Output a single JSON object only, no extra text.\n- Keys must be exactly: \"topLevelBucket\", \"categories\".\n- Use double quotes for all strings. No trailing commas."
+          "systemMessage": "You are a precise meeting classifier. Read the meeting type reference and the transcript, then output STRICT JSON (no markdown, no commentary) with exactly this schema:\n\n{\n  \"topLevelBucket\": \"string\",\n  \"categories\": [\"string\"]\n}\n\nINSTRUCTIONS\n1) Parse `meetingTypes` to determine:\n   a) The valid top-level buckets (e.g., \"Internal\", \"Client\", \"Vendor / Partner\", \"Personal\", \"Other External\") \u2014 treat whatever appears in meetingTypes as authoritative.\n   b) For each bucket, its allowed subcategory labels (category names only; ignore definitions except for meaning).\n\n2) Choose exactly ONE `topLevelBucket` that best fits the transcript based on:\n   - Attendee composition (internal-only vs client/vendor/external).\n   - Meeting purpose (status, sales, delivery, demo, interview, networking, personal, etc.).\n   If multiple buckets seem plausible, select the single most likely based on strongest textual evidence (attendees > purpose > agenda keywords).\n\n3) `categories` must include ONLY subcategories that belong to the chosen `topLevelBucket`. \n   - Include 1\u20133 subcategories that best match the transcript. \n   - If none clearly match, return an empty array: [].\n\n4) Do not invent category names. Use exact strings from `meetingTypes`. Prefer precise matches; if synonyms appear in transcript, map them to the closest defined subcategory.\n\n5) If the transcript is fragmentary or ambiguous, still pick the most likely top-level bucket using available cues; keep `categories` minimal and accurate.\n\nOUTPUT RULES\n- Output a single JSON object only, no extra text.\n- Keys must be exactly: \"topLevelBucket\", \"categories\".\n- Use double quotes for all strings. No trailing commas."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -359,7 +360,7 @@
       "typeVersion": 1,
       "position": [
         3968,
-        -592
+        -596
       ],
       "id": "03149f90-0842-4ff3-b714-cd9511ab5d85",
       "name": "Create Meeting Note",
@@ -813,8 +814,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        3696,
-        -80
+        3688,
+        -76
       ],
       "id": "69d1ad09-1b14-4f41-ab86-95dd2e9f3f84",
       "name": "OpenAI Chat Model2",
@@ -838,7 +839,7 @@
       "typeVersion": 2.2,
       "position": [
         3616,
-        -304
+        -300
       ],
       "id": "b0fcc801-5c1a-4080-b5fd-bf68d45f3c44",
       "name": "Meeting Overview"
@@ -900,7 +901,7 @@
       "typeVersion": 3.4,
       "position": [
         3968,
-        -304
+        -300
       ],
       "id": "3fe96195-4680-422d-a882-ac035ccb53d6",
       "name": "Edit Fields"
@@ -949,7 +950,7 @@
       "typeVersion": 2.2,
       "position": [
         3680,
-        -592
+        -596
       ],
       "id": "d63688f5-9cd0-4e6e-b272-9c34f3de02de",
       "name": "If"
@@ -1050,7 +1051,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n    \"name\": \"⚠️ {{ $json.name}}\",\n    \"description\":{{`⚠️ Invalid file type. ${$json.description||''}`.toJsonString()}}\n  }",
+        "jsonBody": "={\n    \"name\": \"\u26a0\ufe0f {{ $json.name}}\",\n    \"description\":{{`\u26a0\ufe0f Invalid file type. ${$json.description||''}`.toJsonString()}}\n  }",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -1421,7 +1422,7 @@
       "typeVersion": 1,
       "position": [
         3968,
-        -784
+        -788
       ],
       "id": "f1603f5d-e1af-45a9-a936-5c57ee000e96",
       "name": "Update Meeting Note",
@@ -1776,7 +1777,7 @@
       "type": "n8n-nodes-base.dataTableTool",
       "typeVersion": 1,
       "position": [
-        2272,
+        2264,
         -128
       ],
       "id": "e1537022-6a4f-4051-af4a-4ec9d2b325d8",
@@ -2298,16 +2299,11 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "versionId": "2fdb2a82-9cd2-41cc-b2e5-8a1ab46b59dc",
-  "activeVersionId": "2fdb2a82-9cd2-41cc-b2e5-8a1ab46b59dc",
+  "versionId": "cd044237-b897-440e-8dd0-a8287448d514",
+  "activeVersionId": "cd044237-b897-440e-8dd0-a8287448d514",
+  "versionCounter": 66,
   "triggerCount": 1,
   "tags": [
-    {
-      "updatedAt": "2026-03-10T00:11:31.515Z",
-      "createdAt": "2026-03-10T00:11:31.515Z",
-      "id": "L1wo431MCPrwlBMG",
-      "name": "export"
-    },
     {
       "updatedAt": "2026-01-01T21:31:31.119Z",
       "createdAt": "2026-01-01T21:31:31.119Z",
