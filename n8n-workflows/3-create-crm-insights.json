@@ -1,0 +1,1195 @@
+{
+  "updatedAt": "2026-03-10T00:20:56.031Z",
+  "createdAt": "2025-10-24T15:25:40.598Z",
+  "id": "BtXrccLHc4cZA0vR",
+  "name": "[3] Create CRM Insights",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-5-mini"
+        },
+        "options": {
+          "reasoningEffort": "medium",
+          "timeout": 120000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2704,
+        176
+      ],
+      "id": "d6f72797-e667-4511-bf09-7a967f316c40",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "FPFFI1NvOtGMoh30",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Extract the contact insights from this meeting.\n<METADATA>\n{{ $json.metadata }}\n</METADATA>\n<OVERVIEW>\n{{ $json.overview }}\n</OVERVIEW>\n<TRANSCRIPT>\n{{ $json.transcript.base64Decode() }}\n</TRANSCRIPT>",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are an expert CRM Insights extractor. Process the meeting notes/transcript and output a single JSON object (and only JSON) with two keys: `insights` and `contacts`. The agent must **not** return any other text.\n\n## High-level goals\n\n1. Extract **discrete insights** (events or CRM-worthy updates) from the meeting. Each insight may reference multiple people. Insights are the canonical items.\n2. For each insight, identify the people involved (attendees or mentioned persons) and normalize their identity fields. Produce a `contacts` array where each contact lists the **indices** of the insights they participate in.\n3. Do **not** duplicate the same insight for each person. One insight → many people. One person → may appear in many insights.\n4. Keep notes to the point (less than 1500 characters, the shorter but yet more descriptive, the better). Notes with high EQ (emotional/sentiment awareness) and tactical value are ideal.\n\n## Required Output — exact JSON object\n\nReturn **only one JSON object** with exactly these two top-level keys and nothing else:\n\n```json\n{\n  \"insights\": [\n    { \"index\": <integer>, \"note\": \"<markdown string>\" }\n  ],\n  \"contacts\": [\n    {\n      \"first_name\": \"<string|null>\",\n      \"last_name\": \"<string|null>\",\n      \"full_name\": \"<string>\",\n      \"email\": \"<string|null>\",\n      \"company_name\": \"<string|null>\",\n      \"insight_indices\": [ <integer>, ... ]\n    }\n  ]\n}\n```\n\n### Key rules & formats\n\n* `insights`:\n\n  * Preserve the original order of extracted insights. Use **0-based** indexing for `index`.\n  * `note` should be the insight text in **simple Markdown**, preserving paragraph breaks and basic formatting if present (bold, italics, lists, links, but NOT tables).\n  * An **insight** is a single event/observation (e.g., “Todd and Sarah’s daughter’s 1st birthday; they’ll meet Kathy afterward”) — not a per-person record. If multiple sentences in the same insight logically belong together, keep them in the same `note`.\n* `contacts`:\n\n  * Each contact must have `first_name`, `full_name` non-empty strings (or set `first_name` = `null` only if you truly cannot infer any name — but at least one of `first_name`, `last_name`, or `email` must be non-null).\n  * `last_name`, `email`, `company_name` are nullable.\n  * `insight_indices` lists the integer indices of the insights in which the person is referenced.\n  * Merge duplicate identities: if the same person is referenced in multiple insights, produce one `contacts` entry with combined `insight_indices`.\n  * Normalize names: trim spaces, remove honorifics/titles (Dr., Mr., Ms., Mrs., Sir), collapse multiple spaces, and split into `first_name` and `last_name` (single token → `first_name`, `last_name = null`).\n  * If email domain clearly implies a company, set `company_name` (e.g., `@qualcomm.com → \"Qualcomm\"`); otherwise leave `company_name` null.\n* At least one of `first_name`, `last_name`, or `email` must be non-null for a contact to be returned. If you cannot identify any persons for an insight, still include the insight in `insights` and do not create empty contacts.\n* If a person is mentioned but not present on the call, include them as a contact if they are clearly referenced by name or email; indicate their `insight_indices` accordingly.\n\n## Extraction rules (how to form an insight)\n\n* **Group related mentions** together into a single insight when they describe one event or CRM update (family event, travel, new role, OOO dates, preferences, major business news, personal context).\n* Merge sentences that are obviously part of the same event even if different speakers comment on it.\n* Do not include trivial project updates or routine action items as CRM insights (these belong in tasks). Focus on relational/personal items useful in a CRM.\n\n## Person identification & grouping\n\n* Use attendees (prefer exact matches by name/email).\n* Use transcript speaker labels and nearby phrases to disambiguate (“Tom said his wife is due in November” → Tom is the person).\n* If the insight names multiple people (e.g., Todd, Sarah, Kathy), create/associate contacts for each name.\n* For ambiguous single-name mentions that could be multiple people, attempt to disambiguate with attendees list; if still ambiguous, create one contact per unique normalized name and mark best available fields (email null if unknown).\n\n## Sensitivity & uncertainty\n\n* If content is sensitive, surround the sensitive phrase with `*` on both sides in the insight `note` (e.g., `*going through a hard time*`).\n* If an item is uncertain or implied (not stated as fact), the insight `note` must explicitly state the uncertainty (e.g., “Possibly moving offices — not confirmed”).\n\n## Deduplication & normalization\n\n* Deduplicate insights that are semantically identical (minor wording differences) — choose the clearest single phrasing for the `note`.\n* Deduplicate contacts by email if present; otherwise by normalized full name + company when high confidence.\n\n## Output validation (must perform before returning)\n\n* `insights` must be non-null array (empty allowed if no CRM insights).\n* `contacts` must be non-null array (empty allowed if no people identified).\n* Each contact must include `insight_indices` values that reference existing `insights` indices.\n* Return exactly one JSON object and nothing else.\n\n---\n\n## Examples\n\n### Example: multi-person insight (one insight referencing three people)\n\nInput (conceptual): meeting where Todd and Sarah say their daughter just turned 1 and they will meet Kathy after the party; Sarah and Kathy were attendees (Sarah has email).\n\nOutput (must look like this):\n\n```json\n{\n  \"insights\": [\n    {\n      \"index\": 0,\n      \"note\": \"Todd and Sarah celebrated their daughter's first birthday and plan to meet up with Kathy afterward. (Source: meeting 2025-10-07)\"\n    }\n  ],\n  \"contacts\": [\n    {\n      \"first_name\": \"Todd\",\n      \"last_name\": \"Miller\",\n      \"full_name\": \"Todd Miller\",\n      \"email\": null,\n      \"company_name\": null,\n      \"insight_indices\": [0]\n    },\n    {\n      \"first_name\": \"Sarah\",\n      \"last_name\": \"Lopez\",\n      \"full_name\": \"Sarah Lopez\",\n      \"email\": \"sarah@partner.com\",\n      \"company_name\": \"PartnerCo\",\n      \"insight_indices\": [0]\n    },\n    {\n      \"first_name\": \"Kathy\",\n      \"last_name\": null,\n      \"full_name\": \"Kathy\",\n      \"email\": null,\n      \"company_name\": null,\n      \"insight_indices\": [0]\n    }\n  ]\n}\n```\n\n### Example: sensitive personal update\n\nInput: speaker Jamie says they are dealing with a family medical issue.\n\n```json\n{\n  \"insights\": [\n    {\n      \"index\": 0,\n      \"note\": \"Jamie said they are *going through a family medical issue* and will be available only for urgent items for the next month. (Jamie, meeting 2025-10-02)\"\n    }\n  ],\n  \"contacts\": [\n    {\n      \"first_name\": \"Jamie\",\n      \"last_name\": \"Lopez\",\n      \"full_name\": \"Jamie Lopez\",\n      \"email\": \"jamie.lopez@acme.com\",\n      \"company_name\": \"Acme\",\n      \"insight_indices\": [0]\n    }\n  ]\n}\n```\n\n---\n\n## Final instructions\n\n* Output **only** the single JSON object described above — no commentary, no logs, and no extra fields.\n* Be conservative: only output contacts and insights that are clearly supported by the transcript or notes, or that are strongly implied and labelled as uncertain.\n* Keep `note` contents concise (1–4 sentences per insight) and CRM-useful.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2624,
+        -64
+      ],
+      "id": "74487a66-6693-4ec7-9773-0ac04b422dc5",
+      "name": "CRM Insight Agent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "meetingNoteId",
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "id": "8e3127d9-4459-4c04-871b-4336b4e5767f",
+      "typeVersion": 1.1,
+      "name": "Start",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        2176,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "gbUMm2ADZughCW2a",
+          "mode": "list",
+          "cachedResultName": "Meeting Notes",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/gbUMm2ADZughCW2a"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ $json.meetingNoteId }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        2400,
+        -64
+      ],
+      "id": "cd575b48-3c06-4205-a647-2380e860a9d0",
+      "name": "Get row(s)"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "Bnq5qZXSemo1JjL8",
+          "mode": "list",
+          "cachedResultName": "Dex Contacts",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/Bnq5qZXSemo1JjL8"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "first_name",
+              "condition": "ilike",
+              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions0_Value', `Case-Insensitive, partial match for first name`, 'string') }}"
+            },
+            {
+              "keyName": "last_name",
+              "condition": "ilike",
+              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions1_Value', `Case-Insensitive, partial match for last name`, 'string') }}"
+            },
+            {
+              "keyName": "emails",
+              "condition": "ilike",
+              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions2_Value', `Case-Insensitive, partial match for email. Start and end emails with a pipe (|) for an exact match`, 'string') }}"
+            }
+          ]
+        },
+        "limit": 5
+      },
+      "type": "n8n-nodes-base.dataTableTool",
+      "typeVersion": 1,
+      "position": [
+        4016,
+        384
+      ],
+      "id": "3782570e-921b-4f48-bf55-1dcb91c88e17",
+      "name": "Find_Contacts"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5",
+          "mode": "list"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3808,
+        384
+      ],
+      "id": "b1fa19f9-c2db-4f6b-b49a-ebefe925f22b",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "FPFFI1NvOtGMoh30",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.toJsonString() }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=Developer: You are the **Contact Matching Agent (single-contact)**.\nYour input is a single contact identity object. Your job is to search the DEX database for existing matches for that contact and return a single JSON object with the **`matching_ids`** array. **Do not create or modify contacts.**\n\nReturn **only** one JSON object with the exact key `matching_ids` and nothing else.\n\n---\n\n## INPUT (single contact object)\n\nThe agent receives a contact object with the following fields: first name, last name, full name, email, and company name (all may be string or null).\n\n---\n\n## TOOL (required)\n\n* **Find_Contacts** tool — use it to search the DEX Contacts table only.\n\n  * Do **not** create or update contacts.\n  * DEX `emails` field stores pipe-delimited emails (e.g., `a@x.com|a.personal@gmail.com`). Use boundary-aware logic (see below) when matching discrete emails.\n\n---\n\n## OUTPUT — exact JSON (single object; snake_case)\n\nReturn **only**:\n\n```json\n{ \n  \"matching_ids\": [\n    { \"id\": \"<string>\", \"dex_id\": \"<string>\", \"confidence\": <1|2|3> }\n  ]\n}\n```\n\n* `matching_ids` must be an array; if no matches are found return `[]`.\n* Include **no more than 3** candidate objects.\n* `id` and `dex_id` are strings. If `dex_id` is unavailable, set `dex_id` to `\"\"`.\n* `confidence` must be 1, 2, or 3.\n* Sort the array by `confidence` (desc). For equal confidence, use the tool's returned order.\n\n---\n\n## EMAIL MATCHING (DEX pipe-delimited emails)\n\nTo match by email, treat `emails` as `|`-delimited tokens. Accept a match only if any of these are true for candidate's `emails`:\n* `emails === \"<email>\"`\n* `emails.startsWith(\"<email>|\")`\n* `emails.endsWith(\"|<email>\")`\n* `emails.includes(\"|<email>|\")`\n\nIf the Find_Contacts tool only supports substring search, post-filter results with these boundary checks.\n\n---\n\n## MATCHING & SCORING\n\n1. **Email exact** (highest priority): If input email is present, query by email and verify using boundary logic.\n2. **Email partial/domain**: If above fails and domain is present, query by `@domain` with boundary checks.\n3. **Name/company**: Query `full_name` together with company name if available.\n4. **Full name only**: Query full name using obvious nickname variants if needed.\n5. **Last name + company**: Use if first name is missing.\n6. **Fuzzy name variants**: Include hyphens, initials, diacritics.\n\n* Collect all unique candidates (do not fabricate IDs).\n* Assign confidence:\n  * **3**: Exact email match, or only strong match by name/company/domain.\n  * **2**: Domain+name, or name+company with few similar matches.\n  * **1**: Name only, fuzzy, or ambiguous cases.\n* Top 3 by confidence.\n* If none, return `matching_ids: []`.\n\n---\n\n## EXAMPLES\n\n**No matches**\n\n```json\n{ \"matching_ids\": [] }\n```\n\n**One high-confidence match**\n\n```json\n{\n  \"matching_ids\": [\n    { \"id\": \"7f9c8\", \"dex_id\": \"dex_98765\", \"confidence\": 3 }\n  ]\n}\n```\n\n**Up to three candidates**\n\n```json\n{\n  \"matching_ids\": [\n    { \"id\": \"7f9c8\", \"dex_id\": \"dex_98765\", \"confidence\": 3 },\n    { \"id\": \"9a2b1\", \"dex_id\": \"dex_11223\", \"confidence\": 2 },\n    { \"id\": \"12f3e\", \"dex_id\": \"\", \"confidence\": 1 }\n  ]\n}\n```"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        3872,
+        160
+      ],
+      "id": "c39ea477-66f2-4d35-bacf-e4e4026ea5c6",
+      "name": "Contact Matching Agent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2976,
+        -64
+      ],
+      "id": "b6400f07-046a-4d42-8f1b-14e1eed8c733",
+      "name": "Insights"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "contacts",
+        "options": {
+          "disableDotNotation": false
+        }
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        3200,
+        240
+      ],
+      "id": "59adc927-99e2-40a2-b57f-85f89626161f",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "maxItems": 2
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        3424,
+        240
+      ],
+      "id": "6a0d974b-51a6-4dd3-b690-11d0be957b69",
+      "name": "Limit",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        3648,
+        240
+      ],
+      "id": "1c8a53c9-f1dd-4575-89bf-637f568e2cd9",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ ({\n...$('Loop Over Items').item.json,\n ...JSON.parse($json.output)\n}).toJsonString() }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4224,
+        368
+      ],
+      "id": "c3c5fc59-a64f-4564-98cb-8885677b306c",
+      "name": "Matched Contact"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "contacts",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        5344,
+        -144
+      ],
+      "id": "6f6280fd-f77a-40ca-a01a-e9f723c9acc0",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        5568,
+        -288
+      ],
+      "id": "e3623bec-5693-45a0-927c-46af919addfb",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "insights",
+        "options": {
+          "destinationFieldName": "insight"
+        }
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        5792,
+        -288
+      ],
+      "id": "533b22b1-b799-46ce-9d50-e3f590a1e2b2",
+      "name": "Insight"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "241d3d39-6365-4691-bb50-063272971cdd",
+              "name": "timeline_items_contacts.data",
+              "value": "={{ \n\n$('Merge').item.json.contacts\n  .filter(c => c.insight_indices.includes($json.insight.index) && c.existing_contact_id)\n  .map(c => c.existing_contact_id)\n  .unique()\n  .map(contact_id => ({ contact_id })) \n\n}}",
+              "type": "array"
+            },
+            {
+              "id": "ff10463f-d2ee-4d69-aa84-d1b55cd4176e",
+              "name": "meeting_type",
+              "value": "note",
+              "type": "string"
+            },
+            {
+              "id": "7e86c65f-aee8-4224-b260-412d4167caaf",
+              "name": "note",
+              "value": "=🗓️ {{ $('Get row(s)').item.json.bucket }} Meeting - <b>\n<a href=\"https://app.clickup.com/t/{{ $('Get row(s)').item.json.taskId }}\" target=\"_blank\">{{ $('Get row(s)').item.json.name }}</a></b>\n<hr>\n<br>\n{{ $json.insight.note.replaceAll('\\n','<br>') }}",
+              "type": "string"
+            },
+            {
+              "id": "d638a9a7-9458-4d30-9bde-efb40fbf84a1",
+              "name": "event_time",
+              "value": "={{ $('Get row(s)').item.json.date }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        6240,
+        -288
+      ],
+      "id": "5eae7522-2e6d-4648-b36a-078565b5afeb",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "241d3d39-6365-4691-bb50-063272971cdd",
+              "name": "existing_contact_id",
+              "value": "={{ $json.matching_ids?.[0].dex_id}}",
+              "type": "string"
+            },
+            {
+              "id": "e20456bd-3a2d-48bc-a351-fbcefbe6c37e",
+              "name": "matching_ids",
+              "value": "={{ undefined }}",
+              "type": "array"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {
+          "ignoreConversionErrors": false
+        }
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3936,
+        -144
+      ],
+      "id": "e5dd2243-0e3b-46ed-a5f0-95346656ec9a",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0f10847f-2f78-4386-ae51-47271a662741",
+              "leftValue": "={{ $json.existing_contact_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4224,
+        -144
+      ],
+      "id": "8dbac891-a2f2-4007-8e29-955a8fcdb2f1",
+      "name": "If Exists"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.getdex.com/api/rest/contacts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"contact\": {{ $json.contact_emails.data.email ?  $json.toJsonString() : [$json].map(i => ({...i, contact_emails: undefined}))[0].toJsonString() }} } ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4672,
+        160
+      ],
+      "id": "1d74c4a2-f71f-4d09-b599-fb08249a0ec3",
+      "name": "Create Contact",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "6kUKQr6mk7NCrb1U",
+          "name": "Dex API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "Bnq5qZXSemo1JjL8",
+          "mode": "list",
+          "cachedResultName": "Dex Contacts",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/Bnq5qZXSemo1JjL8"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "dexId",
+              "keyValue": "={{ $json.insert_contacts_one.id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "dexId": "={{ $json.insert_contacts_one.id }}",
+            "first_name": "={{ $json.insert_contacts_one.first_name }}",
+            "last_name": "={{ $json.insert_contacts_one.last_name }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "dexId",
+              "displayName": "dexId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "first_name",
+              "displayName": "first_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "last_name",
+              "displayName": "last_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "job_title",
+              "displayName": "job_title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "emails",
+              "displayName": "emails",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "website",
+              "displayName": "website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "syncId",
+              "displayName": "syncId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        4896,
+        272
+      ],
+      "id": "d808df4b-c980-435f-905e-d783218c0709",
+      "name": "Upsert row(s)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "042c40c0-fe4d-4220-8bb3-d432abe3ec6f",
+              "name": "first_name",
+              "value": "={{ $json.first_name }}",
+              "type": "string"
+            },
+            {
+              "id": "779abb8a-14a0-44cb-81ce-5c7bcfda0c6e",
+              "name": "last_name",
+              "value": "={{ $json.last_name }}",
+              "type": "string"
+            },
+            {
+              "id": "933e0fe6-4b44-44c8-a470-e6bcd7340651",
+              "name": "contact_emails.data.email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4448,
+        160
+      ],
+      "id": "48010f5d-2a9b-43b9-9607-7cf735c2cfb3",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ebbc50ec-097b-42c8-b04c-f421bf664259",
+              "name": "existing_contact_id",
+              "value": "={{ $json.insert_contacts_one.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4896,
+        80
+      ],
+      "id": "5d70c087-3b51-4310-9e8e-46d092691b6f",
+      "name": "Edit Fields3"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        5120,
+        -208
+      ],
+      "id": "14c48070-1243-464c-ad3d-f34240aefb8c",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.getdex.com/api/rest/timeline_items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"timeline_event\": {{ $json.toJsonString() }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        6464,
+        -288
+      ],
+      "id": "a64df7de-51f3-4836-99ee-5534bac92eb1",
+      "name": "Create Note",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "6kUKQr6mk7NCrb1U",
+          "name": "Dex API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "markdownToHtml",
+        "markdown": "={{ $json.insight.note }}",
+        "destinationKey": "insight.note",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        6016,
+        -288
+      ],
+      "id": "a589123a-ac16-4d7e-b1f6-b8cd7a887c9a",
+      "name": "Markdown"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "comment",
+        "commentOn": "task",
+        "id": "={{ $('Get row(s)').item.json.taskId }}",
+        "commentText": "=Abel: Added {{ $('Create Note').all().length }} notes in Dex",
+        "additionalFields": {
+          "notifyAll": false
+        }
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        6688,
+        -112
+      ],
+      "id": "3f5cc612-7800-425d-afc8-c7cdba6e3035",
+      "name": "Create a comment",
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "gbUMm2ADZughCW2a",
+          "mode": "list",
+          "cachedResultName": "Meeting Notes",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/gbUMm2ADZughCW2a"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ $('Get row(s)').item.json.id}}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "insightsCreatedAt": "={{ $now }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "sourceId",
+              "displayName": "sourceId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "taskId",
+              "displayName": "taskId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "bucket",
+              "displayName": "bucket",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "overview",
+              "displayName": "overview",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "transcript",
+              "displayName": "transcript",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "metadata",
+              "displayName": "metadata",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "slackNotificationThreadId",
+              "displayName": "slackNotificationThreadId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "insightsCreatedAt",
+              "displayName": "insightsCreatedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        6688,
+        -304
+      ],
+      "id": "ba0e4c37-b726-4ff8-96c6-1c5c9b4ec9eb",
+      "name": "Update Meeting Note",
+      "executeOnce": true
+    }
+  ],
+  "connections": {
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "CRM Insight Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CRM Insight Agent": {
+      "main": [
+        [
+          {
+            "node": "Insights",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Get row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s)": {
+      "main": [
+        [
+          {
+            "node": "CRM Insight Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find_Contacts": {
+      "ai_tool": [
+        [
+          {
+            "node": "Contact Matching Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Contact Matching Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contact Matching Agent": {
+      "main": [
+        [
+          {
+            "node": "Matched Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insights": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Contact Matching Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Matched Contact": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Insight",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insight": {
+      "main": [
+        [
+          {
+            "node": "Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "If Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Exists": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Contact": {
+      "main": [
+        [
+          {
+            "node": "Upsert row(s)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Edit Fields3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "Create Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert row(s)": {
+      "main": [
+        []
+      ]
+    },
+    "Edit Fields3": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Create Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Markdown": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Note": {
+      "main": [
+        [
+          {
+            "node": "Create a comment",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update Meeting Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "errorWorkflow": "Ka01FqAuhDXin0Kn",
+    "saveDataSuccessExecution": "none"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "versionId": "bee5f7e8-5d94-45cb-a70f-e53684f73b4f",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    },
+    {
+      "updatedAt": "2026-01-01T21:31:31.119Z",
+      "createdAt": "2026-01-01T21:31:31.119Z",
+      "id": "erv2iAT6He287ePS",
+      "name": "Abel Meeting Assistant"
+    }
+  ]
+}
