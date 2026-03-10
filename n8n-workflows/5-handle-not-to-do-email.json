@@ -1,0 +1,562 @@
+{
+  "updatedAt": "2026-03-10T00:15:47.705Z",
+  "createdAt": "2026-01-14T07:24:56.159Z",
+  "id": "vumANB0XiaAxbjyu",
+  "name": "[5] Handle Not To-Do (Email)",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "emailToDoId",
+              "type": "number"
+            },
+            {
+              "name": "slackThreadTs"
+            },
+            {
+              "name": "slackChannel"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "1ad53a2d-cc05-42dc-bddf-4b04ccf0888e",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "6BIIWj3nPZH1pjQw",
+          "mode": "list",
+          "cachedResultName": "Email Triage - To-Do",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/6BIIWj3nPZH1pjQw"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ $json.emailToDoId }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "1a0f62e6-dd22-4254-a5e7-02b2855da6e7",
+      "name": "Get Email To-Do"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "delete",
+        "id": "={{ $json.taskId }}"
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "cf696b07-a4cb-4bd9-baba-0b0f05d5ab7a",
+      "name": "Delete ClickUp Task",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://public.missiveapp.com/v1/posts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"posts\": {\n    \"conversation\": \"{{ $('Get Email To-Do').item.json.messages_conversation_id }}\",\n    \"organization\": \"c7be17b4-c416-4d3a-b20d-62a89a261016\",\n    \"add_shared_labels\": [\"a551adb7-5304-48e7-b873-dc1ed6a2bc4b\"],\n    \"remove_shared_labels\": [\"e5c96ca9-e940-4667-b5ee-0fb58e337916\"],\n    \"text\": \"Marked as Not a To-Do by automation\",\n    \"notification\" : {\"title\":\"Marked not a to-do\", \"body\": \"Abel in slack called this not a to-do\"}\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        608,
+        0
+      ],
+      "id": "151f761d-ceb6-4019-9cc2-b957ebbda5bf",
+      "name": "Update Missive Labels",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "6BIIWj3nPZH1pjQw",
+          "mode": "list",
+          "cachedResultName": "Email Triage - To-Do",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/6BIIWj3nPZH1pjQw"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ $('When Executed by Another Workflow').item.json.emailToDoId }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "not_todo",
+            "statusChangedAt": "={{ $now.toISO() }}",
+            "taskId": "="
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "messages_id",
+              "displayName": "messages_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "messages_from_field_address",
+              "displayName": "messages_from_field_address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "messages_to_fields0_address",
+              "displayName": "messages_to_fields0_address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "messages_subject",
+              "displayName": "messages_subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "messages_body",
+              "displayName": "messages_body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "messages_conversation_id",
+              "displayName": "messages_conversation_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "messages_delivered_at",
+              "displayName": "messages_delivered_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "messages_conversation_web_url",
+              "displayName": "messages_conversation_web_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "body_rule_id",
+              "displayName": "body_rule_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "body_rule_description",
+              "displayName": "body_rule_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "shared_labels0_name_with_parent_names",
+              "displayName": "shared_labels0_name_with_parent_names",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "taskId",
+              "displayName": "taskId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "overview",
+              "displayName": "overview",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "metadata",
+              "displayName": "metadata",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "slackNotificationThreadId",
+              "displayName": "slackNotificationThreadId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "ackDraftId",
+              "displayName": "ackDraftId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "subtasks_first_agent",
+              "displayName": "subtasks_first_agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "createdTasksAt",
+              "displayName": "createdTasksAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "messages_bcc_fields",
+              "displayName": "messages_bcc_fields",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "messages_cc_fields",
+              "displayName": "messages_cc_fields",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "messages_to_fields",
+              "displayName": "messages_to_fields",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "messages_from_field_name",
+              "displayName": "messages_from_field_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "messages_from_field",
+              "displayName": "messages_from_field",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "statusChangedAt",
+              "displayName": "statusChangedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        816,
+        0
+      ],
+      "id": "3298207f-d9af-4634-8f7c-a148336688a5",
+      "name": "Mark as Not To-Do"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C08HH2X0NF6",
+          "mode": "list",
+          "cachedResultName": "tasks"
+        },
+        "text": "✓ Marked as \"Not a To-Do\" - ClickUp task deleted - Missive labels updated (removed \"to-do\", added \"read only\" + \"create deterministic rule\") - marked as not-to-do in tracking table",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "thread_ts": {
+            "replyValues": {
+              "thread_ts": "={{ $('Get Email To-Do').item.json.slackNotificationThreadId }}"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1024,
+        0
+      ],
+      "id": "49b14a56-a233-47c1-b7d7-f7f212e4d4ff",
+      "name": "Send a message",
+      "webhookId": "e77c3d8f-8509-4065-94d6-23af381d99c5",
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Get Email To-Do",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Email To-Do": {
+      "main": [
+        [
+          {
+            "node": "Delete ClickUp Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete ClickUp Task": {
+      "main": [
+        [
+          {
+            "node": "Update Missive Labels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Missive Labels": {
+      "main": [
+        [
+          {
+            "node": "Mark as Not To-Do",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark as Not To-Do": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "versionId": "e1eec073-c3bd-4e1e-a434-f374fe46d377",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    },
+    {
+      "updatedAt": "2026-01-01T21:31:31.119Z",
+      "createdAt": "2026-01-01T21:31:31.119Z",
+      "id": "erv2iAT6He287ePS",
+      "name": "Abel Meeting Assistant"
+    }
+  ]
+}
