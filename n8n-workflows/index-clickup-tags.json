@@ -1,0 +1,302 @@
+{
+  "updatedAt": "2026-03-10T00:18:55.435Z",
+  "createdAt": "2025-11-14T03:54:29.758Z",
+  "id": "S1VE0OUDWBtPj8LU",
+  "name": "Index Clickup Tags",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtMinute": 31
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        144,
+        -336
+      ],
+      "id": "b93388d4-90eb-4dff-a2d3-fbf8642568c1",
+      "name": "Schedule Trigger",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "23ef81c0-d51a-413a-adfe-c75bfb4d1a68",
+              "name": "syncId",
+              "value": "={{ DateTime.now().toISO().split('T').first() }}.{{ $execution.id }}",
+              "type": "string"
+            },
+            {
+              "id": "f804e3e3-42c6-4531-98c7-960578cf6994",
+              "name": "spaces",
+              "value": "={{ $vars.Abel_Clickup_Spaces.split(',') }}",
+              "type": "array"
+            },
+            {
+              "id": "35378a10-e56b-4983-8ffa-8f1c4f4aa5a5",
+              "name": "folders",
+              "value": "['90113618058|90115735540']",
+              "type": "array"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        368,
+        -240
+      ],
+      "id": "508bfacf-53bc-4ca6-bc16-434f1e11301f",
+      "name": "Sync Settings"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "spaces",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        592,
+        -240
+      ],
+      "id": "495b7752-3489-4c3b-8e12-c92fd52fac10",
+      "name": "Space"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "spaceTag",
+        "operation": "getAll",
+        "space": "={{ $json.spaces }}"
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        816,
+        -240
+      ],
+      "id": "e4169253-91d6-4746-a1a0-38446ab163e3",
+      "name": "Get Space Tags",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "abdwt7TB3zzvU45a",
+          "mode": "list",
+          "cachedResultName": "Clickup Tags",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/abdwt7TB3zzvU45a"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "name",
+              "keyValue": "={{ $json.name }}"
+            },
+            {
+              "keyName": "spaceId",
+              "keyValue": "={{ $('Space').item.json.spaces }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $json.name }}",
+            "projectId": "={{ $json.project_id }}",
+            "tagFg": "={{ $json.tag_fg }}",
+            "tagBg": "={{ $json.tag_bg }}",
+            "spaceId": "={{ $('Space').item.json.spaces }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "projectId",
+              "displayName": "projectId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tagFg",
+              "displayName": "tagFg",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tagBg",
+              "displayName": "tagBg",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "spaceId",
+              "displayName": "spaceId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        -240
+      ],
+      "id": "f95134ca-b5e0-4104-bd44-68f732f5fb5a",
+      "name": "Upsert tag"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        144,
+        -144
+      ],
+      "id": "2c7dcea7-bb92-4353-9379-2fdb239def0e",
+      "name": "When clicking ‘Execute workflow’"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Sync Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync Settings": {
+      "main": [
+        [
+          {
+            "node": "Space",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Space": {
+      "main": [
+        [
+          {
+            "node": "Get Space Tags",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Space Tags": {
+      "main": [
+        [
+          {
+            "node": "Upsert tag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Sync Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": {
+    "node:Schedule Trigger": {
+      "recurrenceRules": [
+        22
+      ]
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "versionId": "bad19f97-f99f-466a-8487-21cc6a72ff6d",
+  "activeVersionId": null,
+  "triggerCount": 1,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    },
+    {
+      "updatedAt": "2026-01-01T21:31:31.119Z",
+      "createdAt": "2026-01-01T21:31:31.119Z",
+      "id": "erv2iAT6He287ePS",
+      "name": "Abel Meeting Assistant"
+    }
+  ]
+}
