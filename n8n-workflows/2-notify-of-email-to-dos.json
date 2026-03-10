@@ -1,0 +1,701 @@
+{
+  "updatedAt": "2026-03-10T00:14:45.485Z",
+  "createdAt": "2025-12-26T23:24:49.541Z",
+  "id": "keaJKDb9Gjd6nMzg",
+  "name": "[2] Notify of Email To-Dos",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "emailToDoID",
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "id": "fcb2752d-ccd9-4301-a891-c51084a1e687",
+      "typeVersion": 1.1,
+      "name": "Start",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        3040,
+        -384
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5",
+          "mode": "list",
+          "cachedResultName": "gpt-5"
+        },
+        "options": {
+          "reasoningEffort": "medium",
+          "timeout": 180000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        4016,
+        96
+      ],
+      "id": "e0f1b03f-e369-41b2-ac1f-5ca551854ee7",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "FPFFI1NvOtGMoh30",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<TRANSCRIPT>\n{{ $('Email To-Dos').item.json.messages_body }}\n</TRANSCRIPT>\n\n<RECIPIENTS>\n{{ $('Email To-Dos').item.json.shared_labels0_name_with_parent_names }}\n</RECIPIENTS>\n\n<SUBTASKS IDENTIFIED FROM FIRST AGENT>\n{{ $('Email To-Dos').item.json.subtasks_first_agent }}\n</SUBTASKS IDENTIFIED FROM FIRST AGENT>\n\n<EMAIL LABELS>\n{{ $('Email To-Dos').item.json.shared_labels0_name_with_parent_names }}\n</EMAIL LABELS>",
+        "options": {
+          "systemMessage": "={{ $json.markdown_description }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        3936,
+        -144
+      ],
+      "id": "ea8b23db-98cd-41c5-8af7-795d1a37dd88",
+      "name": "Task Extractor Agent"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4288,
+        -144
+      ],
+      "id": "ec8ec1af-7c58-4df0-9373-3e898ece0d63",
+      "name": "Tasks"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C08HH2X0NF6",
+          "mode": "list",
+          "cachedResultName": "tasks"
+        },
+        "messageType": "block",
+        "blocksUi": "={\n  \"blocks\": [\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \":wave: <@U07ARECGAF8>, *if something needs editing, reply in this thread with your feedback.\"\n      }\n    },\n    { \"type\": \"divider\" },\n    {\n      \"type\": \"rich_text\",\n      \"elements\": [\n        {{ \n          $json.tasks.map((task,i) => ({\n            \"type\": \"rich_text_section\",\n            \"elements\": [\n              { \"type\": \"text\", \"text\":  `[${i+1}] ${task.title}`, \"style\": { \"bold\": true } },\n              { \"type\": \"text\", \"text\": \"\\n\" },\n              { \"type\": \"text\", \"text\": \"Owner: \" },\n              { \"type\": \"text\", \"text\": (task.assignee || \"—\") },\n              { \"type\": \"text\", \"text\": \"\\n\" },\n              { \"type\": \"text\", \"text\": \"Priority: \" },\n              { \"type\": \"text\", \"text\": (task.priority || \"—\") },\n              ...(task.depends_on ? [\n                { \"type\": \"text\", \"text\": \"\\n\" },\n                { \"type\": \"text\", \"text\": \"Depends on: \" },\n                { \"type\": \"text\", \"text\": task.depends_on }\n              ] : []),\n              { \"type\": \"text\", \"text\": \"\\n\\n\" },\n              { \"type\": \"text\", \"text\": (task.description || \"\") },\n              { \"type\": \"text\", \"text\": \"\\n\\n\" }\n            ]\n          }).toJsonString()).join(',') \n        }}\n      ]\n    }\n  ]\n}",
+        "text": "=Review tasks for {{ $('Email To-Dos').item.json.name }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "thread_ts": {
+            "replyValues": {
+              "thread_ts": "={{ $json.message.ts }}"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        4736,
+        -192
+      ],
+      "id": "fbfb1fba-d8fe-4d07-bf76-561024c75d67",
+      "name": "Review message",
+      "webhookId": "73cb40c2-8050-488c-aced-940c042cc9f3",
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5337231f-3a81-4fa1-ab40-31d26d2cc977",
+              "name": "buttons",
+              "value": "={\n      \"type\": \"actions\",\n      \"elements\": {{ JSON.stringify(\nObject.entries($json.buttons).map(([name, data]) => {\n  const [include = false, text = 'Click', urlOrActionId = null, actionValue] = data.split('|')\n  if ((!Boolean(include)|| include=='false') || !urlOrActionId)\n    return\n  return actionValue ? \n{\n          \"type\": \"button\",\n          \"text\": {\n              \"type\": \"plain_text\",\n              text,\n              \"emoji\": true\n          },\n          action_id: urlOrActionId,\n          value: actionValue,\n      }\n  : {\n          \"type\": \"button\",\n          \"text\": {\n              \"type\": \"plain_text\",\n              text,\n              \"emoji\": true\n          },\n          value: `view_${name}`,\n          url: urlOrActionId\n      }\n}).filter(v=>!!v),\nnull,2, )}}\n  }",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3712,
+        -384
+      ],
+      "id": "0582d167-17ba-4e0b-b5f4-4ec0ad52da50",
+      "name": "with Slack Buttons"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a513535e-3467-4879-aae7-56ab65e83448",
+              "name": "buttons.clickup_notes",
+              "value": "={{ $json.taskId ? 'true' : 'false' }}|ClickUp Task|https://app.clickup.com/t/{{ $json.taskId }}",
+              "type": "string"
+            },
+            {
+              "id": "08704a96-5933-45bb-a840-be4ad57ee49e",
+              "name": "buttons.link",
+              "value": "={{ $json.messages_conversation_web_url ? 'true' : 'false' }}|Missive Link|{{ $json.messages_conversation_web_url }}",
+              "type": "string"
+            },
+            {
+              "id": "1374eeca-3ee1-4ff1-9638-0f52c9be983a",
+              "name": "buttons.not_todo_actions",
+              "value": "=true|❌ Not a To-Do|not_todo_email|{{ $('Email To-Dos').item.json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3488,
+        -384
+      ],
+      "id": "32d121a6-1504-49a9-aaee-bc299afe69a8",
+      "name": "Prep Buttons"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "DZ8o2BfNfraRBlZt",
+          "mode": "list",
+          "cachedResultName": "Clickup Lists",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/DZ8o2BfNfraRBlZt"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "listId",
+              "condition": "isNotEmpty"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        3488,
+        -576
+      ],
+      "id": "9254ab3f-0884-4683-b5f4-865262678c90",
+      "name": "Available Lists",
+      "executeOnce": true,
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        4000,
+        -480
+      ],
+      "id": "61f7f213-cc57-4ab7-bfe4-c6ec58e674d8",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C08HH2X0NF6",
+          "mode": "list",
+          "cachedResultName": "tasks"
+        },
+        "messageType": "block",
+        "blocksUi": "={\"blocks\": [\n      {\n          \"type\": \"section\",\n          \"text\": {\n              \"type\": \"mrkdwn\",\n              \"text\": {{ `Approve tasks from email: ${$('Email To-Dos').item.json.name}\\nFrom: ${$('Email To-Dos').item.json.messages_from_field_address}\\nLabel: ${$('Email To-Dos').item.json.shared_labels0_name_with_parent_names}`.toJsonString() }}\n          }\n      },\n      {{ $json.buttons }},\n      {\n        \"type\": \"section\",\n        \"block_id\": \"assign_email_project\",\n        \"text\": {\n          \"type\": \"mrkdwn\",\n          \"text\": \"_Project:_\"\n        },\n        \"accessory\": {{ $json.accessory.toJsonString() }}\n      }\n]}",
+        "text": "=New email to-dos for {{ $('Email To-Dos').item.json.name }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        4288,
+        -480
+      ],
+      "id": "76534075-a37d-4496-8f59-dad380570167",
+      "name": "Send a message",
+      "webhookId": "282b9112-da18-484f-95e8-b792a96643b6",
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * n8n Code / Function node\n * Input: items[] where each item.json is either a list object or an array of them\n * Output: { accessory: { type: \"static_select\", option_groups: [...] } }\n */\n\nconst ACTION_ID = \"assign_email_project\";\nconst PLACEHOLDER = \"Select an item\";\n\nfunction txt(s) {\n  if (s == null) return \"\";\n  return String(s).replace(/\\r?\\n/g, \" · \").trim();\n}\nfunction optionText(listName, folderName) {\n  const ln = txt(listName);\n  const fn = txt(folderName);\n  return fn ? `${ln} (${fn})` : ln;\n}\n\n// Normalize input to a flat array of records\nconst records = [];\nfor (const it of items) {\n  const j = it.json;\n  if (Array.isArray(j)) records.push(...j);\n  else if (j && typeof j === \"object\") records.push(j);\n}\n\n// Group by spaceId (exclude archived)\nconst bySpace = new Map();\nfor (const r of records.filter(r => r.archived !== true)) {\n  const key = String(r.spaceId ?? \"\");\n  if (!bySpace.has(key)) {\n    bySpace.set(key, { label: txt(r.spaceName || \"Untitled Space\"), rows: [] });\n  }\n  bySpace.get(key).rows.push(r);\n}\n\n// Sort rows within each group: folderName then listName\nfor (const { rows } of bySpace.values()) {\n  rows.sort((a, b) =>\n    txt(a.folderName).localeCompare(txt(b.folderName)) ||\n    txt(a.listName).localeCompare(txt(b.listName))\n  );\n}\n\n// Build Slack option_groups\nconst option_groups = Array.from(bySpace.values()).map(group => ({\n  label: { type: \"plain_text\", text: group.label },\n  options: group.rows.map(r => ({\n    text: { type: \"plain_text\", text: optionText(r.listName, r.folderName) },\n    value: String($('Email To-Dos').first().json.id + '-'+ r.id) \n  })),\n}));\n\n// Wrap in accessory for a section block\nconst accessory = {\n  action_id: ACTION_ID,\n  type: \"static_select\",\n  placeholder: { type: \"plain_text\", text: PLACEHOLDER },\n  option_groups, \n  confirm: {\n    \"title\": {\n        \"type\": \"plain_text\",\n        \"text\": \"Are you sure?\"\n    },\n    \"text\": {\n        \"type\": \"plain_text\",\n        \"text\": \"I'll add these tasks to the project.\"\n    },\n    \"confirm\": {\n        \"type\": \"plain_text\",\n        \"text\": \"Continue\"\n    },\n    \"deny\": {\n        \"type\": \"plain_text\",\n        \"text\": \"Stop!\"\n    }\n  }\n};\n\n// Output\nreturn [{ json: { accessory } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3712,
+        -576
+      ],
+      "id": "ee3fd4f7-045a-49fc-bce4-8413301ba09e",
+      "name": "List Accessory"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": true
+        }
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        4512,
+        -192
+      ],
+      "id": "77fe8358-282f-4060-8324-d10e892cf3f6",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "get",
+        "id": "868gvk32u",
+        "includeMarkdownDescription": true
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        3712,
+        -144
+      ],
+      "id": "137ce206-5ef2-4efa-be79-0db5bdc6f49d",
+      "name": "Email To-Dos Prompt",
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "6BIIWj3nPZH1pjQw",
+          "mode": "list",
+          "cachedResultName": "Email Triage - To-Do",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/6BIIWj3nPZH1pjQw"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ $json.emailToDoID }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        3264,
+        -384
+      ],
+      "id": "6dd02295-4e87-472d-97cd-691ace3c773e",
+      "name": "Email To-Dos"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "6BIIWj3nPZH1pjQw",
+          "mode": "list",
+          "cachedResultName": "Email Triage - To-Do",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/6BIIWj3nPZH1pjQw"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ $('Email To-Dos').item.json.id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "slackNotificationThreadId": "={{ $json.message.ts }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "sourceId",
+              "displayName": "sourceId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "taskId",
+              "displayName": "taskId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "bucket",
+              "displayName": "bucket",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "overview",
+              "displayName": "overview",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "transcript",
+              "displayName": "transcript",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "metadata",
+              "displayName": "metadata",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "slackNotificationThreadId",
+              "displayName": "slackNotificationThreadId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "insightsCreatedAt",
+              "displayName": "insightsCreatedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        4512,
+        -528
+      ],
+      "id": "ec635c30-14cd-4e83-81c5-6428ba1700e9",
+      "name": "Update Email To Do Note with Slack Thread"
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Email To-Dos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Task Extractor Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Task Extractor Agent": {
+      "main": [
+        [
+          {
+            "node": "Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tasks": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Prep Buttons": {
+      "main": [
+        [
+          {
+            "node": "with Slack Buttons",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "with Slack Buttons": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Available Lists": {
+      "main": [
+        [
+          {
+            "node": "List Accessory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Review message": {
+      "main": [
+        []
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Update Email To Do Note with Slack Thread",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Accessory": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Review message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email To-Dos Prompt": {
+      "main": [
+        [
+          {
+            "node": "Task Extractor Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email To-Dos": {
+      "main": [
+        [
+          {
+            "node": "Email To-Dos Prompt",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Available Lists",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prep Buttons",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Email To Do Note with Slack Thread": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "versionId": "e7baee67-5a2a-4b0b-bd9a-661ee31115c2",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    },
+    {
+      "updatedAt": "2026-01-01T21:31:31.119Z",
+      "createdAt": "2026-01-01T21:31:31.119Z",
+      "id": "erv2iAT6He287ePS",
+      "name": "Abel Meeting Assistant"
+    }
+  ]
+}
