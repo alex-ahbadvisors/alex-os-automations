@@ -1,0 +1,808 @@
+{
+  "updatedAt": "2026-03-10T00:21:07.882Z",
+  "createdAt": "2025-10-24T15:25:22.886Z",
+  "id": "cz9cNXAGAdJqGlS3",
+  "name": "[2] Notify of Meeting Tasks",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "get",
+        "id": "868g3hcc1",
+        "includeMarkdownDescription": true
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        3712,
+        -144
+      ],
+      "id": "c9b9f6d4-fa4f-43f4-b2ac-b8b7951a6dfd",
+      "name": "Tasks Prompt",
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "meetingNoteId",
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "id": "921488e8-34ca-47fb-8cea-359a10f8dedd",
+      "typeVersion": 1.1,
+      "name": "Start",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        3040,
+        -480
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "gbUMm2ADZughCW2a",
+          "mode": "list",
+          "cachedResultName": "Meeting Notes",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/gbUMm2ADZughCW2a"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ $json.meetingNoteId }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        3264,
+        -480
+      ],
+      "id": "3b92e783-b2eb-43fb-9fdf-cde2daec7883",
+      "name": "Meeting Note"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5",
+          "mode": "list",
+          "cachedResultName": "gpt-5"
+        },
+        "options": {
+          "reasoningEffort": "medium",
+          "timeout": 180000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3872,
+        80
+      ],
+      "id": "33b4ad6e-ec05-462f-baed-437abf480fd6",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "FPFFI1NvOtGMoh30",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<TRANSCRIPT>\n{{ $('Meeting Note').item.json.transcript.base64Decode() }}\n</TRANSCRIPT>",
+        "options": {
+          "systemMessage": "={{ $json.markdown_description }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        3936,
+        -144
+      ],
+      "id": "49be9809-8f76-4b09-90b1-5dcc1242ffc1",
+      "name": "Task Extractor Agent"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4288,
+        -144
+      ],
+      "id": "3be07c41-e225-449c-8916-b2dd0d5f7e3b",
+      "name": "Tasks"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "gbUMm2ADZughCW2a",
+          "mode": "list",
+          "cachedResultName": "Meeting Notes",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/gbUMm2ADZughCW2a"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ $('Meeting Note').item.json.id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "slackNotificationThreadId": "={{ $json.message.ts }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "sourceId",
+              "displayName": "sourceId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "taskId",
+              "displayName": "taskId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "bucket",
+              "displayName": "bucket",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "overview",
+              "displayName": "overview",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "transcript",
+              "displayName": "transcript",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "metadata",
+              "displayName": "metadata",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "slackNotificationThreadId",
+              "displayName": "slackNotificationThreadId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "insightsCreatedAt",
+              "displayName": "insightsCreatedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        4512,
+        -528
+      ],
+      "id": "750c85a7-3d0e-416d-aad7-df908219a387",
+      "name": "Update Meeting Note with Slack Thread"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C091K3MRWQ4",
+          "mode": "list",
+          "cachedResultName": "meeting-flups"
+        },
+        "messageType": "block",
+        "blocksUi": "={\n  \"blocks\": [\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \":wave: <@U07ARECGAF8>, *if something needs editing, reply in this thread with your feedback.\"\n      }\n    },\n    { \"type\": \"divider\" },\n    {\n      \"type\": \"rich_text\",\n      \"elements\": [\n        {{ \n          $json.tasks.map((task,i) => ({\n            \"type\": \"rich_text_section\",\n            \"elements\": [\n              { \"type\": \"text\", \"text\":  `[${i+1}] ${task.title}`, \"style\": { \"bold\": true } },\n              { \"type\": \"text\", \"text\": \"\\n\" },\n              { \"type\": \"text\", \"text\": \"Owner: \" },\n              { \"type\": \"text\", \"text\": (task.assignee || \"—\") },\n              { \"type\": \"text\", \"text\": \"\\n\" },\n              { \"type\": \"text\", \"text\": \"Priority: \" },\n              { \"type\": \"text\", \"text\": (task.priority || \"—\") },\n              ...(task.depends_on ? [\n                { \"type\": \"text\", \"text\": \"\\n\" },\n                { \"type\": \"text\", \"text\": \"Depends on: \" },\n                { \"type\": \"text\", \"text\": task.depends_on }\n              ] : []),\n              { \"type\": \"text\", \"text\": \"\\n\\n\" },\n              { \"type\": \"text\", \"text\": (task.description || \"\") },\n              { \"type\": \"text\", \"text\": \"\\n\\n\" }\n            ]\n          }).toJsonString()).join(',') \n        }}\n      ]\n    }\n  ]\n}",
+        "text": "=Review tasks for {{ $('Meeting Note').item.json.name }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "thread_ts": {
+            "replyValues": {
+              "thread_ts": "={{ $json.message.ts }}"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        4736,
+        -192
+      ],
+      "id": "c1351c24-8294-4453-9606-f29050493f3e",
+      "name": "Review message",
+      "webhookId": "82903145-c80e-4173-a754-68a1a0de7b33",
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5337231f-3a81-4fa1-ab40-31d26d2cc977",
+              "name": "buttons",
+              "value": "={\n      \"type\": \"actions\",\n      \"elements\": {{ JSON.stringify(\nObject.entries($json.buttons).map(([name, data]) => {\n  const [include = false, text = 'Click', url = null] = data.split('|')\n  if ((!Boolean(include)|| include=='false') || !url)\n    return\n  return {\n          \"type\": \"button\",\n          \"text\": {\n              \"type\": \"plain_text\",\n              text,\n              \"emoji\": true\n          },\n          value: `view_${name}`,\n          url\n      }\n}).filter(v=>!!v),\nnull,2, )}}\n  }",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3712,
+        -384
+      ],
+      "id": "fbfc80b8-a8e7-4632-ab01-c4605ab2784f",
+      "name": "with Slack Buttons"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a513535e-3467-4879-aae7-56ab65e83448",
+              "name": "buttons.clickup_notes",
+              "value": "={{!!$('Meeting Note').item.json.taskId}}|Clickup Notes|https://app.clickup.com/t/{{$('Meeting Note').item.json.taskId}}",
+              "type": "string"
+            },
+            {
+              "id": "79a3511a-c009-4c49-b88b-7db5c78e9203",
+              "name": "buttons.transcript",
+              "value": "={{ !!$json.storedTranscriptUrl }}|Transcript|{{ $('Meeting Note').item.json.storedTranscriptUrl }}",
+              "type": "string"
+            },
+            {
+              "id": "5337231f-3a81-4fa1-ab40-31d26d2cc977",
+              "name": "buttons.source",
+              "value": "={{ !!$json.sourceUrl && $json.sourceUrl != $json.storedTranscriptUrl }}|{{ 'Captured from '+$('Meeting Note').item.json.source.charAt(0).toUpperCase() + $('Meeting Note').item.json.source.slice(1) }}|{{ $('Meeting Note').item.json.sourceUrl }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3488,
+        -384
+      ],
+      "id": "839282c2-194f-411d-b5bd-4fe32287deaa",
+      "name": "Prep Buttons"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "DZ8o2BfNfraRBlZt",
+          "mode": "list",
+          "cachedResultName": "Clickup Lists",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/DZ8o2BfNfraRBlZt"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "listId",
+              "condition": "isNotEmpty"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        3488,
+        -576
+      ],
+      "id": "5aa9b900-6e28-463f-8624-be537ff96ab9",
+      "name": "Available Lists",
+      "executeOnce": true,
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        4000,
+        -480
+      ],
+      "id": "40f70788-c899-47f4-820d-fc3fc7fd9839",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "get",
+        "id": "={{ $json.taskId }}",
+        "includeMarkdownDescription": true
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        3488,
+        -768
+      ],
+      "id": "e4b3a8fb-f177-4024-a8a7-6220a0259d31",
+      "name": "Get a task",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9fa0a027-ef13-43c9-b10f-9b45075507ee",
+              "leftValue": "={{ $json.text_content }}",
+              "rightValue": "={{ $('Meeting Note').item.json.storedTranscriptUrl }}",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        3712,
+        -768
+      ],
+      "id": "1ce86990-cfa6-4911-bc80-da5528ab9a19",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "update",
+        "id": "={{ $json.id }}",
+        "updateFields": {
+          "content": "=Transcript: {{ $('Meeting Note').item.json.storedTranscriptUrl }}\n\n---\n\n{{ $json.markdown_description }}",
+          "markdownContent": true
+        }
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        4000,
+        -768
+      ],
+      "id": "038d807b-1f8a-4e49-9d6d-387fca610091",
+      "name": "Add transcript url to task",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C091K3MRWQ4",
+          "mode": "list",
+          "cachedResultName": "meeting-flups"
+        },
+        "messageType": "block",
+        "blocksUi": "={\"blocks\": [\n      {\n          \"type\": \"section\",\n          \"text\": {\n              \"type\": \"mrkdwn\",\n              \"text\": {{ `Approve tasks for ${$('Meeting Note').item.json.name}`.toJsonString() }}\n          }\n      },\n      {{$json.buttons}},\n      {\n        \"type\": \"section\",\n        \"block_id\": \"assign_meeting_project\",\n        \"text\": {\n          \"type\": \"mrkdwn\",\n          \"text\": \"_Project:_\"\n        },\n        \"accessory\": {{ $json.accessory.toJsonString() }}\n      }\n]}",
+        "text": "=New meeting notes for {{ $('Meeting Note').item.json.name }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        4288,
+        -480
+      ],
+      "id": "8d5d7b75-2b6f-407a-965a-5de4d118280e",
+      "name": "Send a message",
+      "webhookId": "82903145-c80e-4173-a754-68a1a0de7b33",
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * n8n Code / Function node\n * Input: items[] where each item.json is either a list object or an array of them\n * Output: { accessory: { type: \"static_select\", option_groups: [...] } }\n */\n\nconst ACTION_ID = \"assign_meeting_project\";\nconst PLACEHOLDER = \"Select an item\";\n\nfunction txt(s) {\n  if (s == null) return \"\";\n  return String(s).replace(/\\r?\\n/g, \" · \").trim();\n}\nfunction optionText(listName, folderName) {\n  const ln = txt(listName);\n  const fn = txt(folderName);\n  return fn ? `${ln} (${fn})` : ln;\n}\n\n// Normalize input to a flat array of records\nconst records = [];\nfor (const it of items) {\n  const j = it.json;\n  if (Array.isArray(j)) records.push(...j);\n  else if (j && typeof j === \"object\") records.push(j);\n}\n\n// Group by spaceId (exclude archived)\nconst bySpace = new Map();\nfor (const r of records.filter(r => r.archived !== true)) {\n  const key = String(r.spaceId ?? \"\");\n  if (!bySpace.has(key)) {\n    bySpace.set(key, { label: txt(r.spaceName || \"Untitled Space\"), rows: [] });\n  }\n  bySpace.get(key).rows.push(r);\n}\n\n// Sort rows within each group: folderName then listName\nfor (const { rows } of bySpace.values()) {\n  rows.sort((a, b) =>\n    txt(a.folderName).localeCompare(txt(b.folderName)) ||\n    txt(a.listName).localeCompare(txt(b.listName))\n  );\n}\n\n// Build Slack option_groups\nconst option_groups = Array.from(bySpace.values()).map(group => ({\n  label: { type: \"plain_text\", text: group.label },\n  options: group.rows.map(r => ({\n    text: { type: \"plain_text\", text: optionText(r.listName, r.folderName) },\n    value: String($('Meeting Note').first().json.id + '-'+ r.id) \n  })),\n}));\n\n// Wrap in accessory for a section block\nconst accessory = {\n  action_id: ACTION_ID,\n  type: \"static_select\",\n  placeholder: { type: \"plain_text\", text: PLACEHOLDER },\n  option_groups, \n  confirm: {\n    \"title\": {\n        \"type\": \"plain_text\",\n        \"text\": \"Are you sure?\"\n    },\n    \"text\": {\n        \"type\": \"plain_text\",\n        \"text\": \"I'll add these tasks to the project.\"\n    },\n    \"confirm\": {\n        \"type\": \"plain_text\",\n        \"text\": \"Continue\"\n    },\n    \"deny\": {\n        \"type\": \"plain_text\",\n        \"text\": \"Stop!\"\n    }\n  }\n};\n\n// Output\nreturn [{ json: { accessory } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3712,
+        -576
+      ],
+      "id": "01d1f371-6378-44a7-82bb-5396aa1d9b41",
+      "name": "List Accessory"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": true
+        }
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        4512,
+        -192
+      ],
+      "id": "a2292890-c8ed-40e7-aa6e-da6e63552d65",
+      "name": "Merge1"
+    }
+  ],
+  "connections": {
+    "Tasks Prompt": {
+      "main": [
+        [
+          {
+            "node": "Task Extractor Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Meeting Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Meeting Note": {
+      "main": [
+        [
+          {
+            "node": "Get a task",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Tasks Prompt",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Available Lists",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prep Buttons",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Task Extractor Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Task Extractor Agent": {
+      "main": [
+        [
+          {
+            "node": "Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tasks": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Update Meeting Note with Slack Thread": {
+      "main": [
+        []
+      ]
+    },
+    "Prep Buttons": {
+      "main": [
+        [
+          {
+            "node": "with Slack Buttons",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "with Slack Buttons": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Available Lists": {
+      "main": [
+        [
+          {
+            "node": "List Accessory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Review message": {
+      "main": [
+        []
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a task": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Add transcript url to task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Update Meeting Note with Slack Thread",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Accessory": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Review message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "versionId": "bb6da30c-d5df-4ea6-b2f9-fb708d02a706",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    },
+    {
+      "updatedAt": "2026-01-01T21:31:31.119Z",
+      "createdAt": "2026-01-01T21:31:31.119Z",
+      "id": "erv2iAT6He287ePS",
+      "name": "Abel Meeting Assistant"
+    }
+  ]
+}
