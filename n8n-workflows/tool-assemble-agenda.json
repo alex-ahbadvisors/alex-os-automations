@@ -1,25 +1,49 @@
 {
+  "updatedAt": "2026-03-10T00:12:13.621Z",
+  "createdAt": "2026-03-04T00:03:10.761Z",
+  "id": "QuJ3IVJH1xASTRPH",
   "name": "Tool: Assemble Agenda",
+  "active": false,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {
         "workflowInputs": {
           "values": [
-            { "name": "eventId" },
-            { "name": "meetingTitle" },
-            { "name": "meetingTime" },
-            { "name": "attendees" },
-            { "name": "pass" },
-            { "name": "existingAgendaTaskId" },
-            { "name": "existingDescription" },
-            { "name": "clientName" }
+            {
+              "name": "eventId"
+            },
+            {
+              "name": "meetingTitle"
+            },
+            {
+              "name": "meetingTime"
+            },
+            {
+              "name": "attendees"
+            },
+            {
+              "name": "pass"
+            },
+            {
+              "name": "existingAgendaTaskId"
+            },
+            {
+              "name": "existingDescription"
+            },
+            {
+              "name": "clientName"
+            }
           ]
         }
       },
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
-      "position": [0, 300],
-      "id": "input-001",
+      "position": [
+        -1328,
+        96
+      ],
+      "id": "578e65a2-d76b-41f3-8685-62f4c16bb49c",
       "name": "Input"
     },
     {
@@ -28,20 +52,31 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [220, 300],
-      "id": "extract-domains-001",
+      "position": [
+        -1104,
+        96
+      ],
+      "id": "562f572d-94a0-4cbf-8bbd-ff9b9232d914",
       "name": "Extract Domains"
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
           "conditions": [
             {
               "id": "check-domains-or-name",
               "leftValue": "={{ $json.attendeeCount > 0 || $json.providedClientName !== '' }}",
               "rightValue": true,
-              "operator": { "type": "boolean", "operation": "equals" }
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "and"
@@ -50,8 +85,11 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [440, 300],
-      "id": "has-external-attendees-001",
+      "position": [
+        -880,
+        96
+      ],
+      "id": "b6a0dce4-2ae8-4eb0-8bf5-7ced9db936f7",
       "name": "Has External Attendees?"
     },
     {
@@ -66,13 +104,15 @@
         },
         "filters": {
           "conditions": []
-        },
-        "limit": 50
+        }
       },
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
-      "position": [660, 300],
-      "id": "lookup-client-001",
+      "position": [
+        -656,
+        96
+      ],
+      "id": "8aa6aaef-672d-4c46-b1e7-59533c950799",
       "name": "Lookup All Clients",
       "alwaysOutputData": true
     },
@@ -82,20 +122,31 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [880, 300],
-      "id": "resolve-client-001",
+      "position": [
+        -432,
+        96
+      ],
+      "id": "e01683cb-f487-4b06-aafd-4c4b5d9d28ca",
       "name": "Resolve Client"
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
           "conditions": [
             {
               "id": "has-list-id",
               "leftValue": "={{ $json.clientListId }}",
               "rightValue": "",
-              "operator": { "type": "string", "operation": "notEquals" }
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
             }
           ],
           "combinator": "and"
@@ -104,45 +155,78 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [1100, 300],
-      "id": "has-client-list-001",
+      "position": [
+        -208,
+        96
+      ],
+      "id": "dba1ab4f-0e2d-457f-8a08-ad1fd6179e95",
       "name": "Has Client List?"
     },
     {
       "parameters": {
-        "method": "GET",
         "url": "=https://api.clickup.com/api/v2/list/{{ $json.clientListId }}/task",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "clickUpOAuth2Api",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
-            { "name": "statuses[]", "value": "to do" },
-            { "name": "statuses[]", "value": "in progress" },
-            { "name": "statuses[]", "value": "not started" },
-            { "name": "statuses[]", "value": "update required" },
-            { "name": "subtasks", "value": "true" },
-            { "name": "include_closed", "value": "true" },
-            { "name": "order_by", "value": "due_date" },
-            { "name": "page", "value": "0" }
+            {
+              "name": "statuses[]",
+              "value": "to do"
+            },
+            {
+              "name": "statuses[]",
+              "value": "in progress"
+            },
+            {
+              "name": "statuses[]",
+              "value": "not started"
+            },
+            {
+              "name": "statuses[]",
+              "value": "update required"
+            },
+            {
+              "name": "subtasks",
+              "value": "true"
+            },
+            {
+              "name": "include_closed",
+              "value": "true"
+            },
+            {
+              "name": "order_by",
+              "value": "due_date"
+            },
+            {
+              "name": "page",
+              "value": "0"
+            }
           ]
         },
         "options": {
-          "response": { "response": { "responseFormat": "json" } }
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
         }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1320, 200],
-      "id": "get-client-tasks-001",
+      "position": [
+        16,
+        0
+      ],
+      "id": "6c768ad7-8ce9-4fc5-a0e1-22c4c1508451",
       "name": "Get Client Tasks",
+      "alwaysOutputData": true,
       "credentials": {
         "clickUpOAuth2Api": {
           "id": "WiEsUqUCPM9Xds21",
           "name": "ClickUp Alex Oauth"
         }
       },
-      "alwaysOutputData": true,
       "onError": "continueRegularOutput"
     },
     {
@@ -151,8 +235,11 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1320, 420],
-      "id": "no-tasks-001",
+      "position": [
+        16,
+        192
+      ],
+      "id": "a7670456-c7dd-42bf-a4ef-1144d9d21fab",
       "name": "No Tasks (No List)",
       "alwaysOutputData": true
     },
@@ -179,8 +266,11 @@
       },
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
-      "position": [1540, 300],
-      "id": "get-meeting-notes-001",
+      "position": [
+        240,
+        96
+      ],
+      "id": "08edf5b2-505f-4ec8-9536-6b814b89e530",
       "name": "Get Recent Meeting Notes",
       "alwaysOutputData": true
     },
@@ -190,33 +280,41 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1760, 300],
-      "id": "build-email-query-001",
+      "position": [
+        464,
+        96
+      ],
+      "id": "a542021f-4e8c-4306-9150-9b656d7ed7eb",
       "name": "Build Email Query"
     },
     {
       "parameters": {
-        "method": "GET",
         "url": "={{ $json.emailApiUrl }}",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "httpBearerAuth",
-        "sendQuery": false,
         "options": {
-          "response": { "response": { "responseFormat": "json" } }
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
         }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1980, 300],
-      "id": "get-emails-001",
+      "position": [
+        688,
+        96
+      ],
+      "id": "bfccdccb-8bc4-4cb1-a1b8-7f44af8bd325",
       "name": "Get Recent Emails",
+      "alwaysOutputData": true,
       "credentials": {
         "httpBearerAuth": {
           "id": "naMGpImlvunQE8Zi",
           "name": "Missive"
         }
       },
-      "alwaysOutputData": true,
       "onError": "continueRegularOutput"
     },
     {
@@ -227,21 +325,23 @@
         "space": "90113618058",
         "folder": "90114444483",
         "list": "901112698004",
-        "limit": 5,
         "filters": {}
       },
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
-      "position": [2200, 300],
-      "id": "get-newsletters-001",
+      "position": [
+        912,
+        96
+      ],
+      "id": "7c86259e-72ec-42d4-b17f-c6535c3f5a78",
       "name": "Get Newsletter Briefs",
+      "alwaysOutputData": true,
       "credentials": {
         "clickUpOAuth2Api": {
           "id": "WiEsUqUCPM9Xds21",
           "name": "ClickUp Alex Oauth"
         }
       },
-      "alwaysOutputData": true,
       "onError": "continueRegularOutput"
     },
     {
@@ -250,8 +350,11 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2420, 300],
-      "id": "merge-context-001",
+      "position": [
+        1136,
+        96
+      ],
+      "id": "f58a549e-6031-42ad-9978-ff2fbefff586",
       "name": "Merge All Context"
     },
     {
@@ -264,8 +367,11 @@
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
-      "position": [2640, 300],
-      "id": "ai-synthesizer-001",
+      "position": [
+        1360,
+        96
+      ],
+      "id": "078416ec-b4dc-4b1c-b864-e95eab1e0cc5",
       "name": "AI Synthesizer"
     },
     {
@@ -277,14 +383,17 @@
           "cachedResultName": "gpt-4o"
         },
         "options": {
-          "temperature": 0.3,
-          "maxTokens": 600
+          "maxTokens": 600,
+          "temperature": 0.3
         }
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
-      "position": [2660, 520],
-      "id": "openai-model-001",
+      "position": [
+        1440,
+        320
+      ],
+      "id": "968b94eb-53fe-4d71-b902-0b5fdc7bd3b0",
       "name": "OpenAI Chat Model",
       "credentials": {
         "openAiApi": {
@@ -299,8 +408,11 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2860, 300],
-      "id": "merge-description-001",
+      "position": [
+        1712,
+        96
+      ],
+      "id": "547cf81d-2cc2-4731-addb-7430d7cd0152",
       "name": "Merge Description"
     },
     {
@@ -314,8 +426,11 @@
       },
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
-      "position": [3080, 300],
-      "id": "update-agenda-task-001",
+      "position": [
+        1936,
+        96
+      ],
+      "id": "fafab4ea-8731-4b58-9a68-63b986c5eb2b",
       "name": "Update Agenda Task",
       "credentials": {
         "clickUpOAuth2Api": {
@@ -330,12 +445,14 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [3300, 300],
-      "id": "prepare-output-001",
+      "position": [
+        2160,
+        96
+      ],
+      "id": "b61130d6-101c-4170-8f6b-7b776b10dd7a",
       "name": "Prepare Output"
     }
   ],
-  "pinData": {},
   "connections": {
     "Input": {
       "main": [
@@ -367,8 +484,7 @@
             "type": "main",
             "index": 0
           }
-        ],
-        []
+        ]
       ]
     },
     "Lookup All Clients": {
@@ -533,16 +649,32 @@
       ]
     }
   },
-  "active": false,
   "settings": {
-    "executionOrder": "v1",
-    "callerPolicy": "workflowsFromSameOwner",
-    "errorWorkflow": "Ka01FqAuhDXin0Kn"
+    "executionOrder": "v1"
   },
-  "versionId": "",
-  "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "69b353989b2e2524b2186ce2c707a5fca1ffefa89656be27d70fffcaf2744be4"
-  },
-  "tags": []
+  "staticData": null,
+  "meta": null,
+  "versionId": "aa9c3af9-8f96-4cda-81fb-0511aeafdf03",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    },
+    {
+      "updatedAt": "2026-01-01T21:31:31.119Z",
+      "createdAt": "2026-01-01T21:31:31.119Z",
+      "id": "erv2iAT6He287ePS",
+      "name": "Abel Meeting Assistant"
+    },
+    {
+      "updatedAt": "2026-03-04T23:28:06.468Z",
+      "createdAt": "2026-03-04T23:28:06.468Z",
+      "id": "p1gDI9QAauVslxUO",
+      "name": "abel"
+    }
+  ]
 }
