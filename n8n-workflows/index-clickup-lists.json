@@ -1,0 +1,541 @@
+{
+  "updatedAt": "2026-03-10T00:19:26.684Z",
+  "createdAt": "2025-10-31T18:49:30.188Z",
+  "id": "iaQCM0N8xRFtZ8Hi",
+  "name": "Index Clickup Lists",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 2,
+              "triggerAtMinute": 31
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        144,
+        -240
+      ],
+      "id": "a34ac359-e348-4d72-b049-5379ac62a3de",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "23ef81c0-d51a-413a-adfe-c75bfb4d1a68",
+              "name": "syncId",
+              "value": "={{ DateTime.now().toISO().split('T').first() }}.{{ $execution.id }}",
+              "type": "string"
+            },
+            {
+              "id": "f804e3e3-42c6-4531-98c7-960578cf6994",
+              "name": "spaces",
+              "value": "={{ $vars.Abel_Clickup_Spaces.split(',') }}",
+              "type": "array"
+            },
+            {
+              "id": "35378a10-e56b-4983-8ffa-8f1c4f4aa5a5",
+              "name": "folders",
+              "value": "['90113618058|90115735540']",
+              "type": "array"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        368,
+        -240
+      ],
+      "id": "2889d5a7-54f4-4ec1-a054-16171b2c2674",
+      "name": "Sync Settings"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "spaces",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        592,
+        -336
+      ],
+      "id": "2f33de1d-5548-4c95-8d49-5117717a27d9",
+      "name": "Space"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "folder",
+        "operation": "getAll",
+        "team": "9011763462",
+        "space": "={{ $json.spaces }}",
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        816,
+        -336
+      ],
+      "id": "c4a7012a-f65c-4404-a2f1-b507618b7675",
+      "name": "Get Space Folders",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "folders",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        592,
+        -144
+      ],
+      "id": "29bab76c-5770-45fd-9020-63fab18b1877",
+      "name": "Space Folders"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "DZ8o2BfNfraRBlZt",
+          "mode": "list",
+          "cachedResultName": "Clickup Lists",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/DZ8o2BfNfraRBlZt"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "listId",
+              "keyValue": "={{ $json.id }}"
+            },
+            {
+              "keyName": "spaceId",
+              "keyValue": "={{ $json.space.id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "archived": "={{ $json.archived }}",
+            "listName": "={{ $json.name }}",
+            "folderName": "={{ $('Get Space Folders').item.json.name }}",
+            "spaceName": "={{ $json.space.name }}",
+            "description": "={{ $json.content }}",
+            "listId": "={{ $json.id }}",
+            "spaceId": "={{ $json.space.id }}",
+            "folderId": "={{ $('Get Space Folders').item.json.id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "listName",
+              "displayName": "listName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "archived",
+              "displayName": "archived",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "folderName",
+              "displayName": "folderName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "spaceName",
+              "displayName": "spaceName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "listId",
+              "displayName": "listId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "spaceId",
+              "displayName": "spaceId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "folderId",
+              "displayName": "folderId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        1264,
+        -336
+      ],
+      "id": "af6fd518-bb91-4910-8cf0-c19ba5725fcc",
+      "name": "Upsert row(s)1"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "lists",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        -336
+      ],
+      "id": "9ba9cff1-afbf-41f1-89c1-10cc98bae4bf",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "list",
+        "operation": "getAll",
+        "team": "9011763462",
+        "space": "={{ $json.folders.split('|').first() }}",
+        "folder": "={{ $json.folders.split('|').last() }}",
+        "filters": {
+          "archived": false
+        }
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        816,
+        -144
+      ],
+      "id": "c430e5b1-8f44-46d5-abc5-6bdec788db7e",
+      "name": "Get Lists1",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "DZ8o2BfNfraRBlZt",
+          "mode": "list",
+          "cachedResultName": "Clickup Lists",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/DZ8o2BfNfraRBlZt"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "listId",
+              "keyValue": "={{ $json.id }}"
+            },
+            {
+              "keyName": "spaceId",
+              "keyValue": "={{ $json.space.id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "archived": "={{ $json.archived }}",
+            "listName": "={{ $json.name }}",
+            "folderName": "={{ $json.folder.name }}",
+            "spaceName": "={{ $json.space.name }}",
+            "description": "={{ $json.content }}",
+            "listId": "={{ $json.id }}",
+            "spaceId": "={{ $json.space.id }}",
+            "folderId": "={{ $json.folder.id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "listName",
+              "displayName": "listName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "archived",
+              "displayName": "archived",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "folderName",
+              "displayName": "folderName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "spaceName",
+              "displayName": "spaceName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "listId",
+              "displayName": "listId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "spaceId",
+              "displayName": "spaceId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "folderId",
+              "displayName": "folderId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        -144
+      ],
+      "id": "356f5bab-85b0-47b6-893d-0014b43e9457",
+      "name": "Upsert row(s)2"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Sync Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync Settings": {
+      "main": [
+        [
+          {
+            "node": "Space",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Space Folders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Space": {
+      "main": [
+        [
+          {
+            "node": "Get Space Folders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Space Folders": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Space Folders": {
+      "main": [
+        [
+          {
+            "node": "Get Lists1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Upsert row(s)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Lists1": {
+      "main": [
+        [
+          {
+            "node": "Upsert row(s)2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": {
+    "node:Schedule Trigger": {
+      "recurrenceRules": [
+        20
+      ]
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "versionId": "ab2051fd-c43a-4197-a6bc-f0d94109ca07",
+  "activeVersionId": "ab2051fd-c43a-4197-a6bc-f0d94109ca07",
+  "triggerCount": 1,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    },
+    {
+      "updatedAt": "2026-01-01T21:31:31.119Z",
+      "createdAt": "2026-01-01T21:31:31.119Z",
+      "id": "erv2iAT6He287ePS",
+      "name": "Abel Meeting Assistant"
+    }
+  ]
+}
