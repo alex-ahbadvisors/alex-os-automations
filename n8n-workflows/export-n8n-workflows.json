@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-03-10T00:46:25.609Z",
+  "updatedAt": "2026-03-10T01:03:10.643Z",
   "createdAt": "2026-01-01T21:30:12.307Z",
   "id": "DKrAVjDY2QDLr72W",
   "name": "Export n8n Workflows",
@@ -148,7 +148,7 @@
             "Structure Hash": "={{ $json.structureHash }}",
             "Last Updated": "={{ $json.lastUpdated }}",
             "Last Checked": "={{ $json.lastChecked }}",
-            "GitHub Path": "=n8n-workflows/{{ $json.filename }}"
+            "GitHub Path": "=https://github.com/alex-ahbadvisors/alex-os-automations/blob/main/n8n-workflows/{{ $json.filename }}"
           },
           "matchingColumns": [
             "Workflow ID"
@@ -380,31 +380,24 @@
     },
     {
       "id": "b1000001-0000-0000-0000-000000000002",
-      "name": "GitHub Get File",
-      "type": "n8n-nodes-base.github",
-      "typeVersion": 1.1,
+      "name": "Get File SHA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         1792,
         -96
       ],
       "parameters": {
-        "authentication": "oAuth2",
-        "resource": "file",
-        "operation": "get",
-        "owner": {
-          "__rl": true,
-          "value": "alex-ahbadvisors",
-          "mode": "name",
-          "cachedResultName": "alex-ahbadvisors"
-        },
-        "repository": {
-          "__rl": true,
-          "value": "alex-os-automations",
-          "mode": "name",
-          "cachedResultName": "alex-os-automations"
-        },
-        "filePath": "={{ $json.filePath }}",
-        "additionalParameters": {}
+        "url": "=https://api.github.com/repos/alex-ahbadvisors/alex-os-automations/contents/{{ $json.filePath }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubOAuth2Api",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
       },
       "credentials": {
         "githubOAuth2Api": {
@@ -658,14 +651,14 @@
       "main": [
         [
           {
-            "node": "GitHub Get File",
+            "node": "Get File SHA",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "GitHub Get File": {
+    "Get File SHA": {
       "main": [
         [
           {
@@ -726,7 +719,7 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "versionId": "79308bc5-6033-408a-87db-66705f739467",
+  "versionId": "d3e0e39a-789d-4e99-954a-273854f0dd23",
   "activeVersionId": null,
   "triggerCount": 0,
   "tags": [
