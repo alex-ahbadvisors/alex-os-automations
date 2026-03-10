@@ -1,0 +1,311 @@
+{
+  "updatedAt": "2026-03-10T00:20:36.876Z",
+  "createdAt": "2025-10-24T15:56:08.291Z",
+  "id": "Ka01FqAuhDXin0Kn",
+  "name": "Abel Error Handler",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "e8b04447-a0cf-40fa-9339-3ea0bc08f597",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=**ERROR:**\n\n{{ $('Error Trigger').item.json.toJsonString() }}\n\n**N8N EXECUTION:**\n\n{{ $json.toJsonString() }}",
+        "options": {
+          "systemMessage": "=You are **N8N Error Reporter**, a neutral formatter that produces a clean Markdown **email body** (no subject, no greeting, no sign-off). Your sole job is to summarize and present the error context; do not interpret causes or suggest remediation.\n\nINPUTS (do not print these verbatim):\n- Primary error payload (JSON or object-like): `{{ $('Error Trigger').item.json.toJsonString() }}`\n- Execution context payload (JSON or object-like): `{{ $json.toJsonString() }}`\nAssume a link to the full error log will already be included in the email by another system—**do not** add or repeat any links.\n\nHARD RULES\n- **No full data dumps.** Never paste entire payloads. Extract only the most relevant fields.\n- **No advice, no diagnosis, no next steps, no speculation.** Pure summarization.\n- **Redact secrets.** If tokens/keys/Authorization headers appear, mask after the first 4 visible chars (e.g., `abcd•••`), or show `**hidden**` if unsure.\n- **Do not alter facts.** If a field is missing/unknown, say `Not available`.\n- **Keep it readable.** Prefer short bullets and crisp labels over raw logs.\n- **Do not include links.** (They are added elsewhere.)\n- **Audience split:** Start with a 1–3 sentence non-technical summary; everything after is technical and precise.\n\nOUTPUT FORMAT (Markdown, exact section order)\n1) **Non-technical Summary (1–3 sentences)**\n   - Describe plainly that a workflow step encountered an error, when it happened (if available), and that details follow for engineers.\n   - No advice, no blame, no links.\n\n2) `---` (divider)\n\n3) **Error Overview**\n   - **Type:** *(classify from message/metadata; e.g., Authentication, Authorization, Timeout, Rate Limit, Validation, Not Found, Network, Parsing, Unknown)*\n   - **Severity:** *(map from level if present: error > warning > info; otherwise `Unknown`)*\n   - **Message:** *(compact message text; trim newlines/stack traces; ≤ 240 chars; end with `…` if truncated)*\n   - **Code/Status:** *(HTTP status, error code, or `Not available`)*\n\n4) **Where It Occurred**\n   - **Workflow:** *(name/id)*  \n   - **Node / Step:** *(last node executed / node name / operation if present)*  \n   - **Execution Mode/Run ID:** *(trigger/manual, executionId if present)*  \n   - **Timestamp:** *(ISO 8601 if present; else `Not available`)*\n\n5) **What Was Happening**\n   - One or two bullets summarizing the action being attempted (e.g., “Updating Google Drive file”, “PATCH to /drive/v3/files/{id}”) derived from method, endpoint, node operation, or descriptive fields.\n\n6) **Related Resources**\n   - Bullet list of concrete identifiers/URIs relevant to the failure (e.g., file IDs, task IDs, meeting IDs, document names, user emails).  \n   - Format: **Label:** value  \n   - Redact sensitive values per rules.  \n   - Include up to **8** items; if more, end with “(+N more)”.\n\n7) **Apps / Integrations Detected**\n   - Identify platforms from domains/endpoints/headers/scopes (e.g., Google Drive, Slack, ClickUp, Salesforce).  \n   - List only those clearly indicated. If unclear: `Unknown`.\n\n8) **Request Snapshot (if applicable)**\n   - **Method & Endpoint:** *(e.g., PATCH https://www.googleapis.com/drive/v3/files/{id})*  \n   - **Key Params/Body Fields:** *(up to 5 most relevant keys only; values redacted if sensitive)*  \n   - **Headers (sensitive redacted):** *(list only notable ones, e.g., Content-Type, Authorization redacted)*\n\n9) **System Signals**\n   - **Timeout/Latency:** *(any timeout fields or long durations)*  \n   - **Retries/Rate Limits:** *(retry count, 429s, backoff hints)*  \n   - **Auth State:** *(unauthorized/forbidden/expired/invalid scopes if detected)*\n\n10) **Minimal Raw Fields (selected)**\n    - Provide a short fenced code block with **at most 15 lines** showing only the most relevant key/value pairs (e.g., `status`, `code`, `endpoint`, `node`, `workflowId`, top-level `message`).  \n    - No arrays or large objects; no stack traces; no secrets.\n\nFORMATTING & STYLE\n- Use concise bullets, bold labels, and short phrases.  \n- Trim extraneous whitespace, stack traces, and nested JSON.  \n- When classifying **Type**, use keyword cues:  \n  - “unauthorized”, “invalid credentials”, “auth”, “forbidden” → Authentication/Authorization  \n  - “timeout”, “timed out”, “deadline” → Timeout  \n  - “429”, “rate”, “quota”, “too many requests” → Rate Limit  \n  - “404”, “not found”, “no such” → Not Found  \n  - “400”, “422”, “validation”, “schema” → Validation  \n  - “ENET”, “ECONN”, “network”, “DNS” → Network  \n  - “parse”, “JSON”, “syntax” → Parsing  \n  - else → Unknown\n- Resource extraction hints: look for keys like `id`, `fileId`, `taskId`, `meetingNoteId`, `documentId`, `email`, `uri`, `url`, `name`, `path`.\n- Apps detection hints: derive from domains (e.g., `googleapis.com` → Google Drive/Sheets; `slack.com`; `clickup.com`; `salesforce.com`; etc.).\n\nMISSING/AMBIGUOUS DATA\n- If a section has no data, include it with `Not available` or omit bullets under it (but keep the section heading).\n- Never fabricate fields.\n\nLENGTH LIMITS\n- Target total output ≤ **350–600 words**.\n- Truncate individual long values to keep sections scannable (use `…` to indicate truncation).\n\nEXAMPLE SKELETON (do not include example text in real outputs)\n**N8N Error Report**\n\nA workflow step encountered an error during execution. A brief overview is below for non-technical readers; detailed technical context follows.\n\n---\n\n**Error Overview**\n- **Type:** Timeout  \n- **Severity:** error  \n- **Message:** Request to Google Drive API exceeded the configured timeout…  \n- **Code/Status:** 504\n\n**Where It Occurred**\n- **Workflow:** [Name] (id: abc123)\n- **Node / Step:** Update GDrive File\n- **Execution Mode/Run ID:** trigger / run-xyz\n- **Timestamp:** 2025-10-24T18:02:09Z\n\n**What Was Happening**\n- Updating an existing Google Drive file via PATCH endpoint.\n\n**Related Resources**\n- **File ID:** 1NaZCvA-5gT-KQXQ2-GEWLojDU7vIlejgUQ\n- **ClickUp Task ID:** 868g3w3y5\n- **Meeting Note ID:** 12\n\n**Apps / Integrations Detected**\n- Google Drive, ClickUp\n\n**Request Snapshot (if applicable)**\n- **Method & Endpoint:** PATCH https://www.googleapis.com/drive/v3/files/{fileId}\n- **Body Fields:** name, description\n- **Headers:** Authorization: abcd•••, Content-Type: application/json\n\n**System Signals**\n- **Timeout/Latency:** timeout: 300000ms\n\n**Minimal Raw Fields (selected)**\n\nstatus: 504\nnode: “Update GDrive File”\nworkflowName: “[1] Capture Transcript”\nendpoint: “/drive/v3/files/{fileId}”\nmessage: “Request timed out after 300000ms”\n",
+          "maxIterations": 3
+        }
+      },
+      "id": "04297062-88c8-468d-8267-d061848f78c5",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        448,
+        0
+      ],
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "id": "c122af1e-5f4e-4606-8c51-8d677e5efa28",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        528,
+        224
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "HARjKXKowcnnlEVi",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "markdownToHtml",
+        "markdown": "={{ $json.output }}",
+        "destinationKey": "html",
+        "options": {}
+      },
+      "id": "05d37796-f6ff-4302-8b5b-43a4cab09f44",
+      "name": "Markdown",
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        800,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ JSON.stringify($('Error Trigger').item.json.trigger?.error || $('Error Trigger').item.json.execution?.error || $('Error Trigger').item.json?.error || $('Error Trigger').item.json) }}",
+        "options": {}
+      },
+      "id": "95038618-c2d1-425a-9505-365591638be0",
+      "name": "Error",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "71600418-9959-4709-b88d-b5d79ad8d7ec",
+              "name": "subject",
+              "value": "={{ $('Error').item.json.message.slice(0,80) }}...",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c31bd7e3-ad6a-4d8f-85bf-f293e2ec8516",
+      "name": "Email Header ",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1024,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "alex@ahbadvisors.com",
+        "subject": "=[ABEL.AI ERROR - {{ $('Error Trigger').item.json.workflow.name }}] {{ $json.subject }}",
+        "message": "=Workflow: {{ $('Error Trigger').item.json.workflow.name }}\n{{ $('Error Trigger').item.json.execution.url }}\n---\n\n{{ $('Markdown').item.json.html }}\n",
+        "options": {
+          "appendAttribution": false,
+          "ccList": "c-ahb@projects.sayla.co"
+        }
+      },
+      "id": "e771eb80-dcc1-4571-91f2-dd3a19e714ad",
+      "name": "Send a message",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1248,
+        0
+      ],
+      "webhookId": "a68575fc-5a43-4b6e-9e2a-746a4c030d24",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "XIl4ryxuxHi2Udom",
+          "name": "AHBrownstein Personal Email"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "channel",
+              "name": "channel",
+              "value": "C0AJQH5NFPS",
+              "type": "string"
+            },
+            {
+              "id": "message",
+              "name": "message",
+              "value": "={{ '*' + $('Error').item.json.workflow_name + '* failed\\n\\n' + $('AI Agent').item.json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "source_workflow",
+              "name": "source_workflow",
+              "value": "={{ $('Error').item.json.workflow_name }}",
+              "type": "string"
+            },
+            {
+              "id": "message_type",
+              "name": "message_type",
+              "value": "error",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "format-slack-error",
+      "name": "Format Slack Error",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        800,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": "JSM1IAZ8Bj4miEck",
+        "mode": "id",
+        "options": {}
+      },
+      "id": "call-slack-handler",
+      "name": "Call Abel Slack Flow Handler",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1024,
+        256
+      ]
+    }
+  ],
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Markdown",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Format Slack Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Markdown": {
+      "main": [
+        [
+          {
+            "node": "Email Header ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Header ": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Slack Error": {
+      "main": [
+        [
+          {
+            "node": "Call Abel Slack Flow Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "versionId": "4842e136-c71b-4e84-949a-69ef9052fc6a",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    },
+    {
+      "updatedAt": "2026-01-01T21:31:31.119Z",
+      "createdAt": "2026-01-01T21:31:31.119Z",
+      "id": "erv2iAT6He287ePS",
+      "name": "Abel Meeting Assistant"
+    }
+  ]
+}
