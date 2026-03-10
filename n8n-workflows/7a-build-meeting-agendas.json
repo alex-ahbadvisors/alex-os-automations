@@ -1,5 +1,10 @@
 {
+  "updatedAt": "2026-03-10T00:12:03.259Z",
+  "createdAt": "2026-03-03T21:59:06.760Z",
+  "id": "FXErGwcUKWqJ0Wda",
   "name": "[7a] Build Meeting Agendas",
+  "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {
@@ -13,8 +18,11 @@
       },
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [0, 300],
-      "id": "trigger-7a-001",
+      "position": [
+        0,
+        0
+      ],
+      "id": "b19897f5-140f-448f-995b-0bfbcc97b72c",
       "name": "7 AM Weekday Trigger"
     },
     {
@@ -23,67 +31,114 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [220, 300],
-      "id": "weekday-guard-001",
+      "position": [
+        224,
+        0
+      ],
+      "id": "f3885a1d-a83d-40ae-aa62-e13b543401c0",
       "name": "Weekday Guard"
     },
     {
       "parameters": {
-        "method": "GET",
         "url": "https://api.clickup.com/api/v2/list/901107582941/task",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "clickUpOAuth2Api",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
-            { "name": "statuses[]", "value": "to do" },
-            { "name": "statuses[]", "value": "not started" },
-            { "name": "statuses[]", "value": "in progress" },
-            { "name": "statuses[]", "value": "update required" },
-            { "name": "due_date_gt", "value": "={{ DateTime.now().minus({days: 2}).startOf('day').toMillis() }}" },
-            { "name": "due_date_lt", "value": "={{ DateTime.now().plus({days: 2}).startOf('day').toMillis() }}" },
-            { "name": "include_closed", "value": "false" },
-            { "name": "subtasks", "value": "false" },
-            { "name": "page", "value": "0" }
+            {
+              "name": "statuses[]",
+              "value": "to do"
+            },
+            {
+              "name": "statuses[]",
+              "value": "not started"
+            },
+            {
+              "name": "statuses[]",
+              "value": "in progress"
+            },
+            {
+              "name": "statuses[]",
+              "value": "update required"
+            },
+            {
+              "name": "due_date_gt",
+              "value": "={{ DateTime.now().minus({days: 2}).startOf('day').toMillis() }}"
+            },
+            {
+              "name": "due_date_lt",
+              "value": "={{ DateTime.now().plus({days: 2}).startOf('day').toMillis() }}"
+            },
+            {
+              "name": "include_closed",
+              "value": "false"
+            },
+            {
+              "name": "subtasks",
+              "value": "false"
+            },
+            {
+              "name": "page",
+              "value": "0"
+            }
           ]
         },
         "options": {
-          "response": { "response": { "responseFormat": "json" } }
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
         }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [440, 300],
-      "id": "get-agenda-tasks-001",
+      "position": [
+        448,
+        0
+      ],
+      "id": "550e1f56-f490-415b-ab83-4f3608f80cd3",
       "name": "Get Agenda Tasks",
+      "alwaysOutputData": true,
       "credentials": {
         "clickUpOAuth2Api": {
           "id": "WiEsUqUCPM9Xds21",
           "name": "ClickUp Alex Oauth"
         }
       },
-      "alwaysOutputData": true,
       "onError": "continueRegularOutput"
     },
     {
       "parameters": {
-        "jsCode": "// Extract custom fields from each Relay-created agenda task\n// Convert attendee emails to JSON array format for the Tool workflow\n// Determine pass (day-before vs day-of) from due date\nconst response = $input.first().json;\nconst tasks = response.tasks || [];\n\nif (tasks.length === 0) return [];\n\nconst now = new Date();\nconst todayStart = new Date(now);\ntodayStart.setHours(0, 0, 0, 0);\nconst tomorrowStart = new Date(todayStart);\ntomorrowStart.setDate(tomorrowStart.getDate() + 1);\n\nconst results = [];\n\nfor (const task of tasks) {\n  const cf = {};\n  for (const field of (task.custom_fields || [])) {\n    cf[field.name] = field.value || '';\n  }\n\n  const gCalId = cf['gCal ID'] || cf['gCal Id'] || '';\n  const attendeeEmailsRaw = cf['Attendee Emails'] || cf['Attendee emails'] || '';\n  const attendeeDomains = cf['Attendee email domains'] || cf['Attendee Email Domains'] || '';\n\n  // Convert comma-separated emails to JSON array\n  const attendees = attendeeEmailsRaw\n    .split(',')\n    .map(e => e.trim())\n    .filter(e => e && e.includes('@'))\n    .map(e => ({ email: e.toLowerCase(), displayName: e.split('@')[0] }));\n\n  // Read meeting start time from custom field (populated by Relay)\n  const meetingStartRaw = cf['Meeting Date & Time'] || cf['Meeting Date &amp; Time'] || '';\n  let meetingDateStr = '';\n  if (meetingStartRaw) {\n    // ClickUp date custom fields store as Unix ms\n    const ms = typeof meetingStartRaw === 'number' ? meetingStartRaw : parseInt(meetingStartRaw);\n    meetingDateStr = new Date(ms).toISOString();\n  } else {\n    // Fallback: derive from due_date + 1 day (no time info)\n    const dueDate = task.due_date ? parseInt(task.due_date) : 0;\n    meetingDateStr = new Date(dueDate + 24 * 60 * 60 * 1000).toISOString();\n  }\n\n  const meetingDate = new Date(meetingDateStr);\n  let pass = 'day-before';\n  if (meetingDate < tomorrowStart) {\n    pass = 'day-of'; // Meeting is today\n  }\n\n  // Extract meeting title: strip date prefix like \"[2026-03-04] \"\n  const rawName = task.name || 'Untitled Meeting';\n  const meetingTitle = rawName.replace(/^\\[\\d{4}-\\d{2}-\\d{2}\\]\\s*/, '');\n\n  results.push({\n    eventId: gCalId || task.id,\n    existingAgendaTaskId: task.id,\n    meetingTitle: meetingTitle,\n    meetingTime: meetingDateStr,\n    attendees: JSON.stringify(attendees),\n    attendeeCount: attendees.length,\n    pass: pass,\n    agendaTaskName: task.name\n  });\n}\n\nreturn results;"
+        "jsCode": "  // Extract custom fields from each Relay-created agenda task                                                                                                                          \n  // Convert attendee emails to JSON array format for the Tool workflow\n  // Determine pass (day-before vs day-of) from meeting start time                                                                                                                      \n  const response = $input.first().json;                                                                                                                                                 \n  const tasks = response.tasks || [];\n\n  if (tasks.length === 0) return [];\n\n  const now = new Date();\n  const todayStart = new Date(now);\n  todayStart.setHours(0, 0, 0, 0);\n  const tomorrowStart = new Date(todayStart);\n  tomorrowStart.setDate(tomorrowStart.getDate() + 1);\n\n  const results = [];\n\n  for (const task of tasks) {\n    const cf = {};\n    for (const field of (task.custom_fields || [])) {\n      cf[field.name] = field.value || '';\n    }\n\n    const gCalId = cf['gCal ID'] || cf['gCal Id'] || '';\n    const attendeeEmailsRaw = cf['Attendee Emails'] || cf['Attendee emails'] || '';\n    const attendeeDomains = cf['Attendee email domains'] || cf['Attendee Email Domains'] || '';\n\n    // Convert comma-separated emails to JSON array\n    const attendees = attendeeEmailsRaw\n      .split(',')\n      .map(e => e.trim())\n      .filter(e => e && e.includes('@'))\n      .map(e => ({ email: e.toLowerCase(), displayName: e.split('@')[0] }));\n\n    // Read meeting start time from custom field (populated by Relay)\n    const meetingStartRaw = cf['Meeting Date & Time'] || cf['Meeting Date &amp; Time'] || '';\n    let meetingDateStr = '';\n    if (meetingStartRaw) {\n      // ClickUp date custom fields store as Unix ms\n      const ms = typeof meetingStartRaw === 'number' ? meetingStartRaw : parseInt(meetingStartRaw);\n      meetingDateStr = new Date(ms).toISOString();\n    } else {\n      // Fallback: derive from due_date + 1 day (no time info)\n      const dueDate = task.due_date ? parseInt(task.due_date) : 0;\n      meetingDateStr = new Date(dueDate + 24 * 60 * 60 * 1000).toISOString();\n    }\n\n    const meetingDate = new Date(meetingDateStr);\n    let pass = 'day-before';\n    if (meetingDate < tomorrowStart) {\n      pass = 'day-of'; // Meeting is today\n    }\n\n    // Extract meeting title: strip date prefix like \"[2026-03-04] \"\n    const rawName = task.name || 'Untitled Meeting';\n    const meetingTitle = rawName.replace(/^\\[\\d{4}-\\d{2}-\\d{2}\\]\\s*/, '');\n\n    results.push({\n      eventId: gCalId || task.id,\n      existingAgendaTaskId: task.id,\n      meetingTitle: meetingTitle,\n      meetingTime: meetingDateStr,\n      attendees: JSON.stringify(attendees),\n      attendeeCount: attendees.length,\n      pass: pass,\n      agendaTaskName: task.name\n    });\n  }\n\n  return results;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [660, 300],
-      "id": "extract-task-data-001",
+      "position": [
+        672,
+        0
+      ],
+      "id": "9a4e7f79-a752-4222-8344-470ec762fab9",
       "name": "Extract Task Data"
     },
     {
       "parameters": {
         "authentication": "oAuth2",
-        "id": "={{ $json.existingAgendaTaskId }}"
+        "team": "9011763462",
+        "space": "90113618058",
+        "folder": "90114444483",
+        "list": "901107582941",
+        "name": "={{ $json.agendaTaskName }}",
+        "additionalFields": {}
       },
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
-      "position": [880, 300],
-      "id": "fetch-existing-desc-001",
+      "position": [
+        896,
+        0
+      ],
+      "id": "7cfd9ae5-d4e0-453d-bd9b-7ef285e07731",
       "name": "Fetch Existing Description",
       "credentials": {
         "clickUpOAuth2Api": {
@@ -94,27 +149,124 @@
     },
     {
       "parameters": {
-        "jsCode": "// Prepare input for the Tool workflow\n// Uses index-based matching to combine task data with fetched description\nconst allTasks = $('Extract Task Data').all();\nconst allExisting = $input.all();\nconst results = [];\n\nfor (let i = 0; i < allExisting.length; i++) {\n  const task = allTasks[i]?.json || {};\n  const existing = allExisting[i]?.json || {};\n\n  results.push({\n    eventId: task.eventId,\n    meetingTitle: task.meetingTitle,\n    meetingTime: task.meetingTime,\n    attendees: task.attendees,\n    pass: task.pass,\n    existingAgendaTaskId: task.existingAgendaTaskId,\n    existingDescription: existing.description || existing.content || '',\n    clientName: ''\n  });\n}\n\nreturn results;"
+        "jsCode": "  // Prepare input for the Tool workflow\n  // Uses index-based matching to combine task data with fetched description\n  const allTasks = $('Extract Task Data').all();\n  const allExisting = $input.all();\n  const results = [];\n\n  for (let i = 0; i < allExisting.length; i++) {\n    const task = allTasks[i]?.json || {};\n    const existing = allExisting[i]?.json || {};\n\n    results.push({\n      eventId: task.eventId,\n      meetingTitle: task.meetingTitle,\n      meetingTime: task.meetingTime,\n      attendees: task.attendees,\n      pass: task.pass,\n      existingAgendaTaskId: task.existingAgendaTaskId,\n      existingDescription: existing.description || existing.content || '',\n      clientName: ''\n    });\n  }\n\n  return results;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1100, 300],
-      "id": "prep-input-001",
+      "position": [
+        1120,
+        0
+      ],
+      "id": "35614c7c-16e7-4d14-ac01-70542ddf2f8f",
       "name": "Prep Input"
     },
     {
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "PCJgjIFbUUf7u2mU",
-          "mode": "id"
+          "value": "QuJ3IVJH1xASTRPH",
+          "mode": "id",
+          "cachedResultUrl": "/workflow/QuJ3IVJH1xASTRPH"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "eventId": "={{ $json.eventId }}",
+            "meetingTitle": "={{ $json.meetingTitle }}",
+            "meetingTime": "={{ $json.meetingTime }}",
+            "attendees": "={{ $json.attendees }}",
+            "pass": "={{ $json.pass }}",
+            "existingAgendaTaskId": "={{ $json.existingAgendaTaskId }}",
+            "existingDescription": "={{ $json.existingDescription }}",
+            "clientName": "={{ $json.clientName }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "eventId",
+              "displayName": "eventId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "meetingTitle",
+              "displayName": "meetingTitle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "meetingTime",
+              "displayName": "meetingTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "attendees",
+              "displayName": "attendees",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "pass",
+              "displayName": "pass",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "existingAgendaTaskId",
+              "displayName": "existingAgendaTaskId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "existingDescription",
+              "displayName": "existingDescription",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "clientName",
+              "displayName": "clientName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
         },
         "options": {}
       },
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
-      "position": [1320, 300],
-      "id": "call-assemble-001",
+      "position": [
+        1344,
+        0
+      ],
+      "id": "6c839f8e-3d8f-413c-85fc-1dbb15805290",
       "name": "Call: Assemble Agenda"
     },
     {
@@ -141,7 +293,6 @@
             "agendaTaskId": "={{ $json.agendaTaskId }}",
             "clientName": "={{ $json.clientName }}",
             "clientListId": "={{ $json.clientListId }}",
-            "missiveLabelId": "={{ $json.missiveLabelId }}",
             "meetingTitle": "={{ $json.meetingTitle }}",
             "meetingTime": "={{ $json.meetingTime }}",
             "attendees": "={{ $json.attendees }}",
@@ -149,23 +300,141 @@
             "lastRefreshed": "={{ $json.lastRefreshed }}",
             "lastTasksHash": "={{ $json.tasksHash }}",
             "lastEmailTimestamp": "={{ $json.latestEmailTimestamp }}",
-            "lastMeetingNoteId": "={{ $json.latestMeetingNoteId }}"
+            "lastMeetingNoteId": "={{ $json.latestMeetingNoteId }}",
+            "missiveLabelId": "={{ $json.missiveLabelId }}"
           },
           "matchingColumns": [],
           "schema": [
-            { "id": "eventId", "displayName": "eventId", "required": false, "defaultMatch": false, "display": true, "type": "string", "readOnly": false, "removed": false },
-            { "id": "agendaTaskId", "displayName": "agendaTaskId", "required": false, "defaultMatch": false, "display": true, "type": "string", "readOnly": false, "removed": false },
-            { "id": "clientName", "displayName": "clientName", "required": false, "defaultMatch": false, "display": true, "type": "string", "readOnly": false, "removed": false },
-            { "id": "clientListId", "displayName": "clientListId", "required": false, "defaultMatch": false, "display": true, "type": "string", "readOnly": false, "removed": false },
-            { "id": "missiveLabelId", "displayName": "missiveLabelId", "required": false, "defaultMatch": false, "display": true, "type": "string", "readOnly": false, "removed": false },
-            { "id": "meetingTitle", "displayName": "meetingTitle", "required": false, "defaultMatch": false, "display": true, "type": "string", "readOnly": false, "removed": false },
-            { "id": "meetingTime", "displayName": "meetingTime", "required": false, "defaultMatch": false, "display": true, "type": "string", "readOnly": false, "removed": false },
-            { "id": "attendees", "displayName": "attendees", "required": false, "defaultMatch": false, "display": true, "type": "string", "readOnly": false, "removed": false },
-            { "id": "pass", "displayName": "pass", "required": false, "defaultMatch": false, "display": true, "type": "string", "readOnly": false, "removed": false },
-            { "id": "lastRefreshed", "displayName": "lastRefreshed", "required": false, "defaultMatch": false, "display": true, "type": "string", "readOnly": false, "removed": false },
-            { "id": "lastTasksHash", "displayName": "lastTasksHash", "required": false, "defaultMatch": false, "display": true, "type": "string", "readOnly": false, "removed": false },
-            { "id": "lastEmailTimestamp", "displayName": "lastEmailTimestamp", "required": false, "defaultMatch": false, "display": true, "type": "string", "readOnly": false, "removed": false },
-            { "id": "lastMeetingNoteId", "displayName": "lastMeetingNoteId", "required": false, "defaultMatch": false, "display": true, "type": "string", "readOnly": false, "removed": false }
+            {
+              "id": "eventId",
+              "displayName": "eventId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "agendaTaskId",
+              "displayName": "agendaTaskId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "clientName",
+              "displayName": "clientName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "clientListId",
+              "displayName": "clientListId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "meetingTitle",
+              "displayName": "meetingTitle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "meetingTime",
+              "displayName": "meetingTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "attendees",
+              "displayName": "attendees",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "pass",
+              "displayName": "pass",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "lastRefreshed",
+              "displayName": "lastRefreshed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "lastTasksHash",
+              "displayName": "lastTasksHash",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "lastEmailTimestamp",
+              "displayName": "lastEmailTimestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "lastMeetingNoteId",
+              "displayName": "lastMeetingNoteId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "missiveLabelId",
+              "displayName": "missiveLabelId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
           ],
           "attemptToConvertTypes": false,
           "convertFieldsToString": false
@@ -174,39 +443,38 @@
       },
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
-      "position": [1540, 300],
-      "id": "track-datatable-001",
+      "position": [
+        1568,
+        0
+      ],
+      "id": "97be1e95-8983-4453-993b-20d21befcef4",
       "name": "Track in DataTable"
     },
     {
       "parameters": {
-        "channel": "#meeting-flups",
-        "text": "=*Meeting Prep Ready: {{ $json.clientName }} — {{ DateTime.fromISO($json.meetingTime).toFormat('h:mm a') }}*\n{{ $json.meetingTitle }}\n{{ $json.pass === 'day-before' ? 'Day-before build' : 'Day-of refresh' }} complete",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C089YN2B74N",
+          "mode": "list",
+          "cachedResultName": "bios-mtgbriefs"
+        },
+        "text": "=📋 *Meeting Prep Ready: {{ $json.clientName }} — {{ DateTime.fromISO($json.meetingTime).toFormat('h:mm a') }}*\n{{ $json.meetingTitle }}\n{{ $json.pass === 'day-before' ? '📅 Day-before build' : '🔄 Day-of refresh' }} complete",
         "otherOptions": {
           "includeLinkToWorkflow": false,
           "unfurl_links": false,
           "unfurl_media": false
-        },
-        "attachments": [
-          {
-            "actions": {
-              "actions": [
-                {
-                  "type": "button",
-                  "name": "Open in ClickUp",
-                  "text": "Open in ClickUp",
-                  "url": "=https://app.clickup.com/t/{{ $json.agendaTaskId }}"
-                }
-              ]
-            }
-          }
-        ]
+        }
       },
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
-      "position": [1760, 300],
-      "id": "slack-notify-001",
+      "position": [
+        1792,
+        0
+      ],
+      "id": "33e94820-aaf1-4657-ab6c-99bdfbec098d",
       "name": "Slack Notify",
+      "webhookId": "8568db40-fe61-4b1e-ad3e-3027d198dbd6",
       "credentials": {
         "slackApi": {
           "id": "DvovCyTPlCPUoL2k",
@@ -215,7 +483,6 @@
       }
     }
   ],
-  "pinData": {},
   "connections": {
     "7 AM Weekday Trigger": {
       "main": [
@@ -306,16 +573,37 @@
       ]
     }
   },
-  "active": false,
   "settings": {
     "executionOrder": "v1",
-    "saveDataSuccessExecution": "none",
-    "errorWorkflow": "Ka01FqAuhDXin0Kn"
+    "availableInMCP": true
   },
-  "versionId": "",
-  "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "69b353989b2e2524b2186ce2c707a5fca1ffefa89656be27d70fffcaf2744be4"
+  "staticData": {
+    "node:7 AM Weekday Trigger": {
+      "recurrenceRules": []
+    }
   },
-  "tags": []
+  "meta": null,
+  "versionId": "dd899f37-512e-4f34-8ddf-cf3d0043879b",
+  "activeVersionId": "dd899f37-512e-4f34-8ddf-cf3d0043879b",
+  "triggerCount": 1,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    },
+    {
+      "updatedAt": "2026-01-01T21:31:31.119Z",
+      "createdAt": "2026-01-01T21:31:31.119Z",
+      "id": "erv2iAT6He287ePS",
+      "name": "Abel Meeting Assistant"
+    },
+    {
+      "updatedAt": "2026-03-04T23:28:06.468Z",
+      "createdAt": "2026-03-04T23:28:06.468Z",
+      "id": "p1gDI9QAauVslxUO",
+      "name": "abel"
+    }
+  ]
 }
