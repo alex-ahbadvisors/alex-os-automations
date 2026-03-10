@@ -1,0 +1,193 @@
+{
+  "updatedAt": "2026-03-10T00:19:41.165Z",
+  "createdAt": "2025-10-25T19:08:45.139Z",
+  "id": "dT1erow5dTdS3R0Z",
+  "name": "Tool: Search Meeting Notes",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "keywordOrPhrase"
+            },
+            {
+              "name": "includeTranscript",
+              "type": "boolean"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        144,
+        64
+      ],
+      "id": "80c6f9c0-1602-42d8-94be-ed7548af2815",
+      "name": "Input"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "gbUMm2ADZughCW2a",
+          "mode": "list",
+          "cachedResultName": "Meeting Notes",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/gbUMm2ADZughCW2a"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "name",
+              "condition": "ilike",
+              "keyValue": "={{ $json.keywordOrPhrase|| '<NONE>' }}"
+            },
+            {
+              "keyName": "overview",
+              "keyValue": "={{ $json.keywordOrPhrase || '<NONE>' }}"
+            }
+          ]
+        },
+        "limit": "={{ $json.includeTranscript ? 3 : 10 }}"
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        368,
+        64
+      ],
+      "id": "2700a18a-e371-45f5-9a4e-d6738c838ba7",
+      "name": "Get row(s)",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "26533d86-8501-4327-904b-e59555d9244c",
+              "name": "id",
+              "value": "={{ $json.id }}",
+              "type": "number"
+            },
+            {
+              "id": "3e83e186-c6ad-4ac2-b844-040674e49af8",
+              "name": "date",
+              "value": "={{ $json.date }}",
+              "type": "string"
+            },
+            {
+              "id": "4b75acb1-cd4c-4872-b8ae-e00f61d3fd2e",
+              "name": "updatedAt",
+              "value": "={{ $json.updatedAt }}",
+              "type": "string"
+            },
+            {
+              "id": "230e8555-6d1a-4df5-bba2-6f253f00539d",
+              "name": "source",
+              "value": "={{ $json.source }}",
+              "type": "string"
+            },
+            {
+              "id": "de421cc7-250c-4341-a903-aae524715cf3",
+              "name": "sourceId",
+              "value": "={{ $json.sourceId }}",
+              "type": "string"
+            },
+            {
+              "id": "896bbd0b-f70e-4fea-b66e-66d06665377b",
+              "name": "sourceUrl",
+              "value": "={{ $json.sourceUrl }}",
+              "type": "string"
+            },
+            {
+              "id": "dbedfea5-1afc-42c3-bf44-90d53651e999",
+              "name": "overview",
+              "value": "={{ $json.overview }}",
+              "type": "string"
+            },
+            {
+              "id": "75d33ee7-b104-48b1-a1c9-c54c2a86273c",
+              "name": "name",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "d7ee8b57-ee9b-4939-af56-1cb2aa3cee60",
+              "name": "taskId",
+              "value": "={{ $json.taskId }}",
+              "type": "string"
+            },
+            {
+              "id": "3236e9c2-c50f-446f-8122-e9975567410b",
+              "name": "transcript",
+              "value": "={{$('Input').item.json.includeTranscript ?  $json.transcript?.base64Decode() : null }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        592,
+        64
+      ],
+      "id": "77d810f6-f8b5-4ee0-933a-617347597f51",
+      "name": "Search Result"
+    }
+  ],
+  "connections": {
+    "Input": {
+      "main": [
+        [
+          {
+            "node": "Get row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s)": {
+      "main": [
+        [
+          {
+            "node": "Search Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "versionId": "a026577b-52ce-4c5e-bc12-cd995934e350",
+  "activeVersionId": null,
+  "triggerCount": 1,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    },
+    {
+      "updatedAt": "2026-01-01T21:31:31.119Z",
+      "createdAt": "2026-01-01T21:31:31.119Z",
+      "id": "erv2iAT6He287ePS",
+      "name": "Abel Meeting Assistant"
+    }
+  ]
+}
