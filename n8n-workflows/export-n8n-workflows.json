@@ -1,0 +1,746 @@
+{
+  "updatedAt": "2026-03-10T00:46:25.609Z",
+  "createdAt": "2026-01-01T21:30:12.307Z",
+  "id": "DKrAVjDY2QDLr72W",
+  "name": "Export n8n Workflows",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "a1000001-0000-0000-0000-000000000001",
+      "name": "Weekly Sunday Midnight ET",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        72
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 5 * * 0"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "a1000001-0000-0000-0000-000000000002",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        264
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "a1000001-0000-0000-0000-000000000003",
+      "name": "Get Export Workflows",
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [
+        224,
+        168
+      ],
+      "parameters": {
+        "filters": {
+          "tags": "export",
+          "excludePinnedData": true,
+          "workflowId": {
+            "__rl": true,
+            "mode": "list",
+            "value": ""
+          }
+        },
+        "requestOptions": {}
+      },
+      "credentials": {
+        "n8nApi": {
+          "id": "KqRF0URXttyyuyYz",
+          "name": "My n8n ahbadvisors"
+        }
+      }
+    },
+    {
+      "id": "a1000001-0000-0000-0000-000000000004",
+      "name": "Read Registry",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        168
+      ],
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1hb_KqerZv8fRX04si2lzHXj_NMG2Ww8POED65tDCcsY",
+          "mode": "id",
+          "cachedResultName": "1hb_KqerZv8fRX04si2lzHXj_NMG2Ww8POED65tDCcsY"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 0,
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "80VJb4L9NWLlKxVM",
+          "name": "Google Sheets account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "a1000001-0000-0000-0000-000000000005",
+      "name": "Parse & Compare",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        168
+      ],
+      "parameters": {
+        "jsCode": "const workflows = $('Get Export Workflows').all();\nconst registryRows = $input.all();\nconst existingMap = {};\nfor (const row of registryRows) {\n  const r = row.json;\n  if (r['Workflow ID']) {\n    existingMap[r['Workflow ID']] = {\n      hash: r['Structure Hash'] || '',\n      description: r['Description'] || '',\n      lastUpdated: r['Last Updated'] || ''\n    };\n  }\n}\nconst results = [];\nfor (const item of workflows) {\n  const wf = item.json;\n  const nodes = wf.nodes || [];\n  const connections = wf.connections || {};\n  let triggerType = 'manual';\n  for (const node of nodes) {\n    const t = node.type || '';\n    if (t.includes('scheduleTrigger')) { triggerType = 'schedule'; break; }\n    if (t.includes('webhook') || t.includes('Webhook')) { triggerType = 'webhook'; break; }\n    if (t.includes('slackTrigger')) { triggerType = 'slack'; break; }\n    if (t.includes('executeWorkflowTrigger')) { triggerType = 'sub-workflow'; break; }\n    if (t.includes('manualTrigger')) { triggerType = 'manual'; }\n  }\n  const outputs = new Set();\n  for (const node of nodes) {\n    const t = (node.type || '').toLowerCase();\n    if (t.includes('slack') && !t.includes('trigger')) outputs.add('Slack');\n    if (t.includes('clickup')) outputs.add('ClickUp');\n    if (t.includes('googlesheets')) outputs.add('Google Sheets');\n    if (t.includes('googledrive')) outputs.add('Google Drive');\n    if (t.includes('gmail') || t.includes('emailsend')) outputs.add('Email');\n    if (t.includes('github')) outputs.add('GitHub');\n    if (t.includes('datatable')) outputs.add('n8n DataTable');\n    if (t.includes('executeworkflow') && !t.includes('trigger')) outputs.add('Sub-workflow');\n    if (t.includes('httprequest')) outputs.add('HTTP API');\n  }\n  const subWorkflows = [];\n  for (const node of nodes) {\n    if ((node.type || '').includes('executeWorkflow') && !(node.type || '').includes('Trigger')) {\n      const wfId = node.parameters?.workflowId?.value || node.parameters?.workflowId || '';\n      subWorkflows.push(node.name + ' > ' + wfId);\n    }\n  }\n  let inputSchema = '';\n  for (const node of nodes) {\n    if ((node.type || '').includes('executeWorkflowTrigger')) {\n      const inputs = node.parameters?.workflowInputs?.values || [];\n      inputSchema = inputs.map(i => i.name + ': ' + (i.type || 'string')).join(', ');\n    }\n  }\n  const nodeTypes = nodes.map(n => n.type + ':' + n.name).sort().join('|');\n  const connKeys = Object.entries(connections).map(([k, v]) => {\n    const targets = (v.main || []).flat().map(c => c.node).join(',');\n    return k + '->' + targets;\n  }).sort().join('|');\n  const hashInput = nodeTypes + '::' + connKeys;\n  let hash = 0;\n  for (let i = 0; i < hashInput.length; i++) {\n    hash = ((hash << 5) - hash) + hashInput.charCodeAt(i);\n    hash = hash & hash;\n  }\n  const structureHash = Math.abs(hash).toString(16);\n  const existing = existingMap[wf.id];\n  const needsDescription = !existing || existing.hash !== structureHash;\n  let description = '';\n  if (needsDescription) {\n    const triggerDesc = { 'schedule': 'Runs on a schedule', 'webhook': 'Triggered by webhook', 'slack': 'Triggered by Slack events', 'sub-workflow': 'Called as a sub-workflow', 'manual': 'Manually triggered' }[triggerType] || 'Manually triggered';\n    const outputList = Array.from(outputs);\n    const outputDesc = outputList.length > 0 ? 'Outputs to ' + outputList.join(', ') + '.' : '';\n    const subDesc = subWorkflows.length > 0 ? 'Calls: ' + subWorkflows.map(s => s.split(' >')[0]).join(', ') + '.' : '';\n    description = (triggerDesc + '. ' + outputDesc + ' ' + subDesc).trim();\n  } else {\n    description = existing.description;\n  }\n  const filename = wf.name.replace(/^\\[(\\d+[a-z]?)\\]\\s*/i, '$1-').replace(/^\\[T\\]\\s*/i, 'tool-').replace(/[^a-zA-Z0-9\\-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').toLowerCase() + '.json';\n  const needsGitHubPush = !existing || existing.lastUpdated !== wf.updatedAt;\n  const cleanWf = { ...wf };\n  delete cleanWf.shared;\n  delete cleanWf.activeVersion;\n  const workflowJson = JSON.stringify(cleanWf, null, 2);\n  results.push({ json: { workflowId: wf.id, name: wf.name, active: wf.active, triggerType, description, inputSchema, outputDestinations: Array.from(outputs).join(', '), subWorkflowsCalled: subWorkflows.join('; '), tags: (wf.tags || []).map(t => t.name).join(', '), nodeCount: nodes.length, errorHandler: wf.settings?.errorWorkflow || '', structureHash, needsGitHubPush, needsDescription, filename, workflowJson, lastUpdated: wf.updatedAt, lastChecked: new Date().toISOString() } });\n}\nreturn results;"
+      }
+    },
+    {
+      "id": "a1000001-0000-0000-0000-000000000006",
+      "name": "Upsert Registry",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        896,
+        168
+      ],
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1hb_KqerZv8fRX04si2lzHXj_NMG2Ww8POED65tDCcsY",
+          "mode": "id",
+          "cachedResultName": "1hb_KqerZv8fRX04si2lzHXj_NMG2Ww8POED65tDCcsY"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 0,
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Workflow ID": "={{ $json.workflowId }}",
+            "Name": "={{ $json.name }}",
+            "Active": "={{ $json.active }}",
+            "Trigger Type": "={{ $json.triggerType }}",
+            "Description": "={{ $json.description }}",
+            "Input Schema": "={{ $json.inputSchema }}",
+            "Output Destinations": "={{ $json.outputDestinations }}",
+            "Sub-workflows Called": "={{ $json.subWorkflowsCalled }}",
+            "Tags": "={{ $json.tags }}",
+            "Node Count": "={{ $json.nodeCount }}",
+            "Error Handler": "={{ $json.errorHandler }}",
+            "Structure Hash": "={{ $json.structureHash }}",
+            "Last Updated": "={{ $json.lastUpdated }}",
+            "Last Checked": "={{ $json.lastChecked }}",
+            "GitHub Path": "=n8n-workflows/{{ $json.filename }}"
+          },
+          "matchingColumns": [
+            "Workflow ID"
+          ],
+          "schema": [
+            {
+              "id": "Workflow ID",
+              "displayName": "Workflow ID",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "options": []
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "options": []
+            },
+            {
+              "id": "Active",
+              "displayName": "Active",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "options": []
+            },
+            {
+              "id": "Trigger Type",
+              "displayName": "Trigger Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "options": []
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "options": []
+            },
+            {
+              "id": "Input Schema",
+              "displayName": "Input Schema",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "options": []
+            },
+            {
+              "id": "Output Destinations",
+              "displayName": "Output Destinations",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "options": []
+            },
+            {
+              "id": "Sub-workflows Called",
+              "displayName": "Sub-workflows Called",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "options": []
+            },
+            {
+              "id": "Tags",
+              "displayName": "Tags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "options": []
+            },
+            {
+              "id": "Node Count",
+              "displayName": "Node Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "options": []
+            },
+            {
+              "id": "Error Handler",
+              "displayName": "Error Handler",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "options": []
+            },
+            {
+              "id": "Structure Hash",
+              "displayName": "Structure Hash",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "options": []
+            },
+            {
+              "id": "Last Updated",
+              "displayName": "Last Updated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "options": []
+            },
+            {
+              "id": "Last Checked",
+              "displayName": "Last Checked",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "options": []
+            },
+            {
+              "id": "GitHub Path",
+              "displayName": "GitHub Path",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "options": []
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "80VJb4L9NWLlKxVM",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "id": "a1000001-0000-0000-0000-000000000007",
+      "name": "Filter Changed Only",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        168
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "filter-needs-push",
+              "leftValue": "={{ $json.needsGitHubPush }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "a1000001-0000-0000-0000-000000000008",
+      "name": "SplitInBatches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1344,
+        168
+      ],
+      "parameters": {
+        "options": {}
+      }
+    },
+    {
+      "id": "b1000001-0000-0000-0000-000000000001",
+      "name": "Prepare Content",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1568,
+        -96
+      ],
+      "parameters": {
+        "jsCode": "// Direct access to original parsed data (no longer goes through Upsert)\nconst item = $input.first().json;\n\nreturn [{\n  json: {\n    filePath: 'n8n-workflows/' + item.filename,\n    fileContent: item.workflowJson,\n    commitMessage: 'Auto-export: ' + item.name,\n    filename: item.filename\n  }\n}];"
+      }
+    },
+    {
+      "id": "b1000001-0000-0000-0000-000000000002",
+      "name": "GitHub Get File",
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        1792,
+        -96
+      ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "file",
+        "operation": "get",
+        "owner": {
+          "__rl": true,
+          "value": "alex-ahbadvisors",
+          "mode": "name",
+          "cachedResultName": "alex-ahbadvisors"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "alex-os-automations",
+          "mode": "name",
+          "cachedResultName": "alex-os-automations"
+        },
+        "filePath": "={{ $json.filePath }}",
+        "additionalParameters": {}
+      },
+      "credentials": {
+        "githubOAuth2Api": {
+          "id": "VsAQA7Ut5keA6h7X",
+          "name": "GitHub account"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "webhookId": "4fbe9615-4f5a-4427-a58f-9c35404981d5"
+    },
+    {
+      "id": "b1000001-0000-0000-0000-000000000003",
+      "name": "File Exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2016,
+        -96
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-sha",
+              "leftValue": "={{ $json.sha }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b1000001-0000-0000-0000-000000000004",
+      "name": "GitHub Edit File",
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        2240,
+        72
+      ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "file",
+        "operation": "edit",
+        "owner": {
+          "__rl": true,
+          "value": "alex-ahbadvisors",
+          "mode": "name",
+          "cachedResultName": "alex-ahbadvisors"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "alex-os-automations",
+          "mode": "name",
+          "cachedResultName": "alex-os-automations"
+        },
+        "filePath": "={{ $('Prepare Content').first().json.filePath }}",
+        "fileContent": "={{ $('Prepare Content').first().json.fileContent }}",
+        "commitMessage": "={{ $('Prepare Content').first().json.commitMessage }}",
+        "additionalParameters": {
+          "branch": {
+            "branch": "main"
+          }
+        }
+      },
+      "credentials": {
+        "githubOAuth2Api": {
+          "id": "VsAQA7Ut5keA6h7X",
+          "name": "GitHub account"
+        }
+      },
+      "webhookId": "48917b1f-c5e2-4262-b6c8-a9669c84d36e"
+    },
+    {
+      "id": "b1000001-0000-0000-0000-000000000005",
+      "name": "GitHub Create File",
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        2240,
+        288
+      ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "file",
+        "owner": {
+          "__rl": true,
+          "value": "alex-ahbadvisors",
+          "mode": "name",
+          "cachedResultName": "alex-ahbadvisors"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "alex-os-automations",
+          "mode": "name",
+          "cachedResultName": "alex-os-automations"
+        },
+        "filePath": "={{ $('Prepare Content').first().json.filePath }}",
+        "fileContent": "={{ $('Prepare Content').first().json.fileContent }}",
+        "commitMessage": "={{ $('Prepare Content').first().json.commitMessage }}",
+        "additionalParameters": {
+          "branch": {
+            "branch": "main"
+          }
+        }
+      },
+      "credentials": {
+        "githubOAuth2Api": {
+          "id": "VsAQA7Ut5keA6h7X",
+          "name": "GitHub account"
+        }
+      },
+      "webhookId": "27c9a355-cc8e-4a71-9eb8-62e88a4ae126"
+    },
+    {
+      "id": "a1000001-0000-0000-0000-000000000012",
+      "name": "Slack Notify Done",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1568,
+        96
+      ],
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0AJQH5NFPS",
+          "mode": "id",
+          "cachedResultName": "C0AJQH5NFPS"
+        },
+        "text": "=*n8n Workflow Export Complete*\nExported {{ $('Filter Changed Only').all().length }} changed workflow(s) to GitHub.\nRegistry updated: {{ $('Parse & Compare').all().length }} workflows tracked.",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      },
+      "webhookId": "0a4759b6-4367-4280-bf29-24bd909e3f70"
+    }
+  ],
+  "connections": {
+    "Weekly Sunday Midnight ET": {
+      "main": [
+        [
+          {
+            "node": "Get Export Workflows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Export Workflows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Export Workflows": {
+      "main": [
+        [
+          {
+            "node": "Read Registry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Registry": {
+      "main": [
+        [
+          {
+            "node": "Parse & Compare",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse & Compare": {
+      "main": [
+        [
+          {
+            "node": "Filter Changed Only",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Upsert Registry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Changed Only": {
+      "main": [
+        [
+          {
+            "node": "SplitInBatches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SplitInBatches": {
+      "main": [
+        [
+          {
+            "node": "Slack Notify Done",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Content": {
+      "main": [
+        [
+          {
+            "node": "GitHub Get File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub Get File": {
+      "main": [
+        [
+          {
+            "node": "File Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "File Exists?": {
+      "main": [
+        [
+          {
+            "node": "GitHub Edit File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GitHub Create File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub Edit File": {
+      "main": [
+        [
+          {
+            "node": "SplitInBatches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub Create File": {
+      "main": [
+        [
+          {
+            "node": "SplitInBatches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "versionId": "79308bc5-6033-408a-87db-66705f739467",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    },
+    {
+      "updatedAt": "2026-01-01T21:31:31.119Z",
+      "createdAt": "2026-01-01T21:31:31.119Z",
+      "id": "erv2iAT6He287ePS",
+      "name": "Abel Meeting Assistant"
+    }
+  ]
+}
