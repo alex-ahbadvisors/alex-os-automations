@@ -1,0 +1,393 @@
+{
+  "updatedAt": "2026-03-10T00:16:34.803Z",
+  "createdAt": "2026-02-03T20:01:47.979Z",
+  "id": "iFQP0ZSU10eb5vLx",
+  "name": "[T] Draft an Email In Missive",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.1",
+          "mode": "list",
+          "cachedResultName": "gpt-5.1"
+        },
+        "options": {
+          "reasoningEffort": "medium",
+          "timeout": 120000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -176,
+        0
+      ],
+      "id": "effb0592-3c34-4469-bcfc-4e6c6b80a937",
+      "name": "OpenAI Chat Model3",
+      "credentials": {
+        "openAiApi": {
+          "id": "FPFFI1NvOtGMoh30",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<USER_REQUEST>\n{{ $('When Executed by Another Workflow').item.json.userRequest }}\n</USER_REQUEST>\n\n<INIIAL_EMAIL_CONTENTS>\n{{ $('When Executed by Another Workflow').item.json.emailContents }}\n</INIIAL_EMAIL_CONTENTS>\n\n\n<METADATA>\n{{ $json.metadata }}\n</METADATA>",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are an email-drafting assistant. Your job is to read the full user message (which may include an email thread, rough notes, bullet points, a preferred template, task lists, and metadata) and produce a polished, ready-to-send email draft as a JSON object that matches the required schema.\n\nYou do NOT send emails. You only return a draft for the user to review and send.\n\nOUTPUT FORMAT (MANDATORY)\nReturn exactly ONE JSON object with these keys and nothing else:\n\n- \"subject\": string\n- \"content\": string (the full email body, including greeting and sign-off)\n- \"from\": object\n  - \"address\": string (sender email address)\n  - \"name\": string (sender display name)\n- \"recipients\": array of objects; each object MUST have:\n  - \"address\": string (recipient email address)\n  - \"name\": string or null (display name if available)\n  - \"internal\": boolean (true = same organization/team as sender; false = external/client)\n\nDo not include any explanations, markdown, or tags outside of this JSON object.\n\nINPUTS YOU MAY RECEIVE\nThe user message may contain:\n- An email thread (previous messages), including quoted text\n- Meeting notes and/or decisions\n- A selected email template (structure, placeholders, examples, tone guidance, sign-off examples)\n- Task lists and subtasks\n- Metadata (attendees, companies, domains, calendar/invite owner, categorization)\n\nYou are not in an interactive loop. Do not ask follow-up questions. Use all provided information to produce the best possible draft.\n\nCORE RULES\n1) If a template is provided, it is authoritative\n- Follow the template’s structure, section order, tone, and sign-off style.\n- If the template includes subject patterns/examples, follow them.\n\n2) If no template is provided\n- Choose a clear, professional structure appropriate to the situation (reply, intro, recap, update, request, etc.).\n- Default sign-off:\n  Best,\n  [Sender Name]\n\n3) Subjects\n- If replying to a thread, keep the subject aligned with the thread unless the user indicates a new topic.\n- Otherwise, create a concise, informative subject based on the purpose and key outcome.\n\n4) Sender (\"from\")\n- Prefer sender name/address explicitly provided in the user message or metadata.\n- If multiple sender addresses are provided, choose the one that matches the organization/brand implied by the context (client name, domain, firm, signature block).\n- If you cannot find a sender address, use \"unknown@unknown.com\".\n- If you cannot find a sender name, use \"Sender\".\n\n5) Recipients\n- Use metadata, headers, and signatures to identify recipients and their emails.\n- Do NOT invent recipient email addresses.\n- If you cannot confidently identify any recipient addresses, set \"recipients\" to [].\n- Set \"internal\" = true for recipients who appear to be on the same organization/team as the sender; otherwise false.\n  - Use domains, explicit labels (internal/team), and context clues. If unsure, default to false.\n\n6) Tasks / next steps\n- Include tasks/action items only if the template implies them or the user clearly asked for them.\n- Translate internal task phrasing into client-friendly language.\n- Do not include links to internal tools (Asana, ClickUp, Jira, etc.) unless the user/template explicitly includes them.\n\n7) Composition rules\n- Write in the sender’s voice (first person) unless the template indicates otherwise.\n- Be clear, professional, and warm.\n- Do not fabricate facts. If key details are missing, keep language slightly general rather than guessing.\n\nFINAL CHECK BEFORE RESPONDING\nBefore returning the JSON object, verify:\n- \"subject\" is non-empty\n- \"content\" is complete and ready to send (includes sign-off)\n- \"from.address\" looks like an email address and \"from.name\" is non-empty\n- \"recipients\" contains only valid-looking, non-invented emails (or is empty)\n- The output is exactly one JSON object with only the required keys."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -96,
+        -224
+      ],
+      "id": "ece86a2c-a0f8-4dfb-ac12-c2f62a1f879c",
+      "name": "Follow Email Draft Agent"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"name\": \"email_draft\",\n  \"strict\": true,\n  \"schema\": {\n    \"type\": \"object\",\n    \"properties\": {\n      \"subject\": {\n        \"type\": \"string\",\n        \"description\": \"The email subject line.\"\n      },\n      \"content\": {\n        \"type\": \"string\",\n        \"description\": \"The full email body, ready to send (including greeting and sign-off).\"\n      },\n      \"from\": {\n        \"type\": \"object\",\n        \"description\": \"Sender information for Alex.\",\n        \"properties\": {\n          \"address\": {\n            \"type\": \"string\",\n            \"description\": \"Alex's email address, chosen from the allowed set when possible or defaulting to alex@ahbadvisors.com.\"\n          },\n          \"name\": {\n            \"type\": \"string\",\n            \"description\": \"Sender display name, usually 'Alex Brownstein'.\"\n          }\n        },\n        \"required\": [\"address\", \"name\"],\n        \"additionalProperties\": false\n      },\n      \"recipients\": {\n        \"type\": \"array\",\n        \"description\": \"List of recipients for this email. Will be reshaped into Missive to/cc fields downstream.\",\n        \"items\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"address\": {\n              \"type\": \"string\",\n              \"description\": \"Recipient email address.\"\n            },\n            \"name\": {\n              \"type\": [\"string\", \"null\"],\n              \"description\": \"Recipient display name if available, otherwise null.\"\n            },\n            \"internal\": {\n              \"type\": \"boolean\",\n              \"description\": \"True if this is an internal attendee; false if this is an external or client attendee.\"\n            }\n          },\n          \"required\": [\"address\", \"internal\"],\n          \"additionalProperties\": false\n        }\n      }\n    },\n    \"required\": [\"subject\", \"content\", \"from\", \"recipients\"],\n    \"additionalProperties\": false\n  }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        112,
+        0
+      ],
+      "id": "2af0de64-83d7-48e4-aea1-5ccb1e0b3bb9",
+      "name": "Email Draft Structure"
+    },
+    {
+      "parameters": {
+        "mode": "markdownToHtml",
+        "markdown": "={{ $json.output.content }}",
+        "destinationKey": "html",
+        "options": {
+          "openLinksInNewWindow": true,
+          "simpleLineBreaks": true,
+          "smartIndentationFix": true,
+          "splitAdjacentBlockquotes": true,
+          "tables": true
+        }
+      },
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        704,
+        -224
+      ],
+      "id": "14cbbcde-7c7b-4be9-92dc-6f31a19cdf50",
+      "name": "Markdown"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://public.missiveapp.com/v1/drafts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"drafts\": {\n    \"organization\": \"c7be17b4-c416-4d3a-b20d-62a89a261016\",\n    \"subject\": {{ $json.output.subject.toJsonString() }},\n    \"body\": {{ $json.html.toJsonString() }},\n    \"from_field\": {{$json.missive.from_field.toJsonString() }},\n    \"to_fields\": {{$json.missive.to_fields.toJsonString() }},\n    \"cc_fields\": {{$json.missive.cc_fields.toJsonString() }},\n    \"add_shared_labels\": [\"5dc4d84f-4c03-4503-8608-8f0f56ea474b\"]\n  }\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        928,
+        -224
+      ],
+      "id": "20125941-b718-4822-8c1d-75bb7086befa",
+      "name": "Draft in Missive",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f6122a02-5524-4be1-ae7b-aa42801293cc",
+              "name": "output.internalRecipients",
+              "value": "={{ $json.output.recipients.filter(r => r.internal && r.address!=='alex@ahbadvisors.com').map(({address,name}) => ({address, name})) }}",
+              "type": "array"
+            },
+            {
+              "id": "8203ce7c-bed4-47d9-b1fe-2ec00ee9342c",
+              "name": "output.externalRecipients",
+              "value": "={{ $json.output.recipients.filter(r => !r.internal).map(({address,name}) => ({address, name})) }}",
+              "type": "array"
+            },
+            {
+              "id": "7a2a5b73-44b0-4ff1-89a4-89d12fd0c116",
+              "name": "output.recipients",
+              "value": "={{ $json.output.recipients.map(({address,name}) => ({address, name})) }}",
+              "type": "array"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        256,
+        -224
+      ],
+      "id": "8ad551d7-3866-432c-81f8-ee5536a9f7a9",
+      "name": "Split Internal & External Recipients"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f6122a02-5524-4be1-ae7b-aa42801293cc",
+              "name": "missive.to_fields",
+              "value": "= {{ $json.output.externalRecipients?.length ?  $json.output.externalRecipients.toJsonString() : $json.output.recipients.toJsonString() }}",
+              "type": "array"
+            },
+            {
+              "id": "8203ce7c-bed4-47d9-b1fe-2ec00ee9342c",
+              "name": "missive.cc_fields",
+              "value": "= {{ $json.output.externalRecipients?.length ?  $json.output.internalRecipients.toJsonString() : '[]' }}",
+              "type": "array"
+            },
+            {
+              "id": "685328ce-cd5c-4ce4-bbe5-f563a9dde3ad",
+              "name": "missive.from_field",
+              "value": "={{ $json.output.from.toJsonString() }}",
+              "type": "object"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        -224
+      ],
+      "id": "e91270f4-b277-453d-82b2-c33722fd0685",
+      "name": "Set Missive Recipients"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "emailContents"
+            },
+            {
+              "name": "userRequest"
+            },
+            {
+              "name": "slackThreadId"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -544,
+        -224
+      ],
+      "id": "42eaa3c8-292b-403c-be34-7f34e7b70eca",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "gbUMm2ADZughCW2a",
+          "mode": "list",
+          "cachedResultName": "Meeting Notes",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/gbUMm2ADZughCW2a"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "slackNotificationThreadId",
+              "keyValue": "={{ $json.slackThreadId }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        -224
+      ],
+      "id": "fc1ce317-75ae-4e7f-9b60-bffa26c658ce",
+      "name": "If thread is for a meeting note?",
+      "alwaysOutputData": true,
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f00339ba-aeef-4fb8-b008-248695a41350",
+              "name": "drafts.url",
+              "value": "=https://mail.missiveapp.com/#drafts/conversations/{{ $json.drafts.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1152,
+        -224
+      ],
+      "id": "a1d250aa-4f98-48eb-af0e-28f68f5c6b2a",
+      "name": "Add Conversation URL"
+    }
+  ],
+  "connections": {
+    "OpenAI Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Follow Email Draft Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Follow Email Draft Agent": {
+      "main": [
+        [
+          {
+            "node": "Split Internal & External Recipients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Draft Structure": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Follow Email Draft Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Markdown": {
+      "main": [
+        [
+          {
+            "node": "Draft in Missive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Internal & External Recipients": {
+      "main": [
+        [
+          {
+            "node": "Set Missive Recipients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Missive Recipients": {
+      "main": [
+        [
+          {
+            "node": "Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "If thread is for a meeting note?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If thread is for a meeting note?": {
+      "main": [
+        [
+          {
+            "node": "Follow Email Draft Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Draft in Missive": {
+      "main": [
+        [
+          {
+            "node": "Add Conversation URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "versionId": "464628b1-449d-46ec-8298-94744bf32972",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    },
+    {
+      "updatedAt": "2026-01-01T21:31:31.119Z",
+      "createdAt": "2026-01-01T21:31:31.119Z",
+      "id": "erv2iAT6He287ePS",
+      "name": "Abel Meeting Assistant"
+    }
+  ]
+}
