@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-03-10T01:03:10.643Z",
+  "updatedAt": "2026-03-10T01:44:32.786Z",
   "createdAt": "2026-01-01T21:30:12.307Z",
   "id": "DKrAVjDY2QDLr72W",
   "name": "Export n8n Workflows",
@@ -350,7 +350,7 @@
         },
         "options": {}
       },
-      "alwaysOutputData": true
+      "alwaysOutputData": false
     },
     {
       "id": "a1000001-0000-0000-0000-000000000008",
@@ -532,8 +532,8 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        1568,
-        96
+        1720,
+        380
       ],
       "parameters": {
         "select": "channel",
@@ -543,7 +543,7 @@
           "mode": "id",
           "cachedResultName": "C0AJQH5NFPS"
         },
-        "text": "=*n8n Workflow Export Complete*\nExported {{ $('Filter Changed Only').all().length }} changed workflow(s) to GitHub.\nRegistry updated: {{ $('Parse & Compare').all().length }} workflows tracked.",
+        "text": "={{ $json.slackMessage }}",
         "otherOptions": {
           "includeLinkToWorkflow": false
         }
@@ -555,6 +555,32 @@
         }
       },
       "webhookId": "0a4759b6-4367-4280-bf29-24bd909e3f70"
+    },
+    {
+      "id": "b5baa9ed-fbcb-4118-9499-c67fb8955a5c",
+      "name": "Generate Descriptions",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        380
+      ],
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst results = [];\nconst API_KEY = 'AIzaSyAD15K6pfu_sjnzdDIoNBQ9vPpawnC0nVg';\n\nfor (const item of items) {\n  if (!item.json.needsDescription) {\n    results.push(item);\n    continue;\n  }\n  try {\n    const prompt = 'Describe this n8n automation workflow in 1-2 concise sentences. Focus on what it automates and why. Be specific about the business purpose.\\n\\nName: ' + item.json.name + '\\nTrigger: ' + item.json.triggerType + '\\nOutputs to: ' + (item.json.outputDestinations || 'None') + '\\nSub-workflows: ' + (item.json.subWorkflowsCalled || 'None') + '\\nInput schema: ' + (item.json.inputSchema || 'None') + '\\nTags: ' + (item.json.tags || 'None');\n    const resp = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + API_KEY, {\n      method: 'POST',\n      headers: { 'Content-Type': 'application/json' },\n      body: JSON.stringify({\n        contents: [{ parts: [{ text: prompt }] }],\n        generationConfig: { maxOutputTokens: 150, temperature: 0.3 }\n      })\n    });\n    const data = await resp.json();\n    const desc = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();\n    results.push({ json: { ...item.json, description: desc || item.json.description } });\n  } catch (e) {\n    results.push(item);\n  }\n}\n\nreturn results;"
+      }
+    },
+    {
+      "id": "db13c701-e8ed-4092-adf8-804ad6443b2f",
+      "name": "Build Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1500,
+        380
+      ],
+      "parameters": {
+        "jsCode": "const allItems = $('Generate Descriptions').all();\nconst changedItems = $('Filter Changed Only').all();\nconst total = allItems.length;\nconst changed = changedItems.length;\n\nconst lines = [\n  '*n8n Workflow Export Complete*',\n  total + ' workflows tracked | ' + changed + ' pushed to GitHub'\n];\n\nif (changed > 0) {\n  lines.push('');\n  lines.push('*Updated:*');\n  for (const item of changedItems) {\n    const url = 'https://github.com/alex-ahbadvisors/alex-os-automations/blob/main/n8n-workflows/' + item.json.filename;\n    lines.push('\\u2022 <' + url + '|' + item.json.name + '>');\n  }\n}\n\nreturn [{ json: { slackMessage: lines.join('\\n') } }];"
+      }
     }
   ],
   "connections": {
@@ -606,12 +632,23 @@
       "main": [
         [
           {
-            "node": "Filter Changed Only",
+            "node": "Generate Descriptions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Descriptions": {
+      "main": [
+        [
+          {
+            "node": "Upsert Registry",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Upsert Registry",
+            "node": "Filter Changed Only",
             "type": "main",
             "index": 0
           }
@@ -633,7 +670,7 @@
       "main": [
         [
           {
-            "node": "Slack Notify Done",
+            "node": "Build Summary",
             "type": "main",
             "index": 0
           }
@@ -708,10 +745,21 @@
           }
         ]
       ]
+    },
+    "Build Summary": {
+      "main": [
+        [
+          {
+            "node": "Slack Notify Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
-    "executionOrder": "v1",
+    "executionOrder": "v0",
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   },
@@ -719,7 +767,7 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "versionId": "d3e0e39a-789d-4e99-954a-273854f0dd23",
+  "versionId": "c307f231-a983-4d5b-b47a-2b69a25b2b67",
   "activeVersionId": null,
   "triggerCount": 0,
   "tags": [
