@@ -1,5 +1,10 @@
 {
+  "updatedAt": "2026-03-10T00:12:28.823Z",
+  "createdAt": "2026-03-04T02:35:07.480Z",
+  "id": "49WHtcLZUIAghZ1U",
   "name": "Classify 3CV Emails",
+  "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {
@@ -145,7 +150,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        1128,
+        1136,
         224
       ],
       "id": "609ce2d7-f8a7-4a57-b81e-3f659ccae254",
@@ -179,7 +184,7 @@
       "type": "n8n-nodes-base.dataTableTool",
       "typeVersion": 1,
       "position": [
-        1256,
+        1264,
         224
       ],
       "id": "0438594e-cf1d-4c9a-a02e-bac9764bf5f9",
@@ -278,7 +283,6 @@
       "name": "Structured Output Parser"
     }
   ],
-  "pinData": {},
   "connections": {
     "3CV Email Webhook": {
       "main": [
@@ -403,14 +407,27 @@
       ]
     }
   },
-  "active": true,
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "availableInMCP": true
   },
-  "versionId": "0176a4af-5e8b-4c00-977d-2fabda568d17",
-  "meta": {
-    "instanceId": "69b353989b2e2524b2186ce2c707a5fca1ffefa89656be27d70fffcaf2744be4"
-  },
-  "id": "49WHtcLZUIAghZ1U",
-  "tags": []
+  "staticData": null,
+  "meta": null,
+  "versionId": "5224fd62-5bfa-4e9b-a734-245fcd71bd9e",
+  "activeVersionId": "5224fd62-5bfa-4e9b-a734-245fcd71bd9e",
+  "triggerCount": 1,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    },
+    {
+      "updatedAt": "2026-03-02T03:16:47.446Z",
+      "createdAt": "2026-03-02T03:16:47.446Z",
+      "id": "W2Wf7gvhRrIYpYGx",
+      "name": "chief-of-staff"
+    }
+  ]
 }
