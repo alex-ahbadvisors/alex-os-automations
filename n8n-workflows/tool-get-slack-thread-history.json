@@ -1,0 +1,149 @@
+{
+  "updatedAt": "2026-03-10T00:19:10.720Z",
+  "createdAt": "2025-11-11T23:12:48.115Z",
+  "id": "bzeX2YQXskitG584",
+  "name": "Tool: Get Slack Thread History",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// n8n Function node\n// Goal: flatten Slack messages → keep only: ts (Slack) + msg string\n// Requirements: include ALL block text (sections, headers, context, rich_text); no user IDs; no thread_ts\n// Sort output by ts (ascending); include ISO timestamp; keep your exact output shape\n\nfunction extractTextFromBlocks(blocks = []) {\n  const parts = [];\n\n  for (const b of blocks) {\n    // 1) section: mrkdwn text\n    if (b.type === 'section') {\n      if (b.text?.type === 'mrkdwn' && typeof b.text.text === 'string') {\n        parts.push(b.text.text);\n      }\n      // section: fields (array of mrkdwn/plain_text)\n      if (Array.isArray(b.fields) && b.fields.length) {\n        const fieldTexts = b.fields\n          .map(f => (typeof f.text === 'string' ? f.text : ''))\n          .filter(Boolean);\n        if (fieldTexts.length) parts.push(fieldTexts.join('\\n'));\n      }\n    }\n\n    // 2) header: plain_text\n    else if (b.type === 'header' && b.text?.type === 'plain_text' && typeof b.text.text === 'string') {\n      parts.push(`*${b.text.text}*`);\n    }\n\n    // 3) context: elements (mrkdwn/plain_text)\n    else if (b.type === 'context' && Array.isArray(b.elements)) {\n      const ctx = b.elements\n        .map(el => (typeof el.text === 'string' ? el.text : ''))\n        .filter(Boolean);\n      if (ctx.length) parts.push(ctx.join(' '));\n    }\n\n    // 4) rich_text: nested text segments\n    else if (b.type === 'rich_text' && Array.isArray(b.elements)) {\n      for (const el of b.elements) {\n        if (el.type === 'rich_text_section' && Array.isArray(el.elements)) {\n          const segs = el.elements\n            .filter(s => s.type === 'text' && typeof s.text === 'string')\n            .map(s => s.text);\n          if (segs.length) parts.push(segs.join(''));\n        }\n      }\n    }\n\n    // 5) image (optional): include alt text if present\n    else if (b.type === 'image' && typeof b.alt_text === 'string' && b.alt_text.trim()) {\n      parts.push(`_(image: ${b.alt_text.trim()})_`);\n    }\n\n    // actions/divider/etc. have no human text → ignore\n  }\n\n  return parts.join('\\n\\n').trim();\n}\n\nfunction bestUserName(msg) {\n  if (msg.bot_profile?.name) return msg.bot_profile.name; // bots\n  if (msg.username) return msg.username; // webhook-style\n  if (msg.user_profile?.display_name) return msg.user_profile.display_name;\n  if (msg.user_profile?.real_name) return msg.user_profile.real_name;\n  return 'Unknown';\n}\n\nfunction toIsoFromSlackTs(ts) {\n  const [secStr, fracStr = '0'] = String(ts || '0').split('.');\n  const sec = Number(secStr || 0);\n  // Slack fractional part is microseconds; convert to ms\n  const ms = Math.floor(Number(fracStr.padEnd(6, '0').slice(0, 3)));\n  return new Date(sec * 1000 + ms).toISOString();\n}\n\nfunction normalizeReactions(reactions = []) {\n  return reactions.map(r => ({\n    name: r.name,\n    count: Number(r.count || 0)\n  }));\n}\n\nconst out = [];\n\nfor (const item of $input.all()) {\n  const body = item.json || {};\n  const messages = Array.isArray(body.messages) ? body.messages : [];\n\n  for (const m of messages) {\n    const baseText = (typeof m.text === 'string' ? m.text : '').trim();\n    const blocksText = Array.isArray(m.blocks) ? extractTextFromBlocks(m.blocks) : '';\n    const reactions = m.reactions ? normalizeReactions(m.reactions) : [];\n    const iso = toIsoFromSlackTs(m.ts);\n\n    // Always include blocks after base text (if both exist)\n    const textParts = [];\n    if (baseText) textParts.push(baseText);\n    if (blocksText) textParts.push(blocksText);\n    const fullText = textParts.join('\\n\\n'); // separator between base text and blocks\n\n    out.push({\n      ts: Number(m.ts),\n      msg:\n        `FROM: ${bestUserName(m)} at ${iso}\\n` +\n        `${fullText || ''}` +\n        (reactions.length ? `\\nREACTIONS: ${JSON.stringify(reactions)}` : '')\n    });\n  }\n}\n\n// Sort by ts ascending\nout.sort((a, b) => a.ts - b.ts);\n\nreturn {\n  messages: out,\n  output: out.map(o => o.msg).join('\\n')\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "3aaa9178-91df-452d-8389-fb7b949a4172",
+      "name": "Flatten messages"
+    },
+    {
+      "parameters": {
+        "url": "https://slack.com/api/conversations.replies",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "channel",
+              "value": "={{ $json.channel }}"
+            },
+            {
+              "name": "ts",
+              "value": "={{ $json.messageTs }}"
+            },
+            {
+              "name": "inclusive",
+              "value": "true"
+            },
+            {
+              "name": "limit",
+              "value": "30"
+            },
+            {
+              "name": "oldest",
+              "value": "={{ $json.messageTs }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "4164a881-f13b-47b1-9e6d-686ad36a137f",
+      "name": "Slack Msgs",
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "channel"
+            },
+            {
+              "name": "messageTs"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "54b60487-3e7e-46ca-8b66-f7d184fb96eb",
+      "name": "When Executed by Another Workflow"
+    }
+  ],
+  "connections": {
+    "Flatten messages": {
+      "main": [
+        []
+      ]
+    },
+    "Slack Msgs": {
+      "main": [
+        [
+          {
+            "node": "Flatten messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Slack Msgs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "errorWorkflow": "Ka01FqAuhDXin0Kn"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "versionId": "8108faec-c617-49ed-9325-75d66bdef31d",
+  "activeVersionId": null,
+  "triggerCount": 1,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    },
+    {
+      "updatedAt": "2026-01-01T21:31:31.119Z",
+      "createdAt": "2026-01-01T21:31:31.119Z",
+      "id": "erv2iAT6He287ePS",
+      "name": "Abel Meeting Assistant"
+    }
+  ]
+}
