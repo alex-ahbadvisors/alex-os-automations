@@ -1,0 +1,1649 @@
+{
+  "updatedAt": "2026-03-10T00:18:21.843Z",
+  "createdAt": "2025-11-14T04:51:39.045Z",
+  "id": "4vgkEkRpSIjG6BEi",
+  "name": "[4] Create Tasks from Slack",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.1",
+          "mode": "list",
+          "cachedResultName": "gpt-5.1"
+        },
+        "options": {
+          "reasoningEffort": "medium",
+          "timeout": 120000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2384,
+        448
+      ],
+      "id": "5a33501e-2c8e-4278-8276-e1170694a91f",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "FPFFI1NvOtGMoh30",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "oIqpq3JlCp0pnLcK",
+          "mode": "list",
+          "cachedResultName": "Internal Team",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/oIqpq3JlCp0pnLcK"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "name",
+              "condition": "ilike",
+              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions0_Value', `Case-Insensitive, partial match for first name`, 'string') }}"
+            },
+            {
+              "keyName": "email",
+              "condition": "ilike",
+              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions1_Value', `Case-Insensitive, partial match for last name`, 'string') }}"
+            }
+          ]
+        },
+        "limit": 5
+      },
+      "type": "n8n-nodes-base.dataTableTool",
+      "typeVersion": 1,
+      "position": [
+        2512,
+        448
+      ],
+      "id": "1abf71e3-e787-49c2-9855-2a16e4cf7d4a",
+      "name": "Find_ClickUp_User"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.clickup.com/api/v2/task/{{ $('Task').item.json.parentTaskId }}/link/{{ $json.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "clickUpOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4192,
+        336
+      ],
+      "id": "b0b3ae3e-52bf-464f-8b46-d6eb5f042b21",
+      "name": "Link to meeting task",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.1",
+          "mode": "list",
+          "cachedResultName": "gpt-5.1"
+        },
+        "options": {
+          "reasoningEffort": "medium",
+          "timeout": 120000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3024,
+        240
+      ],
+      "id": "0b1d2f79-cf8b-42b8-bab5-e9709432938b",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "FPFFI1NvOtGMoh30",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "output": "empty"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        4416,
+        240
+      ],
+      "id": "ebafb5de-0b19-43c8-811e-dfeda7713ba0",
+      "name": "Finish Link"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "comment",
+        "commentOn": "task",
+        "id": "={{ $json.id }}",
+        "commentText": "=From meeting - {{ $('Start').item.json.name }}\nhttps://app.clickup.com/t/{{ $('Start').item.json.taskId }}",
+        "additionalFields": {
+          "notifyAll": false
+        }
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        4192,
+        144
+      ],
+      "id": "948eda84-c974-4b8c-83d8-69cf78fa8ffc",
+      "name": "Create a comment",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "team": "9011763462",
+        "space": "={{ $json.selectedList.spaceId }}",
+        "folderless": "={{ !$json.selectedList.folderId }}",
+        "folder": "={{ $json.selectedList.folderId }}",
+        "list": "={{ $json.selectedList.id }}",
+        "name": "={{ String(`${$json.task.name}`+ ($json.task.assignee ? ` (${$json.task.assignee})` : '')).trim() }}",
+        "additionalFields": {
+          "assignees": "={{ $json.task.assignee_ids }}",
+          "content": "={{ $json.task.content }}",
+          "dueDate": "={{ $json.task.due_date }}",
+          "markdownContent": true,
+          "priority": "={{ $json.task.priority }}",
+          "tags": "={{ $json.reallyAssignedToAlex ? ['for reference'] : [] }}",
+          "timeEstimate": "={{ $json.task.time_estimate }}"
+        }
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        3936,
+        144
+      ],
+      "id": "64c22f85-ea77-4ede-af18-c381469ccaf8",
+      "name": "Create Task",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c7501538-0dcb-453c-bdad-eb02dc949fda",
+              "name": "task.assignee_ids",
+              "value": "={{ [ Number($json.task.clickup_member_id || $vars.Abel_Alex_Clickup_Id)] }}",
+              "type": "array"
+            },
+            {
+              "id": "12b865d1-3b6a-40f0-a57e-2f2c2ef2972e",
+              "name": "reallyAssignedToAlex",
+              "value": "={{ $json.task.clickup_member_id == $vars.Abel_Alex_Clickup_Id }}",
+              "type": "boolean"
+            },
+            {
+              "id": "99e95eea-bde6-4a85-9384-4ad734d63b53",
+              "name": "task.due_date",
+              "value": "={{ \n  $json.task.due_date \n    ? $json.task.due_date \n    : ([$now.weekday].map(weekday => {\n        let daysToAdd;\n        if (weekday >= 1 && weekday <= 3) {\n          daysToAdd = 5 - weekday;    \n        } else if (weekday === 4 || weekday === 5) {\n          daysToAdd = 10 - weekday; \n        } else {\n          daysToAdd = (3 + 7) - weekday; \n        }\n        return $now.plus({ days: daysToAdd }).toISODate();\n      })[0])\n}}",
+              "type": "string"
+            },
+            {
+              "id": "e654075a-8052-4193-85b4-61f9788e575c",
+              "name": "task.time_estimate",
+              "value": "={{ $json.task.clickup_member_id ? 300 : null }}",
+              "type": "number"
+            },
+            {
+              "id": "f30a2fef-0a84-409c-8459-830ee3648403",
+              "name": "task.priority",
+              "value": "={{ $json.task.urgent ? 1 : 2 }}",
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3744,
+        144
+      ],
+      "id": "2bf82a6f-8822-47a0-bae8-13e17e8d0a46",
+      "name": "Set Task Defaults"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "get",
+        "id": "868g3hcc1",
+        "includeMarkdownDescription": true
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        800,
+        784
+      ],
+      "id": "e0bdac10-c4f6-48e5-8494-6484b7aaf846",
+      "name": "Tasks Prompt",
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Function node\n// Goal: flatten Slack messages → keep only: ts (Slack) + msg string\n// Requirements: include ALL block text (sections, headers, context, rich_text); no user IDs; no thread_ts\n// Sort output by ts (ascending); include ISO timestamp; keep your exact output shape\n\nfunction extractTextFromBlocks(blocks = []) {\n  const parts = [];\n\n  for (const b of blocks) {\n    // 1) section: mrkdwn text\n    if (b.type === 'section') {\n      if (b.text?.type === 'mrkdwn' && typeof b.text.text === 'string') {\n        parts.push(b.text.text);\n      }\n      // section: fields (array of mrkdwn/plain_text)\n      if (Array.isArray(b.fields) && b.fields.length) {\n        const fieldTexts = b.fields\n          .map(f => (typeof f.text === 'string' ? f.text : ''))\n          .filter(Boolean);\n        if (fieldTexts.length) parts.push(fieldTexts.join('\\n'));\n      }\n    }\n\n    // 2) header: plain_text\n    else if (b.type === 'header' && b.text?.type === 'plain_text' && typeof b.text.text === 'string') {\n      parts.push(`*${b.text.text}*`);\n    }\n\n    // 3) context: elements (mrkdwn/plain_text)\n    else if (b.type === 'context' && Array.isArray(b.elements)) {\n      const ctx = b.elements\n        .map(el => (typeof el.text === 'string' ? el.text : ''))\n        .filter(Boolean);\n      if (ctx.length) parts.push(ctx.join(' '));\n    }\n\n    // 4) rich_text: nested text segments\n    else if (b.type === 'rich_text' && Array.isArray(b.elements)) {\n      for (const el of b.elements) {\n        if (el.type === 'rich_text_section' && Array.isArray(el.elements)) {\n          const segs = el.elements\n            .filter(s => s.type === 'text' && typeof s.text === 'string')\n            .map(s => s.text);\n          if (segs.length) parts.push(segs.join(''));\n        }\n      }\n    }\n\n    // 5) image (optional): include alt text if present\n    else if (b.type === 'image' && typeof b.alt_text === 'string' && b.alt_text.trim()) {\n      parts.push(`_(image: ${b.alt_text.trim()})_`);\n    }\n\n    // actions/divider/etc. have no human text → ignore\n  }\n\n  return parts.join('\\n\\n').trim();\n}\n\nfunction bestUserName(msg) {\n  if (msg.bot_profile?.name) return msg.bot_profile.name; // bots\n  if (msg.username) return msg.username; // webhook-style\n  if (msg.user_profile?.display_name) return msg.user_profile.display_name;\n  if (msg.user_profile?.real_name) return msg.user_profile.real_name;\n  return 'Unknown';\n}\n\nfunction toIsoFromSlackTs(ts) {\n  const [secStr, fracStr = '0'] = String(ts || '0').split('.');\n  const sec = Number(secStr || 0);\n  // Slack fractional part is microseconds; convert to ms\n  const ms = Math.floor(Number(fracStr.padEnd(6, '0').slice(0, 3)));\n  return new Date(sec * 1000 + ms).toISOString();\n}\n\nfunction normalizeReactions(reactions = []) {\n  return reactions.map(r => ({\n    name: r.name,\n    count: Number(r.count || 0)\n  }));\n}\n\nconst out = [];\n\nfor (const item of $input.all()) {\n  const body = item.json || {};\n  const messages = Array.isArray(body.messages) ? body.messages : [];\n\n  for (const m of messages) {\n    const baseText = (typeof m.text === 'string' ? m.text : '').trim();\n    const blocksText = Array.isArray(m.blocks) ? extractTextFromBlocks(m.blocks) : '';\n    const reactions = m.reactions ? normalizeReactions(m.reactions) : [];\n    const iso = toIsoFromSlackTs(m.ts);\n\n    // Always include blocks after base text (if both exist)\n    const textParts = [];\n    if (baseText) textParts.push(baseText);\n    if (blocksText) textParts.push(blocksText);\n    const fullText = textParts.join('\\n\\n'); // separator between base text and blocks\n\n    out.push({\n      ts: Number(m.ts),\n      msg:\n        `FROM: ${bestUserName(m)} at ${iso}\\n` +\n        `${fullText || ''}` +\n        (reactions.length ? `\\nREACTIONS: ${JSON.stringify(reactions)}` : '')\n    });\n  }\n}\n\n// Sort by ts ascending\nout.sort((a, b) => a.ts - b.ts);\n\nreturn {\n  messages: out,\n  output: out.map(o => o.msg).join('\\n')\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2144,
+        224
+      ],
+      "id": "8e195c19-c407-4ef9-ba10-615fee973fae",
+      "name": "Flatten messages"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output }}",
+        "options": {
+          "systemMessage": "=You are a task-extraction agent. Input: a Slack thread (array of messages) and optionally the meeting notes summary. Your job is to read the entire thread, synthesize ClickUp-ready tasks, resolve assignees using the `Find_ClickUp_User` tool, and output a JSON array of task objects. **Output only the JSON array** — no commentary.\n\n**Important identity note:** Treat messages authored by **Abel** as the agent’s own messages; use Abel’s posted suggested tasks as the base and apply human edits.\n\n---\n\n## Output schema (exact)\n\nReturn **only** a JSON array of task objects with exactly these keys in this order:\n\n```json\n[\n  {\n    \"name\": \"<string>\",\n    \"content\": \"<markdown string>\",\n    \"due_date\": \"<YYYY-MM-DD or null>\",\n    \"urgent\": <boolean - only true when priority is explicity stated as urgent>,\n    \"priority\": <1|2|3|4>,\n    \"assignee\": \"<string|null>\",\n    \"clickup_user_email\": \"<string|null>\"\n  }\n]\n```\n\n* `assignee`: nullable string (human-readable name as extracted from the thread), or `null` if no assignee specified.\n* `clickup_user_email`: nullable string — the ClickUp user **email** returned by the `Find_ClickUp_User` tool for the assignee, or `null` if no match.\n\n---\n\n## Tools (required)\n\n* **Find_ClickUp_User** (required when an assignee is present): Use this tool to resolve a task assignee to a ClickUp user email.\n\n  * Preferred lookup order: email (if available) → full name (first + last) → full_name string.\n  * If the tool returns multiple candidates, pick the best match (exact email match preferred). If ambiguous or no match, set `clickup_user_email` to `null`.\n  * Do not create ClickUp users; only search.\n  * The tool is expected to return user objects that include an `email` field when a match is found.\n\n---\n\n## Processing rules (follow in order)\n\n1. **Read thread**: consider all messages in chronological order.\n\n2. **Find task candidates**: same heuristics as previous prompt — prefer Abel’s generated checklist as the base and apply participant edits.\n\n3. **Extract assignee**:\n\n   * If an item includes `Owner: Name`, `Owner: <name>`, or an explicit “Owner — <name>” line, set `assignee` to that name (normalized: `First Last`).\n   * If a sentence states “Assign to <Name>” or “<Name> will …”, set `assignee` accordingly.\n   * If no assignee appears, set `assignee` to `null`.\n\n4. **Resolve ClickUp user (email)**:\n\n   * If `assignee` is non-null, call **Find_ClickUp_User** with the assignee name and, if available, the assignee email.\n   * If `Find_ClickUp_User` returns a user with an `email` field, set `clickup_user_email` to that email. If multiple candidates are returned, pick the single best match (exact email match > exact full-name match > best fuzzy), otherwise `null`.\n   * If `assignee` is `null`, set `clickup_user_email` to `null`.\n\n5. **Build task fields**:\n\n   * `name`: title (use Abel’s title if present). If missing, generate concise verb-led title (≤120 chars).\n   * `content`: Markdown description (1–4 sentences, optional bullets). **Remove Acceptance:** sections and Slack metadata. Keep helpful context.\n   * `due_date`: ISO `YYYY-MM-DD` if resolvable per earlier rules; else `null`.\n   * `priority`: integer mapping (1 urgent, 2 high, 3 normal default, 4 low).\n\n6. **Merge/clean**:\n\n   * Merge duplicates, apply edits, drop cancelled tasks, strip Acceptance paragraphs.\n   * If a task has multiple conflicting assignee strings, prefer the latest explicit human instruction. If ambiguous, set `assignee` = `null` and `clickup_user_email` = `null`.\n\n7. **Validation**:\n\n   * `name` and `content` must be non-empty. Auto-generate `name` from `content` if missing.\n   * `priority` in {1,2,3,4}. Default 3.\n   * `due_date` = `YYYY-MM-DD` or `null`.\n   * `assignee` string or `null`; `clickup_user_email` string or `null`.\n\n---\n\n## Email and name normalization for Find_ClickUp_User\n\n* If an assignee appears with an email (e.g., `alex@ahbadvisors.com`), call the tool with that email first (preferred).\n* If only a name is available, call with the full name. Normalize as `First Last`. Remove honorifics/titles prior to lookup.\n\n---\n\n## Example output (illustrative)\n\n```json\n[\n  {\n    \"name\": \"Send interview guides and partner lists\",\n    \"content\": \"Send the draft interview guides and the partner lists to the project team and meeting participants so the team can review ahead of the working session.\\n\\nContext: derived from thread messages (Sean, review tasks message).\",\n    \"due_date\": null,\n    \"urgent\": true,\n    \"priority\": 1,\n    \"assignee\": \"Sean\",\n    \"clickup_user_email\": \"sean@example.com\"\n  },\n  {\n    \"name\": \"Hone publisher interview guide\",\n    \"content\": \"Refine the publisher-specific sections of the interview guide to ensure questions capture priorities around unauthenticated channels, deterministic linking, and attribution needs.\",\n    \"due_date\": null,\n    \"urgent\": false,\n    \"priority\": 2,\n    \"assignee\": \"Bryn Ferguson\",\n    \"clickup_user_email\": null\n  }\n]\n```\n\n---\n\n## Final output rule (absolutely)\n\n* Output **only** the single JSON array defined above; no commentary, logs, or extra keys.\n* If no tasks detected, return `[]`.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2368,
+        224
+      ],
+      "id": "3eef1391-14e6-4c88-9e74-2d9dfa642676",
+      "name": "Task Generator Agent",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 500
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n\"meetingNoteId\": {{ $('MeetingContext').item.json.id }},\n\"parentTaskId\": \"{{ $('MeetingContext').item.json.taskId }}\",\n\"selectedList\": {{ $('MeetingContext').item.json.selectedList.toJsonString() }},\n\"tasks\": {{ $json.output }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3296,
+        16
+      ],
+      "id": "e54a751b-7020-4ebf-ab5f-c7df0b38e9b5",
+      "name": "Tasks"
+    },
+    {
+      "parameters": {
+        "url": "https://slack.com/api/conversations.replies",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "channel",
+              "value": "={{ $json.slackChannel }}"
+            },
+            {
+              "name": "ts",
+              "value": "={{ $json.slackNotificationThreadId }}"
+            },
+            {
+              "name": "inclusive",
+              "value": "true"
+            },
+            {
+              "name": "limit",
+              "value": "30"
+            },
+            {
+              "name": "oldest",
+              "value": "={{ $json.slackNotificationThreadId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1696,
+        176
+      ],
+      "id": "ca7cdf17-0e10-4095-9d53-d7f3e9781c41",
+      "name": "Slack Msgs",
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "tasks",
+        "include": "allOtherFields",
+        "options": {
+          "destinationFieldName": "task"
+        }
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        3520,
+        16
+      ],
+      "id": "aef87c7e-0f6f-45ca-9d92-6c7951e16048",
+      "name": "Task"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<TASKS>\n{{ $json.output }}\n</TASKS>\n\n<MEETING_NOTES>\n{{ $('MeetingContext').item.json.notes.base64Decode() }}\n</MEETING_NOTES>\n",
+        "options": {
+          "systemMessage": "=If the list of tasts is empty, return an empty JSON array. ALWAYS return valid JSON.\nFor each task in the list, determine whether it should be assigned to a ClickUp member.\n1.\tAssignment logic\n\t- If the task’s assignee clearly corresponds to a ClickUp member listed in OWNERS, assign that person’s clickup_member_id and clickup_user_email.\n\t- You must be at least 90% confident that the referenced assignee refers to the same person in AHB Advisors’ team.\n\t- This is not a fuzzy match — avoid guessing or loose associations.\n2.\tFallback rule\n\t- If the meeting notes indicate the owner is AHB (the firm) rather than a specific person, and no corresponding user exists in the list, assign the task to Alexander Brownstein.\n3.\tIntegrity rule\n\t- Do not alter any other task details.\n\t- Treat the provided TASKS data as the authoritative source — tasks may already differ from the original meeting notes and must not be rewritten.\n\nReturn the tasks with the updated ownership fields:\n- clickup_member_id\n- clickup_user_email\n\nOWNERS:\n\n{{ $json.owners.toJsonString() }}\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2944,
+        16
+      ],
+      "id": "28a05dbb-2ede-4d5e-b494-09570626385c",
+      "name": "Task Assigner Agent",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 500
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "get",
+        "id": "={{ $('Tasks').item.json.parentTaskId }}",
+        "includeMarkdownDescription": true
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        4864,
+        -32
+      ],
+      "id": "81387dbd-5288-480c-8214-4601d127240c",
+      "name": "Get Parent Task",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "update",
+        "id": "={{ $json.id }}",
+        "updateFields": {
+          "content": "={{ $json.content }}",
+          "markdownContent": true
+        }
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        5536,
+        -32
+      ],
+      "id": "6e5d1008-d154-44cf-9cef-c9418264b955",
+      "name": "Update Parent Task",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "69befc34-5030-4185-8099-0f6004f19c9d",
+              "name": "content",
+              "value": "={{ \n  ( $('Get Parent Task').item.json.markdown_description || '' )\n    .replace(/\\{TASK(?:\\\\?_)?LIST\\}/g, $json.task_list)\n}}",
+              "type": "string"
+            },
+            {
+              "id": "04c3773a-73c4-41a8-892a-63b8db8aaa67",
+              "name": "id",
+              "value": "={{ $('Get Parent Task').item.json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        5312,
+        -32
+      ],
+      "id": "9ad50576-343f-4efc-b223-c532d6d42d05",
+      "name": "Parent Task Updates"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "channelId": {
+          "__rl": true,
+          "value": "C091K3MRWQ4",
+          "mode": "list",
+          "cachedResultName": "meeting-flups"
+        },
+        "ts": "={{ $('Start').item.json.slackNotificationThreadId }}",
+        "messageType": "block",
+        "blocksUi": "={\n\"blocks\": {{ ($('Start').item.json.finalSlackBlocks)\n .replaceAll('TASK_COUNT', $('Create Task').all().length)\n .replaceAll('LIST_NAME',$('Tasks').item.json.selectedList.name)\n .replaceAll('LIST_ID', $('Tasks').item.json.selectedList.id)\n}}\n\n}",
+        "text": "=",
+        "updateFields": {},
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        5760,
+        -32
+      ],
+      "id": "c3c95c2c-ffe1-45ed-9279-9c7331e9eee8",
+      "name": "Send Confirmation Msg",
+      "webhookId": "f157de3a-962b-44d6-b090-51b97a1c74b4",
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * Input: items[0].json.data = array of tasks (as in your sample)\n * Output: { task_list }  // Two-level Markdown bullets: assignee -> tasks\n */\n\nfunction getTasks(items) {\n  const allTasks = [];\n  for (const item of items) {\n    if (Array.isArray(item.json?.data)) {\n      allTasks.push(...item.json.data);\n    }\n  }\n  return allTasks;\n}\n\nfunction fmtDate(d) {\n  if (!d) return \"\";\n  if (/^\\d+$/.test(String(d))) {\n    const dt = new Date(Number(d));\n    return isNaN(dt) ? \"\" : dt.toISOString().slice(0,10);\n  }\n  const dt = new Date(d);\n  return isNaN(dt) ? \"\" : dt.toISOString().slice(0,10);\n}\n\nfunction mdLink(text = \"\", url = \"\") {\n  const cleanText = String(text).replace(/\\r?\\n/g, \" \").replace(/[\\[\\]\\(\\)]/g, \"\");\n  return url ? `[${cleanText}](${url})` : cleanText;\n}\n\nconst tasks = getTasks($('Created Tasks').all());\n\n// Group by original assignee (from t.task.assignee). Keep constructs otherwise.\nconst grouped = {};\nfor (const t of tasks) {\n  const assignee = (t.task?.assignee || \"Unassigned\").trim() || \"Unassigned\";\n  if (!grouped[assignee]) grouped[assignee] = [];\n  const name = t.task?.name || t?.name || \"Untitled task\";\n  const url  = t?.url || \"\";\n  const due  = fmtDate(t?.due_date); // keeping your existing due-date source\n  grouped[assignee].push(`  - ${mdLink(name, url)}${due ? ` _${due}_` : \"\"}`);\n}\n\n// Build two-level bullet list\nconst lines = [];\nfor (const assignee of Object.keys(grouped).sort()) {\n  lines.push(`- ${assignee}`);\n  // sort tasks under each assignee by their text for consistency\n  lines.push(...grouped[assignee].sort());\n}\n\nreturn [{ json: { task_list: lines.join(\"\\n\") } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5088,
+        -32
+      ],
+      "id": "a5debac3-b85e-4f65-9848-81df2b632747",
+      "name": "Task List in MD"
+    },
+    {
+      "parameters": {
+        "resource": "reaction",
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $json.channel }}",
+          "mode": "id"
+        },
+        "timestamp": "={{ $json.message_timestamp }}",
+        "name": "white_check_mark"
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        5984,
+        -32
+      ],
+      "id": "17a8fafa-f483-496f-8790-7dcaf2cde9ec",
+      "name": "Add Checkmark",
+      "webhookId": "f157de3a-962b-44d6-b090-51b97a1c74b4",
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5772384e-fe43-4a8f-8703-f3c43d7978bc",
+              "name": "id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "e3a9f65f-0955-4bc7-a5ea-7d55e489e92c",
+              "name": "url",
+              "value": "={{ $json.url }}",
+              "type": "string"
+            },
+            {
+              "id": "6be87588-99b5-4add-b9b1-048673c1a536",
+              "name": "name",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4192,
+        -48
+      ],
+      "id": "8279ecd0-8a04-43d1-abbd-0b5134e5e4d2",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        4640,
+        -128
+      ],
+      "id": "0944de68-7d4c-4214-830f-e6ea6cb2f5ea",
+      "name": "Created Tasks"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        4416,
+        -128
+      ],
+      "id": "03c9b7e2-7d20-49b5-9043-9c69dad86d66",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "P4BKqUC3xu39P1wY",
+          "mode": "list",
+          "cachedResultName": "Clickup Users",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/P4BKqUC3xu39P1wY"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "canOwnTasks",
+              "condition": "isTrue"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        -80
+      ],
+      "id": "452fa5f0-8566-4130-bec0-f444cdeec576",
+      "name": "Task Owners"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "961d4a45-709d-420b-b3de-500aa62b659f",
+              "name": "name",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "b770d350-14b3-4885-8005-1fe21f7fd853",
+              "name": "email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "0eccbad8-b49c-492e-b7af-1ad2d184e962",
+              "name": "description",
+              "value": "={{ $json.description }}",
+              "type": "string"
+            },
+            {
+              "id": "eafc6b7d-b161-48f4-bcad-a8a1d6484960",
+              "name": "memberId",
+              "value": "={{ $json.memberId }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2144,
+        -80
+      ],
+      "id": "feb2e5ef-3e00-4af7-a2e3-43bdb7ec3b84",
+      "name": "Task Owner Description"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "owners",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        2432,
+        -80
+      ],
+      "id": "dad56696-e28c-4cc1-be9a-a9863184fb36",
+      "name": "All Owners"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "gbUMm2ADZughCW2a",
+          "mode": "list",
+          "cachedResultName": "Meeting Notes",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/gbUMm2ADZughCW2a"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ $('Start').item.json.id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "createdTasksAt": "={{ $now }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "sourceId",
+              "displayName": "sourceId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "taskId",
+              "displayName": "taskId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "bucket",
+              "displayName": "bucket",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "overview",
+              "displayName": "overview",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "transcript",
+              "displayName": "transcript",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "metadata",
+              "displayName": "metadata",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "slackNotificationThreadId",
+              "displayName": "slackNotificationThreadId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "insightsCreatedAt",
+              "displayName": "insightsCreatedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "creatingTasksAt",
+              "displayName": "creatingTasksAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "createdTasksAt",
+              "displayName": "createdTasksAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        4864,
+        -224
+      ],
+      "id": "97f4daa7-6f69-4168-957d-ac6737afd85a",
+      "name": "Update Meeting Note with Timestamp",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * n8n Code / Function node\n * Input: items[] where the first item.json.data is an array of tasks (as shown)\n * Output: { markdown_table, slack_table }\n */\n\nfunction getTasks(items) {\n  const out = [];\n  for (const it of items) {\n    const j = it.json;\n    if (!j) continue;\n    if (Array.isArray(j.data)) out.push(...j.data);\n    else if (Array.isArray(j)) out.push(...j);\n    else out.push(j);\n  }\n  return out;\n}\n\nfunction fmtDate(d) {\n  if (!d) return \"—\";\n  if (/^\\d+$/.test(String(d))) {\n    const dt = new Date(Number(d));\n    if (!isNaN(dt)) return dt.toISOString().slice(0,10);\n  }\n  const dt = new Date(d);\n  if (!isNaN(dt)) return dt.toISOString().slice(0,10);\n  return String(d);\n}\n\nfunction escMD(s=\"\") {\n  return String(s).replace(/\\|/g, \"\\\\|\").replace(/\\r?\\n/g, \" \").trim();\n}\n\nfunction linkMD(text, url) {\n  if (!url) return escMD(text);\n  return `[${escMD(text)}](${url})`;\n}\n\nfunction linkSlack(text, url) {\n  if (!url) return text;\n  return `<${url}|${text.replace(/\\|/g, \" \").replace(/\\r?\\n/g, \" \").trim()}>`;\n}\n\nconst tasks = getTasks(items);\n\n// Build rows\nconst rows = tasks.map(t => ({\n  name: t.name || \"\",\n  url: t.url || \"\",\n  due: fmtDate(t.due_date),\n}));\n\n// Markdown table\nconst mdHeader = \"| **Task** | **Due** | **URL** |\\n|---|---|---|\";\nconst mdRows = rows.map(r =>\n  `| ${linkMD(r.name, r.url)} | ${r.due} | ${r.url ? `[Link](${r.url})` : \"—\"} |`\n);\nconst task_list = [mdHeader, ...mdRows].join(\"\\n\");\n\n// // Slack version\n// const slackLines = rows.map(r => \n//   `• ${linkSlack(r.name, r.url)} — *Due:* ${r.due}`\n// );\n// const slack_table = slackLines.join(\"\\n\");\n\n// Output\nreturn [{\n  json: {\n    task_list,\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        560
+      ],
+      "id": "1c9779c7-d07e-4bd7-baf1-d26edfa59925",
+      "name": "Task Table in MD"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "DZ8o2BfNfraRBlZt",
+          "mode": "list",
+          "cachedResultName": "Clickup Lists",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/DZ8o2BfNfraRBlZt"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ $json.selectedListRowId }}"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        -224
+      ],
+      "id": "1b30a0bb-47ac-44c3-83cf-d01e04553c51",
+      "name": "Clickup List"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "gbUMm2ADZughCW2a",
+          "mode": "list",
+          "cachedResultName": "Meeting Notes",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/gbUMm2ADZughCW2a"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ $json.meetingRowId }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        1248,
+        -32
+      ],
+      "id": "a606678c-59d2-4bf0-86fa-693bb288cb41",
+      "name": "Meeting Note"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 3,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2720,
+        0
+      ],
+      "id": "96c88ff6-36e8-47a4-ae25-61e4e86214b7",
+      "name": "Start"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "meetingRowId",
+              "type": "number"
+            },
+            {
+              "name": "slackChannel"
+            },
+            {
+              "name": "slackMessageEvent",
+              "type": "object"
+            },
+            {
+              "name": "selectedListRowId",
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "id": "4d5305cf-0468-4f00-bc0f-b1a823538637",
+      "typeVersion": 1.1,
+      "name": "Input",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        800,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 3,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1472,
+        64
+      ],
+      "id": "6a426fa3-d322-4f4a-8bdc-35f2771f49cd",
+      "name": "MeetingContext"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fb467370-f54a-4118-a375-3a13e8acdf6e",
+              "name": "finalSlackBlocks",
+              "value": "={{ $json.slackMessageEvent.message.blocks.filter(b => b.block_id!='assign_meeting_project').concat(\n{\n\"type\": \"section\",\n\"block_id\": \"confirmation_msg\",\n\"text\":  {\n  \"type\": \"mrkdwn\",\n  \"text\": \"Created TASK_COUNT tasks in LIST_NAME!\\nhttps://app.clickup.com/9011763462/v/li/LIST_ID\"\n}\n}) }}",
+              "type": "string"
+            },
+            {
+              "id": "203c646f-a51b-4e95-8c70-fa15d57bda66",
+              "name": "slackChannel",
+              "value": "={{ $json.slackMessageEvent.channel.id }}",
+              "type": "string"
+            },
+            {
+              "id": "73a2b358-52e7-48e9-a015-bf52041bca1d",
+              "name": "slackMessageTs",
+              "value": "={{ $json.slackMessageEvent.message.ts }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1248,
+        176
+      ],
+      "id": "687ad17e-d87a-42cb-9dba-c06c05425a2f",
+      "name": "Set Data"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3b730cd0-fc92-40de-8270-51eff8eb31ba",
+              "name": "selectedList.id",
+              "value": "={{ $json.listId }}",
+              "type": "string"
+            },
+            {
+              "id": "58be7514-ddec-400d-adbf-5a91faf935dc",
+              "name": "selectedList.name",
+              "value": "={{ $json.listName }}",
+              "type": "string"
+            },
+            {
+              "id": "2b06af15-1a08-49a4-ba3d-a1c8368a045b",
+              "name": "selectedList.spaceId",
+              "value": "={{ $json.spaceId }}",
+              "type": "string"
+            },
+            {
+              "id": "1c0ea344-2c68-4d3e-8c24-754bd205c14b",
+              "name": "selectedList.folderId",
+              "value": "={{ $json.folderId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1248,
+        -224
+      ],
+      "id": "151a6392-cb62-4710-a2c3-b7bb7a582c64",
+      "name": "Selected List"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "b0qRdZcWL16KpRkW",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/b0qRdZcWL16KpRkW",
+          "cachedResultName": "[5] Draft Follow Up Email"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "meetingRowId": "={{ $json.id }}"
+          },
+          "matchingColumns": [
+            "meetingRowId"
+          ],
+          "schema": [
+            {
+              "id": "meetingRowId",
+              "displayName": "meetingRowId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        5312,
+        -224
+      ],
+      "id": "937ad3ec-7c99-47c9-9e57-d33147e83718",
+      "name": "[5] Create Follow Up Email"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b9a6e08c-1a6e-4e78-9388-b331f7b02680",
+              "name": "finalSlackBlocks",
+              "value": "={{ $json.finalSlackBlocks }}",
+              "type": "string"
+            },
+            {
+              "id": "c395268d-bcd6-4e76-b36e-0ca9092b46d0",
+              "name": "slackNotificationThreadId",
+              "value": "={{ $json.slackNotificationThreadId }}",
+              "type": "string"
+            },
+            {
+              "id": "b915e505-1758-4b3a-956c-dc2c5deffbbb",
+              "name": "id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "f0632d41-fcb8-41bc-8af2-f687f4e06a21",
+              "name": "listName",
+              "value": "={{ $json.selectedList.name }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2432,
+        -272
+      ],
+      "id": "fad65292-3927-4ac9-a764-a7f2df35e25d",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        5088,
+        -224
+      ],
+      "id": "d3a07eb1-e7e4-46cf-9af8-9a2fcaa6fe48",
+      "name": "Delay for ClickUp",
+      "webhookId": "c9493121-b11f-4c68-a43a-c2cadde10d64"
+    }
+  ],
+  "connections": {
+    "Tasks Prompt": {
+      "main": [
+        []
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Task Generator Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tasks": {
+      "main": [
+        [
+          {
+            "node": "Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Meeting Note with Timestamp": {
+      "main": [
+        [
+          {
+            "node": "Delay for ClickUp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flatten messages": {
+      "main": [
+        [
+          {
+            "node": "Task Generator Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Task Generator Agent": {
+      "main": [
+        [
+          {
+            "node": "Start",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Find_ClickUp_User": {
+      "ai_tool": [
+        [
+          {
+            "node": "Task Generator Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Msgs": {
+      "main": [
+        [
+          {
+            "node": "Flatten messages",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Task Owners",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Task": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Set Task Defaults",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Task Owners": {
+      "main": [
+        [
+          {
+            "node": "Task Owner Description",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Task Owner Description": {
+      "main": [
+        [
+          {
+            "node": "All Owners",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "All Owners": {
+      "main": [
+        [
+          {
+            "node": "Start",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Task Assigner Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Task Assigner Agent": {
+      "main": [
+        [
+          {
+            "node": "Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a comment": {
+      "main": [
+        [
+          {
+            "node": "Finish Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Link to meeting task": {
+      "main": [
+        [
+          {
+            "node": "Finish Link",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Create Task": {
+      "main": [
+        [
+          {
+            "node": "Link to meeting task",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create a comment",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Created Tasks": {
+      "main": [
+        [
+          {
+            "node": "Update Meeting Note with Timestamp",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Parent Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Parent Task": {
+      "main": [
+        [
+          {
+            "node": "Task List in MD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parent Task Updates": {
+      "main": [
+        [
+          {
+            "node": "Update Parent Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Parent Task": {
+      "main": [
+        [
+          {
+            "node": "Send Confirmation Msg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Confirmation Msg": {
+      "main": [
+        [
+          {
+            "node": "Add Checkmark",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Task List in MD": {
+      "main": [
+        [
+          {
+            "node": "Parent Task Updates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Created Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Task Defaults": {
+      "main": [
+        [
+          {
+            "node": "Create Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clickup List": {
+      "main": [
+        [
+          {
+            "node": "Selected List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Meeting Note": {
+      "main": [
+        [
+          {
+            "node": "MeetingContext",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Task Assigner Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input": {
+      "main": [
+        [
+          {
+            "node": "Clickup List",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Meeting Note",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Set Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MeetingContext": {
+      "main": [
+        [
+          {
+            "node": "Slack Msgs",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Data": {
+      "main": [
+        [
+          {
+            "node": "MeetingContext",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Selected List": {
+      "main": [
+        [
+          {
+            "node": "MeetingContext",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delay for ClickUp": {
+      "main": [
+        [
+          {
+            "node": "[5] Create Follow Up Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "errorWorkflow": "Ka01FqAuhDXin0Kn"
+  },
+  "staticData": null,
+  "meta": null,
+  "versionId": "8a1fe7fd-8854-42a2-b1ff-1d295e4f01b5",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    },
+    {
+      "updatedAt": "2026-01-01T21:31:31.119Z",
+      "createdAt": "2026-01-01T21:31:31.119Z",
+      "id": "erv2iAT6He287ePS",
+      "name": "Abel Meeting Assistant"
+    }
+  ]
+}
