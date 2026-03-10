@@ -1,0 +1,1919 @@
+{
+  "updatedAt": "2026-03-10T00:20:44.758Z",
+  "createdAt": "2025-10-24T15:26:09.968Z",
+  "id": "b0qRdZcWL16KpRkW",
+  "name": "[5] Draft Follow Up Email",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "get",
+        "id": "868fkyv39",
+        "includeMarkdownDescription": true
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        4416,
+        -464
+      ],
+      "id": "7af369dc-d0a8-4082-9545-779480ff9085",
+      "name": "Follow Up Email SOP",
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.1",
+          "mode": "list",
+          "cachedResultName": "gpt-5.1"
+        },
+        "options": {
+          "reasoningEffort": "medium",
+          "timeout": 120000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        8080,
+        -208
+      ],
+      "id": "3d62b77b-1acc-4415-96ce-38c017926163",
+      "name": "OpenAI Chat Model3",
+      "credentials": {
+        "openAiApi": {
+          "id": "FPFFI1NvOtGMoh30",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "meetingRowId",
+              "type": "number"
+            },
+            {
+              "name": "runHitl",
+              "type": "boolean"
+            },
+            {
+              "name": "hitlResponse"
+            }
+          ]
+        }
+      },
+      "id": "5480559d-fbc8-4be9-8588-973dd3eb1c95",
+      "typeVersion": 1.1,
+      "name": "Start",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        2624,
+        -720
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "get",
+        "id": "={{ $('Meeting Note').item.json.taskId }}"
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        3968,
+        -720
+      ],
+      "id": "a64af8ee-ae2a-4077-99e3-a2c0fa79af24",
+      "name": "Get a task",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "linked_tasks",
+        "options": {
+          "destinationFieldName": "task_id"
+        }
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        7232,
+        -432
+      ],
+      "id": "f04e794c-5345-4f1e-89ed-64c369ce510d",
+      "name": "Split Out Linked Tasks"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "get",
+        "id": "={{ $json.task_id }}",
+        "includeMarkdownDescription": true
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        7456,
+        -432
+      ],
+      "id": "d8254748-280e-464c-a754-2c4cd61a0e80",
+      "name": "Get Linked Task",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.1",
+          "mode": "list",
+          "cachedResultName": "gpt-5.1"
+        },
+        "options": {
+          "reasoningEffort": "low",
+          "timeout": 120000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        4656,
+        -240
+      ],
+      "id": "53719367-5a57-46ca-9af4-2358f1b58a6e",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "FPFFI1NvOtGMoh30",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<ORGANIZED_BY_ALEX>{{ $('Meeting Note').item.json.organizedByAlex }}</ORGANIZED_BY_ALEX>\n{{ $('Start').item.json.hitlResponse ? '<HITL_RESPONSE>User already provided a HITL response: '+$('Start').item.json.hitlResponse+'</HITL_RESPONSE>' : '' }}\n<BUCKET>\n{{ $('Meeting Note').item.json.bucket }}\n</BUCKET>\n<MEETING_NOTES>\n{{ $('Get a task').item.json.description }}\n</MEETING_NOTES>\n<SOP>\n{{ $json.markdown_description }}\n</SOP>",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=Use the embedded SOP (replace `<SOP/>` with the current SOP content) to decide whether this meeting needs an email follow-up and which email template to use. Review meeting notes and meeting type/bucket. Do **not** hardcode SOP rules — read and apply the SOP text provided in `<SOP/>`.\n\nOutput **only one JSON object**.\n\nTASK — produce this exact JSON object:\n\n```json\n{\n  \"needs_follow_up\": true|false,\n  \"reason_for_follow_up\": \"string|null\",\n  \"hitl_needed\": true|false,\n  \"hitl_message\": \"markdown string|null\",\n  \"email_template_name\": \"string|null\",\n  \"email_template_clickup_link\": \"string|null\"\n}\n```\n\nINSTRUCTIONS\n\n1. Read the embedded SOP (`<SOP/>`) first and use it as the authoritative source for deciding follow-up rules, HITL rules, and template mappings. Do not hardcode rules — derive them from `<SOP/>`.\n2. Determine `needs_follow_up` by applying the SOP to the meeting content and classification. If the SOP is ambiguous for this case, prefer conservative behavior (set `needs_follow_up = true` when external communication is plausible and significant actions/decisions exist).\n3. For `reason_for_follow_up` provide a short plain-text rationale derived from the SOP and the notes (1 sentence). If `needs_follow_up = false`, set `reason_for_follow_up = null`.\n4. Determine `hitl_needed` by applying the SOP. If the SOP gives no explicit HITL criteria, use this fallback: require human check (`\"yes\"`) when the host of the meeting is not Alex, the notes contain sensitive content, or the decision to send is ambiguous. Otherwise set `false`.\n5. If `hitl_needed = true`, populate `hitl_message` with concise, specific questions or action items for Alex (or the user) that explain what the agent needs clarified/approved to proceed (include brief context: which decision/action in the notes triggered the question, and a pointer like “decision X”). If there are no questions to ask despite `hitl_needed = true`, set `hitl_message` to a short instruction for the human (e.g., “Please confirm whether to send external summary for Client X”). If `hitl_needed = \"no\"`, set `hitl_message = null`.\n6. Find the best matching email template name and ClickUp URL in the SOP. Set `email_template_name` and `email_template_clickup_link` from the SOP. If the SOP indicates no template or the matching template is not implemented, set both to `null`.\n7. If you decide a follow-up is required but the SOP prescribes human approval before sending, still set `needs_follow_up = true` and set `hitl_needed = \"yes\"`.\n8. Keep `reason_for_follow_up` concise and SOP-driven (e.g., “Client kickoff with external next steps” — but phrase based on SOP wording).\n\nVALIDATION CHECKLIST (must pass before returning JSON)\n\n* Output exactly one JSON object and nothing else.\n* `needs_follow_up` is boolean.\n* If `needs_follow_up = true`, `reason_for_follow_up` is a non-empty string; otherwise `null`.\n* `hitl_needed` is `\"yes\"` or `\"no\"` and follows SOP (or the fallback rule).\n* If `hitl_needed = \"yes\"`, `hitl_message` is a concise actionable message for Alex; otherwise `null`.\n* `email_template_name` is taken from the SOP or `null`.\n* `email_template_clickup_link` is a URL string from the SOP or `null`.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        4640,
+        -464
+      ],
+      "id": "3a4eca5d-23aa-4b0a-8c7e-17c1d21a7629",
+      "name": "Decider"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "include": "specifiedFields",
+        "fieldsToInclude": "name, markdown_description, status, orderindex",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        7680,
+        -432
+      ],
+      "id": "ec8b672f-4194-41f5-9e89-1727a43e5c24",
+      "name": "Linked Tasks"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"title\": \"MeetingFollowUpDecision\",\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"needs_follow_up\": {\n      \"type\": \"boolean\",\n      \"description\": \"True if the SOP indicates an email follow-up is required for this meeting; otherwise false.\"\n    },\n    \"reason_for_follow_up\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"description\": \"Short rationale for why a follow-up is needed, derived from the SOP and meeting notes; null if no follow-up is needed.\"\n    },\n    \"hitl_needed\": {\n      \"type\": \"boolean\",\n      \"description\": \"Whether a human-in-the-loop review is required before sending any follow-up, based on the SOP or the fallback rule.\"\n    },\n    \"hitl_message\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"description\": \"Concise message with questions or instructions for the human reviewer when hitl_needed = 'yes'; otherwise null.\"\n    },\n    \"email_template_name\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"description\": \"Name of the selected email template from the SOP; null if no template applies or is not implemented.\"\n    },\n    \"email_template_clickup_link\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"description\": \"ClickUp URL of the selected email template from the SOP; null if no template applies or is not implemented.\",\n      \"format\": \"uri\"\n    }\n  },\n  \"required\": [\n    \"needs_follow_up\",\n    \"reason_for_follow_up\",\n    \"hitl_needed\",\n    \"hitl_message\",\n    \"email_template_name\",\n    \"email_template_clickup_link\"\n  ]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        4784,
+        -240
+      ],
+      "id": "40d58eaa-9304-4080-9d2d-d31e695ad773",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "comment",
+        "commentOn": "task",
+        "id": "={{ $('Get a task').item.json.id }}",
+        "commentText": "=[Abel] {{ $json.confirmation }}\n",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        9600,
+        -624
+      ],
+      "id": "bb59c9a5-4811-4c13-92ed-2a8c865a9c42",
+      "name": "Create a comment",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f098fa77-85ea-475a-95f7-2fe440a007be",
+              "leftValue": "={{ !$('Start').item.json.hitlResponse && $json.output.hitl_needed && $('Start').item.json.runHitl !== false && !!$json.output.hitl_message }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5216,
+        -464
+      ],
+      "id": "ace89ba9-4fac-4690-bc86-82f82e6ea26e",
+      "name": "If HITL?"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C091K3MRWQ4",
+          "mode": "list",
+          "cachedResultName": "meeting-flups"
+        },
+        "messageType": "block",
+        "blocksUi": "={\n\t\"blocks\": [\n        {\n          \"type\": \"section\",\n          \"text\": {\n              \"type\": \"mrkdwn\",\n              \"text\": {{ `I'm drafing a follow up email RE: ${$('Get a task').item.json.name}. ${$json.output.hitl_message || ''}`.trim().toJsonString() }}\n          },\n          \"accessory\": {\n              \"type\": \"button\",\n              \"text\": {\n                  \"type\": \"plain_text\",\n                  \"text\": \"View in Clickup\",\n                  \"emoji\": true\n              },\n              \"action_id\": \"view_in_clickup\",\n              \"value\": \"{{$('Get a task').item.json.id}}\",\n              \"url\": \"{{ $('Get a task').item.json.url }}\"\n          }\n        },\n\t\t{\n            \"block_id\": \"hitl_response\",\n\t\t\t\"dispatch_action\": false,\n\t\t\t\"type\": \"input\",\n\t\t\t\"element\": {\n\t\t\t\t\"type\": \"plain_text_input\",\n\t\t\t\t\"multiline\": true\n\t\t\t},\n\t\t\t\"label\": {\n\t\t\t\t\"type\": \"plain_text\",\n\t\t\t\t\"text\": \"Your Response\",\n\t\t\t\t\"emoji\": true\n\t\t\t},\n\t\t\t\"optional\": false\n\t\t},\n\t\t{\n            \"block_id\": \"hitl_button\",\n\t\t\t\"type\": \"actions\",\n\t\t\t\"elements\": [\n\t\t\t\t{\n\t\t\t\t\t\"type\": \"button\",\n\t\t\t\t\t\"text\": {\n\t\t\t\t\t\t\"type\": \"plain_text\",\n\t\t\t\t\t\t\"text\": \"Create Draft ✏️\",\n\t\t\t\t\t\t\"emoji\": true\n\t\t\t\t\t},\n\t\t\t\t\t\"value\": \"{{$execution.resumeUrl +'/hitl-response'}}\",\n\t\t\t\t\t\"action_id\": \"draft_meeting_followup_email\"\n\t\t\t\t},\n                {\n\t\t\t\t\t\"type\": \"button\",\n\t\t\t\t\t\"text\": {\n\t\t\t\t\t\t\"type\": \"plain_text\",\n\t\t\t\t\t\t\"text\": \"Cancel Draft ✖️\",\n\t\t\t\t\t\t\"emoji\": true\n\t\t\t\t\t},\n\t\t\t\t\t\"value\": \"{{$execution.resumeUrl +'/hitl-response'}}\",\n\t\t\t\t\t\"action_id\": \"cancel_meeting_followup_email\"\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t]\n}",
+        "text": "=Need help drafting a followup for {{ $('Get a task').item.json.name }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "thread_ts": {
+            "replyValues": {
+              "thread_ts": "={{ $('Meeting Note').item.json.slackNotificationThreadId }}",
+              "reply_broadcast": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        5440,
+        -608
+      ],
+      "id": "ea56f122-30bc-42ee-8a1c-a811646c509a",
+      "name": "Send a message",
+      "webhookId": "fc55568e-4ab6-45d2-a42c-9701e64aa104",
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        6560,
+        -432
+      ],
+      "id": "6a7221b5-f569-4b7b-9880-f10f3f42240b",
+      "name": "Draft Context"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Draft Context').item.json.output.hitl_response ? `<HITL_MESSAGE>${$('Draft Context').item.json.output.hitl_message }</HITL_MESSAGE><HITL_RESPONSE>${$('Draft Context').item.json.output.hitl_response }</HITL_RESPONSE>` : '' }}\n<EMAIL_TEMPLATE>\n{{ $json.markdown_description }}\n</EMAIL_TEMPLATE>\n<MEETING_NOTES>\n{{ $('Get a task').item.json.description }}\n</MEETING_NOTES>\n{{ $('Linked Tasks').item.json.data?.[0]?.name ? `<ASSOCIATED_TASKS>\\n${$('Linked Tasks').item.json.data.map((t,i) => `TASK ${i+1}: ${t.name} - ${t.markdown_description}`).join('\\n')}\\n</ASSOCIATED_TASKS>` : '' }}\n<MEETING_METADATA>\n{{ $('Meeting Note').item.json.metadata }}\n</MEETING_METADATA>",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are an email-drafting assistant for Alex. Your role is to read the full user message (which may contain meeting notes, the selected email template, task lists, metadata, and prior HITL tags) and produce a polished client-facing email draft as a JSON object.\n\nYou are not sending emails yourself; you only return a draft for Alex to review and send.\n\nOUTPUT FORMAT (MANDATORY)\n\nReturn exactly ONE JSON object with these keys and nothing else:\n\n- \"subject\": The email subject line.\n- \"content\": The full email body.\n- \"from\": The sender information for Alex.\n  - \"address\": The email address that should be used for Alex.\n  - \"name\": The display name for Alex (usually \"Alex Brownstein\").\n- \"recipients\": An array of recipient objects. Each object must have:\n  - \"address\": The recipient’s email address (string).\n  - \"name\": The recipient’s display name if available, otherwise null.\n  - \"internal\": A boolean flag:\n    - true if the recipient is an internal attendee (for Alex’s company or firms).\n    - false if the recipient is an external or client recipient.\n\nDo not include any explanations, markdown, or tags outside of this JSON object.\n\nINPUTS YOU MAY RECEIVE\n\nThe user message may contain:\n- Meeting notes (often in Markdown), including decisions, actions, and owners.\n- A selected email template that may include structure, placeholders, examples, tone guidance, and sign-off examples.\n- Task lists and subtasks that emerged from the meeting.\n- Metadata (for example, attendees, calendar/invite owner, categorization). Do NOT include metadata directly in the email. Refer to it for a list of attendees and their emails.\n- Optional HITL tags from a previous step:\n  - <HITL_MESSAGE>…</HITL_MESSAGE> — what was asked of the human.\n  - <HITL_RESPONSE>…</HITL_RESPONSE> — the human’s answer.\n\nYou are no longer in an interactive HITL loop. Do not ask follow-up questions. Use all provided information, including any <HITL_RESPONSE>, to resolve ambiguity and write the best possible email.\n\nCORE RULES\n\n1. Template is authoritative\n- Treat the email template as the primary guide for structure, tone, content, and level of detail.\n- Follow the order of sections the template suggests.\n- If the template includes examples, copy their style, tone, and sign-off pattern as your model.\n- If the template defines a sign-off, use that sign-off.\n\n2. Sign-off behavior when the template does NOT define one\n- If the template does not clearly specify a sign-off style, use Alex’s default sign-off:\n  Best,\n  Alex\n\n3. Subjects\n- If the template includes a subject pattern or examples, follow them.\n- If it does not, create a concise, informative subject line based on the meeting purpose and key outcome (for example: \"Recap and Next Steps from [Project/Topic] Meeting on [Date]\").\n\n4. From field behavior\n- Alex may send email from multiple addresses because he consults through different firms. When setting \"from.address\", prefer one of these addresses:\n  - \"abrownstein@3cventures.com\"\n  - \"ahbrownstein@gmail.com\"\n  - \"alex@ahbadvisors.com\"\n  - \"alex@clientcatalyzer.com\"\n- Use meeting notes, client names, domains, and context to choose the most appropriate address:\n  - Use \"abrownstein@3cventures.com\" when the work is for or branded as 3CV / 3C Ventures.\n  - Use \"alex@clientcatalyzer.com\" when the work is for or branded as Client Catalyzer.\n  - Use \"alex@ahbadvisors.com\" when the work is for or branded as AHB Advisors.\n  - Use \"ahbrownstein@gmail.com\" only when the context clearly indicates a personal or non-firm engagement.\n- If you cannot confidently determine which address to use, default to:\n  - \"alex@ahbadvisors.com\"\n- Set \"from.name\" to \"Alex Brownstein\" unless clearly instructed otherwise.\n\n5. Tasks and subtasks\n- Only summarize tasks or next steps if the email template implies that tasks should be included (for example, explicit \"Next Steps\" or \"Action Items\" sections or examples).\n- When you describe tasks, keep them clear and concise. Focus on what the client needs to know.\n- Do NOT include links to internal project management systems (ClickUp, Asana, etc.) in client-facing emails unless the template explicitly shows an example of doing so.\n- Rewrite internal tasks into client-friendly language that does not assume access to internal tools.\n\n6. Recipients\n- Use meeting metadata, attendees, and notes to identify the appropriate recipients.\n- Include recipients for both internal and external attendees when they are relevant to the email.\n- For each recipient you can confidently identify, add an object to the \"recipients\" array:\n  {\n    \"address\": \"recipient@example.com\",\n    \"name\": \"Recipient Name\" or null,\n    \"internal\": true or false\n  }\n- Do NOT invent email addresses.\n- If you cannot confidently identify any appropriate email addresses, set \"recipients\" to an empty array [].\n- The \"internal\" flag is used downstream to determine who is CCed; always set it correctly for each recipient, even if all recipients are internal.\n\n7. HITL handling\n- Treat <HITL_MESSAGE> as background context only.\n- Treat <HITL_RESPONSE> as the definitive human clarification for any ambiguity described in <HITL_MESSAGE>.\n- Use <HITL_RESPONSE> to:\n  - Confirm whether to send a client-facing recap.\n  - Clarify which client or team the email is for.\n  - Clarify any specific instructions about tone, detail, or template choice.\n- Do NOT include the literal <HITL_MESSAGE> or <HITL_RESPONSE> tags or their text in the final email body or subject.\n\n8. Composition rules\n- Write from Alex’s perspective in the first person, unless the template clearly uses \"we\".\n- Assume emails are client-facing unless the template clearly indicates an internal-only message.\n- Provide enough context that a client who cannot see internal systems can understand key decisions and next steps.\n- Keep the tone clear, professional, and warm.\n- Do not fabricate specific facts that conflict with the notes, metadata, or template. When necessary, keep statements slightly general rather than guessing.\n\nFINAL CHECK BEFORE RESPONDING\n\nBefore returning your JSON object, ensure:\n- \"subject\" is a non-empty string.\n- \"content\" is a complete, ready-to-send email body (including sign-off).\n- \"from\" is present with:\n  - a valid-looking email address in \"address\", and\n  - a non-empty \"name\".\n- \"recipients\" is:\n  - an array of zero or more objects with \"address\", \"name\", and \"internal\" keys, and\n  - contains no invented or obviously invalid email addresses.\n- The output is exactly one JSON object and nothing else."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        8128,
+        -432
+      ],
+      "id": "65b3052b-160c-4e87-9930-bcf8d79caa98",
+      "name": "Follow Email Draft Agent"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "get",
+        "id": "={{ $('Draft Context').item.json.output.email_template_clickup_link.split('/t/').last() }}",
+        "includeMarkdownDescription": true
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        7904,
+        -432
+      ],
+      "id": "f774f52f-ad64-43ef-992c-246e4f32d55d",
+      "name": "Get Template",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "253fb097-7bcf-461c-9f3f-b82af38fa2cf",
+              "name": "linked_tasks",
+              "value": "={{ $('Get a task').item.json.linked_tasks.map(t => t.link_id).filter(t => t!=$('Get a task').item.json.id) }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        7008,
+        -432
+      ],
+      "id": "3f83914a-7597-4aa3-8468-01148c5df79e",
+      "name": "Linked Task Ids"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"name\": \"email_draft\",\n  \"strict\": true,\n  \"schema\": {\n    \"type\": \"object\",\n    \"properties\": {\n      \"subject\": {\n        \"type\": \"string\",\n        \"description\": \"The email subject line.\"\n      },\n      \"content\": {\n        \"type\": \"string\",\n        \"description\": \"The full email body, ready to send (including greeting and sign-off).\"\n      },\n      \"from\": {\n        \"type\": \"object\",\n        \"description\": \"Sender information for Alex.\",\n        \"properties\": {\n          \"address\": {\n            \"type\": \"string\",\n            \"description\": \"Alex's email address, chosen from the allowed set when possible or defaulting to alex@ahbadvisors.com.\"\n          },\n          \"name\": {\n            \"type\": \"string\",\n            \"description\": \"Sender display name, usually 'Alex Brownstein'.\"\n          }\n        },\n        \"required\": [\"address\", \"name\"],\n        \"additionalProperties\": false\n      },\n      \"recipients\": {\n        \"type\": \"array\",\n        \"description\": \"List of recipients for this email. Will be reshaped into Missive to/cc fields downstream.\",\n        \"items\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"address\": {\n              \"type\": \"string\",\n              \"description\": \"Recipient email address.\"\n            },\n            \"name\": {\n              \"type\": [\"string\", \"null\"],\n              \"description\": \"Recipient display name if available, otherwise null.\"\n            },\n            \"internal\": {\n              \"type\": \"boolean\",\n              \"description\": \"True if this is an internal attendee; false if this is an external or client attendee.\"\n            }\n          },\n          \"required\": [\"address\", \"internal\"],\n          \"additionalProperties\": false\n        }\n      }\n    },\n    \"required\": [\"subject\", \"content\", \"from\", \"recipients\"],\n    \"additionalProperties\": false\n  }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        8304,
+        -208
+      ],
+      "id": "43d77479-4a20-4951-b782-835be47657fd",
+      "name": "Email Draft Structure"
+    },
+    {
+      "parameters": {
+        "mode": "markdownToHtml",
+        "markdown": "={{ $json.output.content }}",
+        "destinationKey": "html",
+        "options": {
+          "openLinksInNewWindow": true,
+          "simpleLineBreaks": true,
+          "smartIndentationFix": true,
+          "splitAdjacentBlockquotes": true,
+          "tables": true
+        }
+      },
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        8928,
+        -432
+      ],
+      "id": "dbcea5cd-6c83-48ec-8c7d-167a3f36ff8c",
+      "name": "Markdown"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $('Send a message').item.json.channel }}",
+          "mode": "id"
+        },
+        "timestamp": "={{ $('Send a message').item.json.message.ts }}"
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        5888,
+        -704
+      ],
+      "id": "5605a65d-f86d-491c-9608-83133a38b19f",
+      "name": "Remove form",
+      "webhookId": "fc55568e-4ab6-45d2-a42c-9701e64aa104",
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "resource": "reaction",
+        "channelId": {
+          "__rl": true,
+          "value": "C091K3MRWQ4",
+          "mode": "list",
+          "cachedResultName": "meeting-flups"
+        },
+        "timestamp": "={{ $('Meeting Note').item.json.slackNotificationThreadId }}",
+        "name": "inbox_tray"
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        9600,
+        -48
+      ],
+      "id": "113cd8a0-69ce-467c-990c-34fb442bf4db",
+      "name": "Add Inbox Icon",
+      "webhookId": "fc55568e-4ab6-45d2-a42c-9701e64aa104",
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "useDataOfInput": 2
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        6112,
+        -608
+      ],
+      "id": "43b156e9-bdd4-4651-91d4-af1eec4e1b79",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://public.missiveapp.com/v1/drafts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"drafts\": {\n    \"organization\": \"c7be17b4-c416-4d3a-b20d-62a89a261016\",\n    \"subject\": {{ $json.output.subject.toJsonString() }},\n    \"body\": {{ $json.html.toJsonString() }},\n    \"from_field\": {{$json.missive.from_field.toJsonString() }},\n    \"to_fields\": {{$json.missive.to_fields.toJsonString() }},\n    \"cc_fields\": {{$json.missive.cc_fields.toJsonString() }},\n    \"add_shared_labels\": [\"5dc4d84f-4c03-4503-8608-8f0f56ea474b\"]\n  }\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        9152,
+        -432
+      ],
+      "id": "8b596ab5-6299-4283-83b4-cbcc5350509c",
+      "name": "Draft in Missive",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f6122a02-5524-4be1-ae7b-aa42801293cc",
+              "name": "output.internalRecipients",
+              "value": "={{ $json.output.recipients.filter(r => r.internal && r.address!=='alex@ahbadvisors.com').map(({address,name}) => ({address, name})) }}",
+              "type": "array"
+            },
+            {
+              "id": "8203ce7c-bed4-47d9-b1fe-2ec00ee9342c",
+              "name": "output.externalRecipients",
+              "value": "={{ $json.output.recipients.filter(r => !r.internal).map(({address,name}) => ({address, name})) }}",
+              "type": "array"
+            },
+            {
+              "id": "7a2a5b73-44b0-4ff1-89a4-89d12fd0c116",
+              "name": "output.recipients",
+              "value": "={{ $json.output.recipients.map(({address,name}) => ({address, name})) }}",
+              "type": "array"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8480,
+        -432
+      ],
+      "id": "6f85a703-cdd3-402e-8d30-29c263b51919",
+      "name": "Split Internal & External Recipients"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f6122a02-5524-4be1-ae7b-aa42801293cc",
+              "name": "missive.to_fields",
+              "value": "= {{ $json.output.externalRecipients?.length ?  $json.output.externalRecipients.toJsonString() : $json.output.recipients.toJsonString() }}",
+              "type": "array"
+            },
+            {
+              "id": "8203ce7c-bed4-47d9-b1fe-2ec00ee9342c",
+              "name": "missive.cc_fields",
+              "value": "= {{ $json.output.externalRecipients?.length ?  $json.output.internalRecipients.toJsonString() : '[]' }}",
+              "type": "array"
+            },
+            {
+              "id": "685328ce-cd5c-4ce4-bbe5-f563a9dde3ad",
+              "name": "missive.from_field",
+              "value": "={{ $json.output.from.toJsonString() }}",
+              "type": "object"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8704,
+        -432
+      ],
+      "id": "1a03f4c3-9bfe-4e04-ac2f-71e2fbd47c7f",
+      "name": "Set Missive Recipients"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e03fed7d-1de0-4597-a949-7312f46e0ad0",
+              "name": "confirmation",
+              "value": "=I drafted an email \"{{ $('Markdown').item.json.output.subject }}\".\n\nhttps://mail.missiveapp.com/#drafts/conversations/{{ $json.drafts.conversation }}  \n\n--- \nTemplate: {{ $('Get Template').item.json.name }} \nhttps://app.clickup.com/t/{{ $('Get Template').item.json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        9376,
+        -336
+      ],
+      "id": "d97b8387-198e-4eef-82a0-b16458ff7236",
+      "name": "Missive Confirmation"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "gbUMm2ADZughCW2a",
+          "mode": "list",
+          "cachedResultName": "Meeting Notes",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/gbUMm2ADZughCW2a"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ $('Meeting Note').item.json.id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "followupDraftId": "={{ $json.drafts.conversation }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "sourceId",
+              "displayName": "sourceId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "taskId",
+              "displayName": "taskId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "bucket",
+              "displayName": "bucket",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "overview",
+              "displayName": "overview",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "transcript",
+              "displayName": "transcript",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "metadata",
+              "displayName": "metadata",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "slackNotificationThreadId",
+              "displayName": "slackNotificationThreadId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "insightsCreatedAt",
+              "displayName": "insightsCreatedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "creatingTasksAt",
+              "displayName": "creatingTasksAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "createdTasksAt",
+              "displayName": "createdTasksAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "sourceUrl",
+              "displayName": "sourceUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "storedTranscriptUrl",
+              "displayName": "storedTranscriptUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "notesUrl",
+              "displayName": "notesUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "followupDraftId",
+              "displayName": "followupDraftId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        9376,
+        -816
+      ],
+      "id": "8f313da1-d8a9-4cb6-82a8-e6b71a5ac6f1",
+      "name": "Save Followup Draft Id"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2f81946a-42df-4d3f-9f47-89317e5b14e5",
+              "name": "output.hitl_response",
+              "value": "={{ $('Start').item.json.hitlResponse }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        6336,
+        -224
+      ],
+      "id": "3042690c-890e-4044-b738-1fbe9390d3dc",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5a19662a-6ab3-4aee-b250-2013e2ce0f33",
+              "leftValue": "={{ $json.linked_tasks }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "empty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "7d11cc79-1ab3-4cca-a3d2-f8009c00287f",
+              "leftValue": "={{ $runIndex }}",
+              "rightValue": 5,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4192,
+        -800
+      ],
+      "id": "4a2b94b6-ec0b-47d0-9037-7672c2daa0df",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        4416,
+        -720
+      ],
+      "id": "eb1cac91-072d-4604-8f7f-72b49b06d090",
+      "name": "Wait1",
+      "webhookId": "83ae7805-751b-48d7-bae3-60e8ca65800d"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "2281a83d-fa22-4d7f-8078-b94ddfaedd2b",
+              "leftValue": "={{ $json.output.needs_follow_up }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        4992,
+        -464
+      ],
+      "id": "e693b808-9ebe-42bb-8a34-598e773b1cc5",
+      "name": "Is Follow Up Needed?"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "usp3aKeVDmMui5zY",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/usp3aKeVDmMui5zY",
+          "cachedResultName": "Tool: Find Calendar Events Across Calendars"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "icalUid": "={{ $json.calendarEventUid }}"
+          },
+          "matchingColumns": [
+            "icalUid"
+          ],
+          "schema": [
+            {
+              "id": "icalUid",
+              "displayName": "icalUid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3296,
+        -864
+      ],
+      "id": "1a6e22f4-9a2a-4a46-b1a3-ccf6cc6bf799",
+      "name": "Find Calendar Events Across Calendars",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f6b170ad-1bdd-4e37-a115-dbf7846247d8",
+              "name": "organizedByAlex",
+              "value": "={{ $json?.organizer?.self === true ? 'yes' : ($json?.organizer?.self === false ? 'no' : 'unsure' ) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3520,
+        -800
+      ],
+      "id": "e6a73132-a59d-4062-a6b4-130a0adf4048",
+      "name": "Set Organized By Alex"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ea528627-8c9a-40d2-91f3-b2bfffca36bf",
+              "leftValue": "={{ $json.calendarEventUid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3072,
+        -800
+      ],
+      "id": "6f369b57-a407-4895-a48c-4d70c72f8289",
+      "name": "HasCalendarEventUid"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        3744,
+        -720
+      ],
+      "id": "4256c7b9-7ad4-45e2-868c-fabc91607a86",
+      "name": "Meeting Note"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "gbUMm2ADZughCW2a",
+          "mode": "list",
+          "cachedResultName": "Meeting Notes",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/gbUMm2ADZughCW2a"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ $json.meetingRowId }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        2848,
+        -720
+      ],
+      "id": "4bd921fa-7829-4b24-81cc-7362d01b27e0",
+      "name": "Find Meeting Note"
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "incomingAuthentication": "headerAuth",
+        "httpMethod": "POST",
+        "options": {
+          "webhookSuffix": "hitl-response"
+        }
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        5664,
+        -608
+      ],
+      "id": "52c5ff2f-d227-41cb-b7e8-f813bd5d2767",
+      "name": "Wait For Response",
+      "webhookId": "b7c37f30-3015-4c64-88b8-217c24485b9c",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CKqpgVPBQ4TDvQkt",
+          "name": "Abel Secret Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "03fb281b-e793-4d6e-b842-192ae0c582a2",
+              "leftValue": "={{ $json.output?.hitl_cancel }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        6784,
+        -432
+      ],
+      "id": "ee7bd969-1e20-44ae-be77-6f12d4be5664",
+      "name": "Should Create Draft"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        6336,
+        -528
+      ],
+      "id": "3847dc5c-b296-42a6-bace-088cc7d61b8b",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fd66889a-c1f0-476f-964f-e28e3bedeff6",
+              "name": "output.hitl_response",
+              "value": "={{ $json.body.response || ( $json.body.action !== 'cancel' ? 'create draft' : null) }}",
+              "type": "string"
+            },
+            {
+              "id": "f498d284-f27b-48d0-9f83-66773ab79b58",
+              "name": "slack_hitl_msg_ts",
+              "value": "={{ $('Send a message').item.json.message.ts }}",
+              "type": "string"
+            },
+            {
+              "id": "c5916697-16c9-427f-a6ff-314a33667393",
+              "name": "slack_hitl_msg_channel",
+              "value": "={{ $('Send a message').item.json.channel }}",
+              "type": "string"
+            },
+            {
+              "id": "52298a1b-3ec5-44d0-9646-38fa861f6c73",
+              "name": "output.hitl_cancel",
+              "value": "={{ $json.body.action === 'cancel' }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        5888,
+        -512
+      ],
+      "id": "e206f4d0-cecf-4433-bea9-e6cf334fc76b",
+      "name": "Capture HITL Response"
+    },
+    {
+      "parameters": {
+        "url": "https://slack.com/api/conversations.replies",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "channel",
+              "value": "C091K3MRWQ4"
+            },
+            {
+              "name": "ts",
+              "value": "={{ $json.slackNotificationThreadId }}"
+            },
+            {
+              "name": "limit",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        9600,
+        -816
+      ],
+      "id": "8e1c394c-6a26-4fe5-bbee-3c674a1e3b63",
+      "name": "Slack Msgs",
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// n8n Code node (Run Once for Each Item)\n\nconst startOfThread = $input.item.json.messages.find(m => m.thread_ts == m.ts);\n\n// 1) Get Missive draft id from the earlier node\n//    Adjust this path if your field name is different.\nconst followupDraftId =$('Save Followup Draft Id').item.json.followupDraftId\n\n// 2) Build the Missive draft URL\nconst missiveDraftUrl =\n  `https://mail.missiveapp.com/#drafts/conversations/${followupDraftId}`;\n\n// 3) Clone blocks so we can safely mutate them\nconst blocks = JSON.parse(JSON.stringify(startOfThread.blocks || []));\n\n// 4) Find the first actions block and append a new button\nconst actionsBlock = blocks.find(b => b.type === 'actions');\n\nif (actionsBlock) {\n  actionsBlock.elements = actionsBlock.elements\n    .filter(e => e.action_id !=='open_missive_draft')\n    .concat({\n        \"type\": \"button\",\n        \"action_id\": \"open_missive_draft\",\n        \"text\": {\n          \"type\": \"plain_text\",\n          \"text\": \"✉️ Open draft\",\n          \"emoji\": true\n        },\n        \"value\": `open_missive_draft_${followupDraftId}`,\n        \"url\": missiveDraftUrl,\n   });\n}\n\nreturn { blocks, ts: startOfThread.ts, };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        9824,
+        -816
+      ],
+      "id": "dac53761-5b1e-4d7c-94ef-2466f0f4faa2",
+      "name": "Add Missive Button"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "channelId": {
+          "__rl": true,
+          "value": "C091K3MRWQ4",
+          "mode": "list",
+          "cachedResultName": "meeting-flups"
+        },
+        "ts": "={{ $json.ts }}",
+        "messageType": "block",
+        "blocksUi": "={\"blocks\": {{ $json.blocks.toJsonString() }}}",
+        "updateFields": {},
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        10048,
+        -816
+      ],
+      "id": "8bd15c0d-60dc-4516-835a-90f53902fd34",
+      "name": "Update a message",
+      "webhookId": "c36706a4-a105-489a-bd52-b5c2c34fe6a9",
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://public.missiveapp.com/v1/posts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"posts\": {\n    \"conversation\": \"{{ $('Draft in Missive').item.json.drafts.conversation }}\",\n    \"notification\": { \"title\": {{ JSON.stringify('New draft: ' + $('Set Missive Recipients').item.json.output.subject) }}, \"body\": \"A body\" },\n    \"username\": \"Abel.ai\",\n    \"username_icon\": \"https://s3.amazonaws.com/missive-assets/missive-avatar.png\",\n    \"attachments\": [\n      {\n        \"author_name\": \"Abel.ai\",\n        \"author_link\": \"mailto:abelbot@ahbadvisors.com\",\n        \"author_icon\": \"avatar:abelbot@ahbadvisors.com\",\n        \"color\": \"#2266ED\",\n        \"text\": {{ $json.confirmation.toJsonString() }}\n      }\n    ]\n  }\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        9600,
+        -240
+      ],
+      "id": "11d9b8aa-137c-4ada-b39d-8a2bcaa369f2",
+      "name": "Missive Notification",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://public.missiveapp.com/v1/shared_labels",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2624,
+        176
+      ],
+      "id": "ddb84a87-bc01-4550-97fb-ab004c0fdf14",
+      "name": "Missive Labels",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "team": "={{ $('Get a task').item.json.team_id }}",
+        "space": "={{ $('Get a task').item.json.space.id }}",
+        "folderless": "={{ !$('Get a task').item.json.folder?.id }}",
+        "folder": "={{ $('Get a task').item.json.folder?.id }}",
+        "list": "={{ $('Get a task').item.json.list.id }}",
+        "name": "=Send followup email re: {{ $('Set Missive Recipients').item.json.output.subject }}",
+        "additionalFields": {
+          "content": "={{ $json.confirmation }}",
+          "parentId": "={{ $('Get a task').item.json.id }}"
+        }
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        9600,
+        -432
+      ],
+      "id": "7b22e22a-0311-465e-b86d-d93b1910989e",
+      "name": "Create a reminder task",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Follow Up Email SOP": {
+      "main": [
+        [
+          {
+            "node": "Decider",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Follow Email Draft Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Find Meeting Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a task": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out Linked Tasks": {
+      "main": [
+        [
+          {
+            "node": "Get Linked Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Decider",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decider": {
+      "main": [
+        [
+          {
+            "node": "Is Follow Up Needed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Linked Task": {
+      "main": [
+        [
+          {
+            "node": "Linked Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Linked Tasks": {
+      "main": [
+        [
+          {
+            "node": "Get Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Decider",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If HITL?": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Wait For Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Draft Context": {
+      "main": [
+        [
+          {
+            "node": "Should Create Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Follow Email Draft Agent": {
+      "main": [
+        [
+          {
+            "node": "Split Internal & External Recipients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Template": {
+      "main": [
+        [
+          {
+            "node": "Follow Email Draft Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Linked Task Ids": {
+      "main": [
+        [
+          {
+            "node": "Split Out Linked Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Draft Structure": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Follow Email Draft Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Markdown": {
+      "main": [
+        [
+          {
+            "node": "Draft in Missive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove form": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Inbox Icon": {
+      "main": [
+        []
+      ]
+    },
+    "Draft in Missive": {
+      "main": [
+        [
+          {
+            "node": "Missive Confirmation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Save Followup Draft Id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Internal & External Recipients": {
+      "main": [
+        [
+          {
+            "node": "Set Missive Recipients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Missive Recipients": {
+      "main": [
+        [
+          {
+            "node": "Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Missive Confirmation": {
+      "main": [
+        [
+          {
+            "node": "Create a comment",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Add Inbox Icon",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Missive Notification",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create a reminder task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Draft Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Follow Up Email SOP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Get a task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Follow Up Needed?": {
+      "main": [
+        [
+          {
+            "node": "If HITL?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Calendar Events Across Calendars": {
+      "main": [
+        [
+          {
+            "node": "Set Organized By Alex",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Organized By Alex": {
+      "main": [
+        [
+          {
+            "node": "Meeting Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HasCalendarEventUid": {
+      "main": [
+        [
+          {
+            "node": "Find Calendar Events Across Calendars",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Organized By Alex",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Meeting Note": {
+      "main": [
+        [
+          {
+            "node": "HasCalendarEventUid",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Meeting Note",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Meeting Note": {
+      "main": [
+        [
+          {
+            "node": "Get a task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait For Response": {
+      "main": [
+        [
+          {
+            "node": "Capture HITL Response",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Remove form",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Create Draft": {
+      "main": [
+        [
+          {
+            "node": "Linked Task Ids",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Draft Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Capture HITL Response": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Save Followup Draft Id": {
+      "main": [
+        [
+          {
+            "node": "Slack Msgs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a comment": {
+      "main": [
+        []
+      ]
+    },
+    "Slack Msgs": {
+      "main": [
+        [
+          {
+            "node": "Add Missive Button",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Missive Button": {
+      "main": [
+        [
+          {
+            "node": "Update a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "errorWorkflow": "Ka01FqAuhDXin0Kn"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "versionId": "0fd51eb4-921f-42f8-bf69-1f1ea532985c",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    },
+    {
+      "updatedAt": "2026-01-01T21:31:31.119Z",
+      "createdAt": "2026-01-01T21:31:31.119Z",
+      "id": "erv2iAT6He287ePS",
+      "name": "Abel Meeting Assistant"
+    }
+  ]
+}
