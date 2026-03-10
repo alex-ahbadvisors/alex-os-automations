@@ -1,0 +1,1581 @@
+{
+  "updatedAt": "2026-03-10T00:20:21.824Z",
+  "createdAt": "2025-10-24T20:46:54.121Z",
+  "id": "v3WtMhbmRSFL1Kq6",
+  "name": "Abel Slack Event Handler",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "abel-interaction-b35e4ef1-5f17-4223-ba5c-0b7680cc58d9",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        -544
+      ],
+      "id": "17c02337-3c60-40d7-8e5b-c72ae92c4beb",
+      "name": "Webhook",
+      "webhookId": "b35e4ef1-5f17-4223-ba5c-0b7680cc58d9"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.body.payload }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        -544
+      ],
+      "id": "df24ebbd-30a3-4745-90ac-5111b2396d2e",
+      "name": "Payload"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b8105a73-92f4-4ebc-a25e-50da528d8c3f",
+              "leftValue": "={{ $json.type }}",
+              "rightValue": "block_actions",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "6b1399dc-f6d1-4538-b3b7-f8f2e71a348f",
+              "leftValue": "={{ $json.state.values.assign_meeting_project }}",
+              "rightValue": "create_meeting_tasks_",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        -448
+      ],
+      "id": "d2bc4ffe-84a0-4555-8f3d-e3d34f6af73c",
+      "name": "Create Meeting Tasks"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "2587a602-76e7-40ff-bf86-46eceb21386f",
+                    "leftValue": "={{ $json.createdTasksAt }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "dateTime",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "CREATED"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.creatingTasksAt }}",
+                    "rightValue": "RUNNING",
+                    "operator": {
+                      "type": "dateTime",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    },
+                    "id": "e2cf9edc-a423-4fe5-8bf0-6e42d4324e91"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "RUNNING"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        1344,
+        -464
+      ],
+      "id": "8418dc8e-d371-4571-81a4-c0fe38d45349",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C091K3MRWQ4",
+          "mode": "list",
+          "cachedResultName": "meeting-flups"
+        },
+        "text": "=Hey, {{ $('Payload').item.json.user.name }}, I already created tasks for this meeting: {{ $json.name }}\n\nhttps://app.clickup.com/t/{{ $json.taskId }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "thread_ts": {
+            "replyValues": {
+              "thread_ts": "={{ $json.slackNotificationThreadId }}",
+              "reply_broadcast": true
+            }
+          },
+          "ephemeral": {
+            "ephemeralValues": {
+              "user": {
+                "__rl": true,
+                "value": "={{ $('Payload').item.json.user.id }}",
+                "mode": "id"
+              }
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1568,
+        -640
+      ],
+      "id": "a2971a1b-bbde-4bc6-a870-3e5e4fdcfae2",
+      "name": "Send Duplicate Msg",
+      "webhookId": "f157de3a-962b-44d6-b090-51b97a1c74b4",
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C091K3MRWQ4",
+          "mode": "list",
+          "cachedResultName": "meeting-flups"
+        },
+        "text": "=Heads up, I've already started creating tasks for this meeting: {{ $('Meeting Note').item.json.name }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "thread_ts": {
+            "replyValues": {
+              "thread_ts": "={{ $json.slackNotificationThreadId }}"
+            }
+          },
+          "ephemeral": {
+            "ephemeralValues": {
+              "user": {
+                "__rl": true,
+                "value": "={{ $('Payload').item.json.user.id }}",
+                "mode": "id"
+              }
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1568,
+        -448
+      ],
+      "id": "450f3f22-25f9-4f1d-9843-350986ed4de9",
+      "name": "Send In Progress Msg",
+      "webhookId": "f157de3a-962b-44d6-b090-51b97a1c74b4",
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "DZ8o2BfNfraRBlZt",
+          "mode": "list",
+          "cachedResultName": "Clickup Lists",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/DZ8o2BfNfraRBlZt"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ Number($('Create Meeting Tasks').item.json.state.values.assign_meeting_project.assign_meeting_project.selected_option.value.split('-').last())}}"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        672,
+        -640
+      ],
+      "id": "220b1b86-f967-47eb-8bf1-f60c53e49473",
+      "name": "Clickup List"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "00e9d4c2-dda2-41a0-b67f-f3a772f64fd1",
+              "name": "selectedList.id",
+              "value": "={{ $json.id }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        -640
+      ],
+      "id": "fffe35cd-68d5-43b9-be25-12773ce777d8",
+      "name": "Selected List"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1120,
+        -448
+      ],
+      "id": "f8de1d99-fa3f-4be3-931b-c09bdb3a7a74",
+      "name": "Meeting Note"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "gbUMm2ADZughCW2a",
+          "mode": "list",
+          "cachedResultName": "Meeting Notes",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/gbUMm2ADZughCW2a"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ Number($json.state.values.assign_meeting_project.assign_meeting_project.selected_option.value.split('-').first())}}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        672,
+        -448
+      ],
+      "id": "357135bd-a3ac-400d-8bdf-bcde26b24150",
+      "name": "Meeting Note1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "74d4411d-7bd0-4631-9019-c9874280dd48",
+              "name": "slackNotificationThreadId",
+              "value": "={{ $('Create Meeting Tasks').item.json.message.ts }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        -448
+      ],
+      "id": "40866b14-e3f7-4987-9807-cb1051784db7",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b8105a73-92f4-4ebc-a25e-50da528d8c3f",
+              "leftValue": "={{ $json.actions[0].action_id }}",
+              "rightValue": "_meeting_followup_email",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "b8fb68ce-70ac-450b-890d-a89469d810cb",
+              "leftValue": "={{ $json.actions[0].value }}",
+              "rightValue": "/webhook-waiting/",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "13d80063-44c4-4ab0-bf4b-354fcfbceb7a",
+              "leftValue": "={{ $json.actions[0].value }}",
+              "rightValue": "/hitl-",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "1d9c2013-5a83-4491-86ae-5c4eb0688ef5",
+              "leftValue": "={{ $('Webhook').item.json.headers['x-slack-signature'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        -64
+      ],
+      "id": "6ea71eca-8fbc-4e68-99d1-37419a2f675d",
+      "name": "Draft Email HITL Response?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.actions[0].value }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "response",
+              "value": "={{ $json.state.values.hitl_response?.values()?.[0]?.value || null }}"
+            },
+            {
+              "name": "action",
+              "value": "continue"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        896,
+        -64
+      ],
+      "id": "ff170ad1-3ea7-49af-89e6-f4c7e0d7dbfc",
+      "name": "Continue Followup Email Draft",
+      "executeOnce": false,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CKqpgVPBQ4TDvQkt",
+          "name": "Abel Secret Key"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "b0qRdZcWL16KpRkW",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/b0qRdZcWL16KpRkW",
+          "cachedResultName": "[5] Draft Follow Up Email"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "meetingRowId": "={{ $json.id }}",
+            "runHitl": false,
+            "hitlResponse": "={{ $('Continue Followup Email Draft').item.json.state.values.hitl_response.values().first().value }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "meetingRowId",
+              "displayName": "meetingRowId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "runHitl",
+              "displayName": "runHitl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "boolean",
+              "removed": false
+            },
+            {
+              "id": "hitlResponse",
+              "displayName": "hitlResponse",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1344,
+        -64
+      ],
+      "id": "9f03278d-80bd-4c4a-8ee1-fc322eda1d1b",
+      "name": "Draft Follow Up Email"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "gbUMm2ADZughCW2a",
+          "mode": "list",
+          "cachedResultName": "Meeting Notes",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/gbUMm2ADZughCW2a"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "slackNotificationThreadId",
+              "keyValue": "={{ $json.message.thread_ts }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        -64
+      ],
+      "id": "344a0a15-2ce2-41d7-8b2c-b3a1dfe1eadc",
+      "name": "Meeting Note2"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.actions[0].action_id }}",
+                    "rightValue": "cancel_meeting_followup_email",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "471b0b1f-d194-4f6d-8066-a7545e83c3ec"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "CANCEL"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "74e20208-1449-441b-91ca-468d67f66b39",
+                    "leftValue": "={{ $json.actions[0].action_id }}",
+                    "rightValue": "draft_meeting_followup_email",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "DRAFT"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        672,
+        -64
+      ],
+      "id": "fbacb23b-d37d-470f-9422-324f77d26a7d",
+      "name": "HITL Action"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.actions[0].value }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "action",
+              "value": "cancel"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        896,
+        -256
+      ],
+      "id": "ef29bf6b-e079-43f3-a64f-b44ef0ab797f",
+      "name": "Cancel Followup Email Draft",
+      "executeOnce": false,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CKqpgVPBQ4TDvQkt",
+          "name": "Abel Secret Key"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "DZ8o2BfNfraRBlZt",
+          "mode": "list",
+          "cachedResultName": "Clickup Lists",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/DZ8o2BfNfraRBlZt"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ Number($('Create Email To-Dos').item.json.state.values.assign_email_project.assign_email_project.selected_option.value.split('-').last())}}"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        672,
+        -1216
+      ],
+      "id": "07db02c3-2f28-461c-8788-f084ca9cb291",
+      "name": "Clickup List1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "00e9d4c2-dda2-41a0-b67f-f3a772f64fd1",
+              "name": "selectedList.id",
+              "value": "={{ $json.id }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        -1216
+      ],
+      "id": "3ce2b087-5fe9-4594-96e9-7924a0f98fbd",
+      "name": "Selected List1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "74d4411d-7bd0-4631-9019-c9874280dd48",
+              "name": "slackNotificationThreadId",
+              "value": "={{ $('Create Email To-Dos').item.json.message.ts }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        -1024
+      ],
+      "id": "4b2ab133-4946-4938-b8d1-ac0c749dae94",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b8105a73-92f4-4ebc-a25e-50da528d8c3f",
+              "leftValue": "={{ $json.type }}",
+              "rightValue": "block_actions",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "6b1399dc-f6d1-4538-b3b7-f8f2e71a348f",
+              "leftValue": "={{$json.state.values.assign_email_project}}",
+              "rightValue": "create_meeting_tasks_",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        -1024
+      ],
+      "id": "b4aa3e61-f7f4-4469-9cdd-0e0541ce492b",
+      "name": "Create Email To-Dos"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "6BIIWj3nPZH1pjQw",
+          "mode": "list",
+          "cachedResultName": "Email Triage - To-Do",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/6BIIWj3nPZH1pjQw"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ Number($json.state.values.assign_email_project.assign_email_project.selected_option.value.split('-').first())}}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        672,
+        -1024
+      ],
+      "id": "8879e036-1463-4141-902e-23bc5a6e2b0c",
+      "name": "Email To-Do Table"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1120,
+        -1024
+      ],
+      "id": "47b476c0-e0f9-45db-b291-efce3edafaf5",
+      "name": "Email To-Do Combine"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "2587a602-76e7-40ff-bf86-46eceb21386f",
+                    "leftValue": "={{ $json.createdTasksAt }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "dateTime",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "CREATED"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.creatingTasksAt }}",
+                    "rightValue": "RUNNING",
+                    "operator": {
+                      "type": "dateTime",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    },
+                    "id": "e2cf9edc-a423-4fe5-8bf0-6e42d4324e91"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "RUNNING"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        1344,
+        -1040
+      ],
+      "id": "90d39e09-1c11-4560-a201-7c2fe1acd2eb",
+      "name": "Switch Email"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C08HH2X0NF6",
+          "mode": "list",
+          "cachedResultName": "tasks"
+        },
+        "text": "=Hey, {{ $('Payload').item.json.user.name }}, I already created tasks for this meeting: {{ $json.name }}\n\nhttps://app.clickup.com/t/{{ $json.taskId }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "thread_ts": {
+            "replyValues": {
+              "thread_ts": "={{ $json.slackNotificationThreadId }}",
+              "reply_broadcast": true
+            }
+          },
+          "ephemeral": {
+            "ephemeralValues": {
+              "user": {
+                "__rl": true,
+                "value": "={{ $('Payload').item.json.user.id }}",
+                "mode": "id"
+              }
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1568,
+        -1216
+      ],
+      "id": "7fc7ceae-dfaa-42dd-9baf-cb13cb17157a",
+      "name": "Send Duplicate Msg Email To-Do",
+      "webhookId": "f157de3a-962b-44d6-b090-51b97a1c74b4",
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C091K3MRWQ4",
+          "mode": "list",
+          "cachedResultName": "meeting-flups"
+        },
+        "text": "=Heads up, I've already started creating tasks for this meeting: {{ $('Email To-Do Combine').item.json.name }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "thread_ts": {
+            "replyValues": {
+              "thread_ts": "={{ $json.slackNotificationThreadId }}"
+            }
+          },
+          "ephemeral": {
+            "ephemeralValues": {
+              "user": {
+                "__rl": true,
+                "value": "={{ $('Payload').item.json.user.id }}",
+                "mode": "id"
+              }
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1568,
+        -1024
+      ],
+      "id": "d6210326-886f-4fc1-a971-b2622ce07146",
+      "name": "Send In Progress Email To-Do",
+      "webhookId": "f157de3a-962b-44d6-b090-51b97a1c74b4",
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "4vgkEkRpSIjG6BEi",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/4vgkEkRpSIjG6BEi",
+          "cachedResultName": "[4] Create Tasks from Slack"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "selectedListRowId": "={{ $json.selectedList.id }}",
+            "meetingRowId": "={{ $('Meeting Note').item.json.id }}",
+            "slackChannel": "={{ $('Create Meeting Tasks').item.json.channel.id }}",
+            "slackMessageEvent": "={{ $('Payload').item.json }}"
+          },
+          "matchingColumns": [
+            "selectedList_toJsonString",
+            "taskId",
+            "id",
+            "channel_id",
+            "slackNotificationThreadId",
+            "notes_base64Decode",
+            "name",
+            "message_ts",
+            "finalSlackBlocks",
+            "listName"
+          ],
+          "schema": [
+            {
+              "id": "meetingRowId",
+              "displayName": "meetingRowId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "slackChannel",
+              "displayName": "slackChannel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "slackMessageEvent",
+              "displayName": "slackMessageEvent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object",
+              "removed": false
+            },
+            {
+              "id": "selectedListRowId",
+              "displayName": "selectedListRowId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1568,
+        -256
+      ],
+      "name": "Call [4] Create Tasks from Slack",
+      "id": "9986e4bd-6c87-4be6-b81b-21dd75c53f00"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "k0bPebBmTgoKcPno",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/k0bPebBmTgoKcPno",
+          "cachedResultName": "[4] Create Tasks from Slack (EMAIL TO DO)"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "selectedListRowId": "={{ $json.selectedList.id }}",
+            "meetingRowId": "={{ $('Email To-Do Combine').item.json.id }}",
+            "slackChannel": "={{ $('Create Email To-Dos').item.json.channel.id }}",
+            "slackMessageEvent": "={{ $('Payload').item.json }}"
+          },
+          "matchingColumns": [
+            "selectedList_toJsonString",
+            "taskId",
+            "id",
+            "channel_id",
+            "slackNotificationThreadId",
+            "notes_base64Decode",
+            "name",
+            "message_ts",
+            "finalSlackBlocks",
+            "listName"
+          ],
+          "schema": [
+            {
+              "id": "meetingRowId",
+              "displayName": "meetingRowId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "slackChannel",
+              "displayName": "slackChannel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "slackMessageEvent",
+              "displayName": "slackMessageEvent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object",
+              "removed": false
+            },
+            {
+              "id": "selectedListRowId",
+              "displayName": "selectedListRowId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1568,
+        -832
+      ],
+      "name": "Call [3] Create Tasks from Slack Email To-Do",
+      "id": "5e1b6511-47e5-41b3-bcd7-28e9babda2db"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "64027ef8-d8c2-430a-8273-885bc8b29717",
+              "leftValue": "={{ $json.type }}",
+              "rightValue": "block_actions",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "6f410c4f-75ff-40b3-87bc-8ca2ee8d55c7",
+              "leftValue": "={{ $json.actions[0].action_id }}",
+              "rightValue": "not_todo_email",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        -832
+      ],
+      "id": "a8a6b960-c7e6-41a7-8822-547c62274efc",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "vumANB0XiaAxbjyu",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/vumANB0XiaAxbjyu",
+          "cachedResultName": "[5] Handle Not To-Do (Email)"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "emailToDoId": "={{ Number($json.actions[0].value) }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "emailToDoId",
+              "displayName": "emailToDoId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "slackThreadTs",
+              "displayName": "slackThreadTs",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "slackChannel",
+              "displayName": "slackChannel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        672,
+        -832
+      ],
+      "id": "9a5e4cd2-1b78-417b-a11b-4a2f5c539194",
+      "name": "Call [5] Handle Not To-Do"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Payload": {
+      "main": [
+        [
+          {
+            "node": "Create Meeting Tasks",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Draft Email HITL Response?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create Email To-Dos",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Meeting Tasks": {
+      "main": [
+        [
+          {
+            "node": "Clickup List",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Meeting Note1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Send Duplicate Msg",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send In Progress Msg",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call [4] Create Tasks from Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clickup List": {
+      "main": [
+        [
+          {
+            "node": "Selected List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Selected List": {
+      "main": [
+        [
+          {
+            "node": "Meeting Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Meeting Note": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Meeting Note1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Meeting Note",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Draft Email HITL Response?": {
+      "main": [
+        [
+          {
+            "node": "HITL Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue Followup Email Draft": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Meeting Note2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Meeting Note2": {
+      "main": [
+        [
+          {
+            "node": "Draft Follow Up Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HITL Action": {
+      "main": [
+        [
+          {
+            "node": "Cancel Followup Email Draft",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Continue Followup Email Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clickup List1": {
+      "main": [
+        [
+          {
+            "node": "Selected List1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Selected List1": {
+      "main": [
+        [
+          {
+            "node": "Email To-Do Combine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Email To-Do Combine",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Create Email To-Dos": {
+      "main": [
+        [
+          {
+            "node": "Clickup List1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Email To-Do Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email To-Do Table": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email To-Do Combine": {
+      "main": [
+        [
+          {
+            "node": "Switch Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Email": {
+      "main": [
+        [
+          {
+            "node": "Send Duplicate Msg Email To-Do",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send In Progress Email To-Do",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call [3] Create Tasks from Slack Email To-Do",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Call [5] Handle Not To-Do",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "errorWorkflow": "Ka01FqAuhDXin0Kn"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "versionId": "03e80fe1-5842-4877-85de-9a066cac2a93",
+  "activeVersionId": "03e80fe1-5842-4877-85de-9a066cac2a93",
+  "triggerCount": 1,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    },
+    {
+      "updatedAt": "2026-01-01T21:31:31.119Z",
+      "createdAt": "2026-01-01T21:31:31.119Z",
+      "id": "erv2iAT6He287ePS",
+      "name": "Abel Meeting Assistant"
+    }
+  ]
+}
