@@ -1,0 +1,1449 @@
+{
+  "updatedAt": "2026-03-10T00:13:02.473Z",
+  "createdAt": "2025-12-26T15:26:31.241Z",
+  "id": "BZpys9OcMz0suz0Y",
+  "name": "[1] Capture Missive Emails",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.2",
+          "mode": "list",
+          "cachedResultName": "gpt-5.2"
+        },
+        "options": {
+          "reasoningEffort": "medium",
+          "timeout": 200000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1536,
+        112
+      ],
+      "id": "8cfb1de2-c912-42ef-8eb0-35773cca9b8b",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "FPFFI1NvOtGMoh30",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "6BIIWj3nPZH1pjQw",
+          "mode": "list",
+          "cachedResultName": "Email Triage - To-Do",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/6BIIWj3nPZH1pjQw"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "messages_id",
+              "keyValue": "={{ $json.messages_id }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        1088,
+        -128
+      ],
+      "id": "d1ec0fec-b58e-4a7b-9afc-151b9a673087",
+      "name": "Existing Meeting Note",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5-nano",
+          "mode": "list",
+          "cachedResultName": "gpt-5-nano"
+        },
+        "options": {
+          "reasoningEffort": "low"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2304,
+        304
+      ],
+      "id": "be4845c6-b5dd-472d-bbea-407b6fda5c4f",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "FPFFI1NvOtGMoh30",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate an overview.\n---\n{{ $('Email To-Do').item.json.messages_body }}\n---\n{{ $('Email To-Do').item.json.messages_from_field_address }}\n---\n{{ $('Email To-Do').item.json.messages_to_fields0_address }}\n---\n{{ $('Email To-Do').item.json.messages_subject }}\n---\n{{ $('Email To-Do').item.json.shared_labels0_name_with_parent_names }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=Generate a plain text overview of the email optimized for search and discoverability, 1500 characters max (but should be way shorter). Include the email date, recipients/senders and high-level overview of meeting objective and keywords.\n\nFormat for human and search engines like:\nA email on {date} from {sender} to {recipients}. \nTopics:\n- ...\n- ...\n- ...\nkey takeaways:\n- ...\n- ..."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2224,
+        80
+      ],
+      "id": "3425e052-6269-4bf5-b851-ef3d667f096c",
+      "name": "Meeting Overview"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "293cf577-cc2b-4191-908e-77fe58ed94f2",
+              "name": "overview",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2576,
+        80
+      ],
+      "id": "4aa2e15a-d1b1-4ab1-a5cb-cc5abb3a5f09",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2800,
+        -176
+      ],
+      "id": "87cb8b2d-21da-4005-8329-49de995c076a",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a20dee1b-b1a6-45ac-8283-e33fe0608810",
+              "leftValue": "={{ $('Existing Meeting Note').item.json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2288,
+        -272
+      ],
+      "id": "7d65daa1-d816-4123-80f0-cf3ac15e0433",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "Bnq5qZXSemo1JjL8",
+          "mode": "list",
+          "cachedResultName": "Dex Contacts",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/Bnq5qZXSemo1JjL8"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "first_name",
+              "condition": "ilike",
+              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions0_Value', `Case-Insensitive, partial match for first name`, 'string') }}"
+            },
+            {
+              "keyName": "last_name",
+              "condition": "ilike",
+              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions1_Value', `Case-Insensitive, partial match for last name`, 'string') }}"
+            },
+            {
+              "keyName": "emails",
+              "condition": "ilike",
+              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions2_Value', `Case-Insensitive, partial match for email`, 'string') }}"
+            }
+          ]
+        },
+        "returnAll": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Return_All', ``, 'boolean') }}"
+      },
+      "type": "n8n-nodes-base.dataTableTool",
+      "typeVersion": 1,
+      "position": [
+        1664,
+        112
+      ],
+      "id": "1f3e8820-cb81-43d7-8ad5-32c2fac175e5",
+      "name": "Find_Contacts"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "6e6bOgtFJ0DAQVsO",
+          "mode": "list",
+          "cachedResultName": "Clickup Clients",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/6e6bOgtFJ0DAQVsO"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "name",
+              "condition": "ilike",
+              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions0_Value', `Case-Insensitive, partial match for name (company name or internal nickname)`, 'string') }}"
+            },
+            {
+              "keyName": "company_name",
+              "condition": "ilike",
+              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions1_Value', `Case-Insensitive, partial match for company name`, 'string') }}"
+            }
+          ]
+        },
+        "returnAll": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Return_All', ``, 'boolean') }}"
+      },
+      "type": "n8n-nodes-base.dataTableTool",
+      "typeVersion": 1,
+      "position": [
+        1792,
+        112
+      ],
+      "id": "839ac015-5366-48cd-8ce0-0ad139dd3cb3",
+      "name": "Find_Clients"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "update",
+        "id": "={{ $('Existing Meeting Note').item.json.taskId }}",
+        "updateFields": {
+          "content": "={{ $json.task_description }}",
+          "name": "={{ $json.task_title }}",
+          "startDate": "={{ $today }}"
+        }
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        2576,
+        -368
+      ],
+      "id": "754d19db-905b-4030-ade9-d94954413f9c",
+      "name": "Update Meeting Note",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "6990338e-e8a7-4a2e-9a00-52e9191b5526",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -704,
+        -128
+      ],
+      "id": "40f2e9d5-39de-443f-9fd3-bacdd79a12a7",
+      "name": "Missive Webhook Connection",
+      "webhookId": "6990338e-e8a7-4a2e-9a00-52e9191b5526"
+    },
+    {
+      "parameters": {
+        "url": "=https://public.missiveapp.com/v1/messages/{{ $json.messageId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        192,
+        -128
+      ],
+      "id": "7e983b35-04b1-4b7f-ba0e-d79ad97ef923",
+      "name": "Missive Rest API Get Messages",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f87227c0-0cb3-4ca5-a55f-023f4c037d66",
+              "name": "messages_id",
+              "value": "={{ $json.messages.id }}",
+              "type": "string"
+            },
+            {
+              "id": "8dcccb50-89c1-4c3e-85b5-828c413303cd",
+              "name": "messages_from_field_address",
+              "value": "={{ $json.messages.from_field.address }}",
+              "type": "string"
+            },
+            {
+              "id": "f89c53d2-75d0-4f54-9c0d-dce5561da3de",
+              "name": "messages_to_fields0_address",
+              "value": "={{ $json.messages.to_fields[0].address }}",
+              "type": "string"
+            },
+            {
+              "id": "02477731-25c1-416d-8822-8cd78be95f0b",
+              "name": "messages_subject",
+              "value": "={{ $json.messages.subject }}",
+              "type": "string"
+            },
+            {
+              "id": "deb61efb-1d82-4266-9f3f-9d6a4099bdd8",
+              "name": "messages_body",
+              "value": "={{ $json.messages.body }}",
+              "type": "string"
+            },
+            {
+              "id": "4b935dcf-d152-4bc0-a280-92f5963a8eed",
+              "name": "messages_conversation_id",
+              "value": "={{ $json.messages.conversation.id }}",
+              "type": "string"
+            },
+            {
+              "id": "b75115cc-7e61-49ec-9aa6-8661aa6651f2",
+              "name": "messages_delivered_at",
+              "value": "={{ $json.messages.delivered_at }}",
+              "type": "number"
+            },
+            {
+              "id": "f8aebae3-4ab5-4f85-9240-ca17a27d16a3",
+              "name": "messages_conversation_web_url",
+              "value": "={{ $json.messages.conversation.web_url }}",
+              "type": "string"
+            },
+            {
+              "id": "8f457951-4bf4-44f9-b545-4e64fdabfe26",
+              "name": "body_rule_id",
+              "value": "={{ $('Missive Webhook Connection').item.json.body.rule.id }}",
+              "type": "string"
+            },
+            {
+              "id": "7bd0992b-2834-4694-ad84-8f8d93821350",
+              "name": "body_rule_description",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "4209858a-7848-410d-b0a4-c71c92de3e03",
+              "name": "=shared_labels0_name_with_parent_names",
+              "value": "={{ $('Missive Webhook Connection').item.json.body.conversation.shared_labels[0].name_with_parent_names }}",
+              "type": "string"
+            },
+            {
+              "id": "5bc228de-ca3c-4254-afb0-a81d7a7e8f2a",
+              "name": "messages_from_field",
+              "value": "={{ JSON.stringify($json.messages.from_field) }}",
+              "type": "object"
+            },
+            {
+              "id": "4802479a-1403-47a2-b225-fb0e79ff25d7",
+              "name": "messages_from_field.name",
+              "value": "={{ $json.messages.from_field.name }}",
+              "type": "string"
+            },
+            {
+              "id": "e7629451-aa38-44aa-8fe3-ca20bc3728ee",
+              "name": "messages_to_fields",
+              "value": "={{ JSON.stringify($json.messages.to_fields) }}",
+              "type": "array"
+            },
+            {
+              "id": "d8488bac-a8e2-48de-a783-10fcb75a63c2",
+              "name": "messages_cc_fields",
+              "value": "={{ JSON.stringify($json.messages.cc_fields) }}",
+              "type": "array"
+            },
+            {
+              "id": "8f83390a-661a-48a0-81e2-fd0652ac93e1",
+              "name": "messages_bcc_fields",
+              "value": "={{ JSON.stringify($json.messages.bcc_fields) }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        640,
+        -128
+      ],
+      "id": "b7a124f1-8ceb-42d1-b5c1-98a3291184d8",
+      "name": "Set fields for table"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "get",
+        "id": "868gvgnzd",
+        "includeMarkdownDescription": true
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        1312,
+        -128
+      ],
+      "id": "624d6fb2-1808-4584-8b1c-2860e8a3b200",
+      "name": "Email Shell Prompt",
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        864,
+        -128
+      ],
+      "id": "3bad7e4e-0a30-482e-a76e-55c2529135bd",
+      "name": "Email To-Do"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate a Click-Up Shell for all To-Dos from this email:\n{{ $json.toJsonString() }}\n\n<TRANSCRIPT>\n{{ $('Email To-Do').item.json.toJsonString() }}\n</TRANSCRIPT>",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "={{ $('Email Shell Prompt').item.json.markdown_description }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1600,
+        -128
+      ],
+      "id": "9a975761-b2a7-487f-8606-c7a5749f3b9d",
+      "name": "Email To-Do Agent",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 500
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "team": "9011763462",
+        "space": "90113618058",
+        "folderless": true,
+        "list": "901112757653",
+        "name": "={{ $json.task_title }}",
+        "additionalFields": {
+          "customFieldsJson": "=[{\"id\": \n\"916c1a91-3537-462d-aa45-0d0ee8ddb608\", \"value\":\"{{ $('Email To-Do').item.json.messages_from_field_address }}\"}, \n\n{\"id\": \n\"9186c4ef-96df-407b-bafc-826462112af7\",\"value\":\"{{ $('Missive Webhook Connection').item.json.body.rule.description }}\"}, \n\n{\"id\": \n\"efbe1dba-0fdc-4945-9522-c5b2822b3d4e\", \"value\":\"{{ $('Email To-Do').item.json.messages_conversation_web_url }}\"},\n\n{\"id\":\"0d36b68b-379a-4fe4-9847-986279d0de25\", \"value\": \"{{ $('Missive Webhook Connection').item.json.body.conversation.shared_labels[2].name_with_parent_names }}\"},\n\n{\"id\":\"c52ce62f-84d6-489e-a73b-32e29d7b1662\", \"value\" : \"{{ $('Email To-Do').item.json.messages_subject }}\"},\n\n{\"id\":\"e0777a76-caab-4521-a487-426634513b9b\", \"value\" : \"{{ $('Missive Webhook Connection').item.json.body.latest_message.to_fields[0].address }}\"}\n\n]",
+          "content": "={{ $('Email Analysis_Raw').item.json.task_description }}",
+          "markdownContent": true
+        }
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        2576,
+        -176
+      ],
+      "id": "4e2c237f-fbfa-4829-87a0-82e661070e07",
+      "name": "Create Email To-Do Note",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "6BIIWj3nPZH1pjQw",
+          "mode": "list",
+          "cachedResultName": "Email Triage - To-Do",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/6BIIWj3nPZH1pjQw"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "messages_id",
+              "keyValue": "={{ $('Set fields for table').item.json.messages_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $json.name }}",
+            "date": "={{ $today }}",
+            "notes": "=",
+            "overview": "={{ $json.overview }}",
+            "messages_delivered_at": "={{ $('Set fields for table').item.json.messages_delivered_at }}",
+            "messages_id": "={{ $('Set fields for table').item.json.messages_id }}",
+            "messages_from_field_address": "={{ $('Set fields for table').item.json.messages_from_field_address }}",
+            "messages_to_fields0_address": "={{ $('Set fields for table').item.json.messages_to_fields0_address }}",
+            "messages_subject": "={{ $('Set fields for table').item.json.messages_subject }}",
+            "messages_body": "={{ $('Set fields for table').item.json.messages_body }}",
+            "messages_conversation_id": "={{ $('Set fields for table').item.json.messages_conversation_id }}",
+            "messages_conversation_web_url": "={{ $('Set fields for table').item.json.messages_conversation_web_url }}",
+            "body_rule_id": "={{ $('Set fields for table').item.json.body_rule_id }}",
+            "shared_labels0_name_with_parent_names": "={{ $('Missive Webhook Connection').item.json.body.conversation.shared_labels[2].name_with_parent_names }}",
+            "taskId": "={{ $json.id }}",
+            "body_rule_description": "={{ $('Missive Webhook Connection').item.json.body.rule.description }}",
+            "subtasks_first_agent": "=={{ JSON.stringify($('Email Analysis_Raw').item.json.subtasks) }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "messages_id",
+              "displayName": "messages_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "messages_from_field_address",
+              "displayName": "messages_from_field_address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "messages_to_fields0_address",
+              "displayName": "messages_to_fields0_address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "messages_subject",
+              "displayName": "messages_subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "messages_body",
+              "displayName": "messages_body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "messages_conversation_id",
+              "displayName": "messages_conversation_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "messages_delivered_at",
+              "displayName": "messages_delivered_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "messages_conversation_web_url",
+              "displayName": "messages_conversation_web_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "body_rule_id",
+              "displayName": "body_rule_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "body_rule_description",
+              "displayName": "body_rule_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "shared_labels0_name_with_parent_names",
+              "displayName": "shared_labels0_name_with_parent_names",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "taskId",
+              "displayName": "taskId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "overview",
+              "displayName": "overview",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "metadata",
+              "displayName": "metadata",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "slackNotificationThreadId",
+              "displayName": "slackNotificationThreadId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "ackDraftId",
+              "displayName": "ackDraftId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "subtasks_first_agent",
+              "displayName": "subtasks_first_agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        3024,
+        -176
+      ],
+      "id": "adaad8fd-42ef-4258-9041-667e82a3dead",
+      "name": "Upsert Email To-Do"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.output }}",
+        "includeOtherFields": true,
+        "include": "selected",
+        "includeFields": "={{ $('Set fields for table').item.json.messages_id }}, {{ $('Set fields for table').item.json.messages_from_field_address }}, {{ $('Set fields for table').item.json.messages_to_fields0_address }}, {{ $('Set fields for table').item.json.messages_subject }}, {{ $('Set fields for table').item.json.messages_body }}, {{ $('Set fields for table').item.json.messages_conversation_id }}, {{ $('Set fields for table').item.json.messages_delivered_at }}, {{ $('Set fields for table').item.json.messages_conversation_web_url }}, {{ $('Set fields for table').item.json.body_rule_id }}, {{ $('Set fields for table').item.json.body_rule_description }}, {{ $('Set fields for table').item.json.shared_labels0_name_with_parent_names }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2000,
+        -128
+      ],
+      "id": "803152a1-87ed-4b9c-8869-c68610fd2f32",
+      "name": "Email Analysis_Raw"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "CSUlliGpgb4JDqBE",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/CSUlliGpgb4JDqBE",
+          "cachedResultName": "[1] Capture Transcript"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "source": "missive",
+            "sourceId": "=message-{{ $json.messages.id }}",
+            "body": "={{ $json.messages }}",
+            "transcriptContents": "={{ $json.markdown }}",
+            "sourceUrl": "={{ $('Missive Rest API Get Messages').item.json.messages.conversation.web_url }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "sourceId",
+              "displayName": "sourceId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "transcriptContents",
+              "displayName": "transcriptContents",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "sourceUrl",
+              "displayName": "sourceUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -704,
+        624
+      ],
+      "id": "f1c37a19-f6d9-4da6-91b9-3fecffc93e9b",
+      "name": "Call '[1] Capture Transcript'"
+    },
+    {
+      "parameters": {
+        "html": "={{ $json.messages.body }}",
+        "destinationKey": "messages.body",
+        "options": {
+          "ignore": "img",
+          "keepDataImages": false
+        }
+      },
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        416,
+        -128
+      ],
+      "id": "aedeaea5-26b0-4c32-a0cb-b383dbed77c1",
+      "name": "Markdown"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b82ae85e-ac6a-4447-8606-903ae9a74df9",
+              "leftValue": "={{ $json.messageId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        -32,
+        -128
+      ],
+      "id": "423a7d65-0d14-4ba0-acdf-e23ea3ad9aa8",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1358d610-0da7-49ba-a11c-779805a3bad6",
+              "name": "messageId",
+              "value": "={{ $json.body?.latest_message?.id || $json.body?.message?.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -256,
+        -128
+      ],
+      "id": "d99ee8f9-aef0-44fe-a390-81d77da9bcb3",
+      "name": "Lastest Message or Message Id"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e0c4db31-dd5d-4345-afca-c9e0da6c0de6",
+              "name": "messages.id",
+              "value": "={{ $json.messages.id }}",
+              "type": "string"
+            },
+            {
+              "id": "901275e3-1eb8-4bec-8564-8a2f6d17f48f",
+              "name": "messages.subject",
+              "value": "={{ $json.messages.subject }}",
+              "type": "string"
+            },
+            {
+              "id": "9e195852-e5e3-442f-819b-e92fea0cf3f9",
+              "name": "messages.preview",
+              "value": "={{ $json.messages.preview }}",
+              "type": "string"
+            },
+            {
+              "id": "c68ed672-aa07-48b6-9999-c766b8661911",
+              "name": "messages.type",
+              "value": "={{ $json.messages.type }}",
+              "type": "string"
+            },
+            {
+              "id": "519c236d-11ce-4766-988e-62f75a805502",
+              "name": "messages.delivered_at",
+              "value": "={{ $json.messages.delivered_at }}",
+              "type": "number"
+            },
+            {
+              "id": "97c72067-049c-4998-9f28-1c5edd7f726d",
+              "name": "messages.email_message_id",
+              "value": "={{ $json.messages.email_message_id }}",
+              "type": "string"
+            },
+            {
+              "id": "413e07ef-65ab-444b-96ff-3be9397c8636",
+              "name": "messages.conversation.id",
+              "value": "={{ $json.messages.conversation.id }}",
+              "type": "string"
+            },
+            {
+              "id": "7e4369da-b4d0-493d-86c9-54501b3baac5",
+              "name": "messages.conversation.users",
+              "value": "={{ $json.messages.conversation.users }}",
+              "type": "array"
+            },
+            {
+              "id": "0bc64b6c-127a-4ae7-aa5b-b72245a06988",
+              "name": "messages.conversation.web_url",
+              "value": "={{ $json.messages.conversation.web_url }}",
+              "type": "string"
+            },
+            {
+              "id": "fc2ab2cd-cc3b-4897-b8fb-b7e1d53a6a21",
+              "name": "messages.conversation.app_url",
+              "value": "={{ $json.messages.conversation.app_url }}",
+              "type": "string"
+            },
+            {
+              "id": "d6bdfdfa-320c-41a5-a7b0-f95bfe1eaee1",
+              "name": "markdown",
+              "value": "={{ $json.messages.body }}",
+              "type": "string"
+            },
+            {
+              "id": "c660e4b0-6c78-4f07-ba87-4a13e7d2a6e6",
+              "name": "messages.to_fields",
+              "value": "={{ $json.messages.to_fields }}",
+              "type": "array"
+            },
+            {
+              "id": "288b8f27-5965-4fa8-9eba-22afe38c0253",
+              "name": "messages.cc_fields",
+              "value": "={{ $json.messages.cc_fields }}",
+              "type": "array"
+            },
+            {
+              "id": "f6bf5769-d258-4559-b8db-3256940d6371",
+              "name": "messages.from_field",
+              "value": "={{ $json.messages.from_field }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -704,
+        400
+      ],
+      "id": "e7c29989-1477-4eed-951b-f987757508fd",
+      "name": "Simplify Missive Data"
+    },
+    {
+      "parameters": {
+        "dataToSave": {
+          "values": [
+            {
+              "key": "ruleDescription",
+              "value": "={{ $json.body.rule.description }}"
+            },
+            {
+              "key": "ruleType",
+              "value": "={{ $json.body.rule.type }}"
+            },
+            {
+              "key": "conversationId",
+              "value": "={{ $json.body.conversation?.id }}"
+            },
+            {
+              "key": "conversationSubject",
+              "value": "={{ $json.body.conversation?.subject || $json.body.conversation?.latest_message_subject }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executionData",
+      "typeVersion": 1.1,
+      "position": [
+        -480,
+        -128
+      ],
+      "id": "c61a870e-d512-4be2-bdc4-f57ce1fb7776",
+      "name": "Execution Data"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "keaJKDb9Gjd6nMzg",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/keaJKDb9Gjd6nMzg",
+          "cachedResultName": "[2] Notify of Email To-Dos"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "emailToDoID": "={{ $json.id }}"
+          },
+          "matchingColumns": [
+            "meetingNoteId"
+          ],
+          "schema": [
+            {
+              "id": "emailToDoID",
+              "displayName": "emailToDoID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        3248,
+        -176
+      ],
+      "name": "[2] Notify of Email To-Dos",
+      "id": "f3598f0f-5654-4c59-8657-b7953ad55bcf"
+    }
+  ],
+  "connections": {
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email To-Do Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Existing Meeting Note": {
+      "main": [
+        [
+          {
+            "node": "Email Shell Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Meeting Overview",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Meeting Overview": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Upsert Email To-Do",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Update Meeting Note",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Email To-Do Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find_Contacts": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email To-Do Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find_Clients": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email To-Do Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Meeting Note": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Missive Webhook Connection": {
+      "main": [
+        [
+          {
+            "node": "Execution Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Missive Rest API Get Messages": {
+      "main": [
+        [
+          {
+            "node": "Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Set fields for table": {
+      "main": [
+        [
+          {
+            "node": "Email To-Do",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Shell Prompt": {
+      "main": [
+        [
+          {
+            "node": "Email To-Do Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email To-Do": {
+      "main": [
+        [
+          {
+            "node": "Existing Meeting Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email To-Do Agent": {
+      "main": [
+        [
+          {
+            "node": "Email Analysis_Raw",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Email To-Do Note": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Email To-Do": {
+      "main": [
+        [
+          {
+            "node": "[2] Notify of Email To-Dos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Analysis_Raw": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Meeting Overview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Markdown": {
+      "main": [
+        [
+          {
+            "node": "Set fields for table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Missive Rest API Get Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lastest Message or Message Id": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simplify Missive Data": {
+      "main": [
+        []
+      ]
+    },
+    "Execution Data": {
+      "main": [
+        [
+          {
+            "node": "Lastest Message or Message Id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "errorWorkflow": "Ka01FqAuhDXin0Kn"
+  },
+  "staticData": {
+    "node:New Transcript": {
+      "lastTimeChecked": "2025-12-16T22:05:52Z"
+    },
+    "node:Schedule Trigger": {
+      "recurrenceRules": [
+        16
+      ]
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "versionId": "4ade064d-9d52-43e6-842f-6f87a286170d",
+  "activeVersionId": "4ade064d-9d52-43e6-842f-6f87a286170d",
+  "triggerCount": 1,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    },
+    {
+      "updatedAt": "2026-01-01T21:31:31.119Z",
+      "createdAt": "2026-01-01T21:31:31.119Z",
+      "id": "erv2iAT6He287ePS",
+      "name": "Abel Meeting Assistant"
+    }
+  ]
+}
