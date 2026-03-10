@@ -1,0 +1,410 @@
+{
+  "updatedAt": "2026-03-10T00:20:04.443Z",
+  "createdAt": "2025-10-24T21:37:54.164Z",
+  "id": "9OBn1bQ51pCNdSg6",
+  "name": "Index Internal Team",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "triggerAtMinute": 21
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        144,
+        -208
+      ],
+      "id": "e91bea36-dfc3-422f-8254-57fe5504fe4c",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "oIqpq3JlCp0pnLcK",
+          "mode": "list",
+          "cachedResultName": "Internal Team",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/oIqpq3JlCp0pnLcK"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "clickupTaskId",
+              "keyValue": "={{$json.clickup_task_id}}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email": "={{ $json.email }}",
+            "department": "={{ $json.department }}",
+            "clickupTaskId": "={{$json.clickup_task_id}}",
+            "name": "={{ $json.name }}",
+            "syncId": "={{ $('Sync Settings').item.json.syncId }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "clickupTaskId",
+              "displayName": "clickupTaskId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "department",
+              "displayName": "department",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "syncId",
+              "displayName": "syncId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        1264,
+        -208
+      ],
+      "id": "f0697f76-99aa-431b-86f8-3026f8b3ff09",
+      "name": "Upsert row(s)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "23ef81c0-d51a-413a-adfe-c75bfb4d1a68",
+              "name": "syncId",
+              "value": "={{ DateTime.now().toISO().split('T').first() }}.{{ $execution.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        368,
+        -208
+      ],
+      "id": "41bbf986-e33c-455c-9c30-30ad92703bb7",
+      "name": "Sync Settings"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3a9ef5de-3f7d-4b11-a87e-7dc03873e638",
+              "name": "name",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "36f28be1-e5db-4bee-b90f-08a48237c5ff",
+              "name": "custom_fields",
+              "value": "={{\n  ($json.custom_fields || [])\n    .filter(({ value }) => value !== null)\n    .map(f => {\n      const { id, name, type } = f;\n\n      const key = String(name)\n        .toLowerCase()\n        .replace(/[\\s\\-]+/g, '_')\n        .replace(/[^\\w_]/g, '');\n\n      const options = Array.isArray(f?.type_config?.options) ? f.type_config.options : [];\n      const isChoice = type === 'drop_down' || type === 'labels';\n\n      const toArray = v => Array.isArray(v) ? v : (v == null ? [] : [v]);\n\n      const out = { id, name };\n\n      if (isChoice) {\n        const ids = toArray(f.value);\n        const labels = ids.map(valId => {\n          const opt = options.find(o => o.id === valId);\n          // drop_down options usually have `name`; labels options have `label`\n          return (opt?.name ?? opt?.label ?? String(valId));\n        });\n\n        out.value = ids.join('|');     // IDs only\n        out.label = labels.join('|');  // Human-readable labels\n      } else {\n        out.value = f.value;\n      }\n\n      return [key, out];\n    })\n    .smartJoin('0', '1')\n    .toJsonString()\n}}",
+              "type": "object"
+            },
+            {
+              "id": "148e209a-d2d1-4d36-a7f4-d42279d017ad",
+              "name": "clickup_task_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        816,
+        -208
+      ],
+      "id": "ee6ad28c-daeb-49e9-8f09-f94aa16198db",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cd0f7d2c-6861-4186-b48e-e832f33ed3f5",
+              "name": "custom_fields",
+              "value": "={{ $json.custom_fields?.toJsonString() }}",
+              "type": "string"
+            },
+            {
+              "id": "fdc4b641-8ddb-4a8a-bfb3-a35d46a5958b",
+              "name": "3cv_or_ahb",
+              "value": "={{ $json.custom_fields[\"3cv_or_ahb\"].label }}",
+              "type": "string"
+            },
+            {
+              "id": "1d83ca90-ba2a-4116-8428-e84909a43a7a",
+              "name": "email",
+              "value": "={{ $json.custom_fields._email.value }}",
+              "type": "string"
+            },
+            {
+              "id": "22aba46a-e0a7-4ab4-9647-4f285c545924",
+              "name": "department",
+              "value": "={{ $json.custom_fields._department.label }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1040,
+        -208
+      ],
+      "id": "717f0117-583e-49ce-a940-cf24c73f5932",
+      "name": "Flatten Custom Fields"
+    },
+    {
+      "parameters": {
+        "operation": "deleteRows",
+        "dataTableId": {
+          "__rl": true,
+          "value": "oIqpq3JlCp0pnLcK",
+          "mode": "list",
+          "cachedResultName": "Internal Team",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/oIqpq3JlCp0pnLcK"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "syncId",
+              "condition": "neq",
+              "keyValue": "={{ $('Sync Settings').item.json.syncId }}"
+            }
+          ]
+        },
+        "options": {
+          "dryRun": false
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        1488,
+        -208
+      ],
+      "id": "0a9d49c6-f24d-485b-afc0-f4e13220fcd1",
+      "name": "Delete row(s)",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "url": "https://api.clickup.com/api/v2/team",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "clickUpOAuth2Api",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        144,
+        -432
+      ],
+      "id": "b2515762-6557-4371-91e1-8ffb8c2543cd",
+      "name": "Clickup Teams",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "getAll",
+        "team": "9011763462",
+        "space": "90113618058",
+        "folder": "90115735544",
+        "list": "901109653608",
+        "filters": {
+          "subtasks": false
+        }
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        592,
+        -208
+      ],
+      "id": "8bdbee50-c5a7-4aa5-a5ea-565de3380802",
+      "name": "Get Team Database",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Sync Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert row(s)": {
+      "main": [
+        [
+          {
+            "node": "Delete row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync Settings": {
+      "main": [
+        [
+          {
+            "node": "Get Team Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Flatten Custom Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flatten Custom Fields": {
+      "main": [
+        [
+          {
+            "node": "Upsert row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Team Database": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "errorWorkflow": "Ka01FqAuhDXin0Kn"
+  },
+  "staticData": {
+    "node:Schedule Trigger": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "versionId": "c5ed796a-c184-44d8-98bd-4a1f31e1214f",
+  "activeVersionId": "c5ed796a-c184-44d8-98bd-4a1f31e1214f",
+  "triggerCount": 1,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    },
+    {
+      "updatedAt": "2026-01-01T21:31:31.119Z",
+      "createdAt": "2026-01-01T21:31:31.119Z",
+      "id": "erv2iAT6He287ePS",
+      "name": "Abel Meeting Assistant"
+    }
+  ]
+}
