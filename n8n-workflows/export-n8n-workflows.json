@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-03-10T01:44:32.786Z",
+  "updatedAt": "2026-03-10T02:12:08.551Z",
   "createdAt": "2026-01-01T21:30:12.307Z",
   "id": "DKrAVjDY2QDLr72W",
   "name": "Export n8n Workflows",
@@ -106,7 +106,7 @@
         168
       ],
       "parameters": {
-        "jsCode": "const workflows = $('Get Export Workflows').all();\nconst registryRows = $input.all();\nconst existingMap = {};\nfor (const row of registryRows) {\n  const r = row.json;\n  if (r['Workflow ID']) {\n    existingMap[r['Workflow ID']] = {\n      hash: r['Structure Hash'] || '',\n      description: r['Description'] || '',\n      lastUpdated: r['Last Updated'] || ''\n    };\n  }\n}\nconst results = [];\nfor (const item of workflows) {\n  const wf = item.json;\n  const nodes = wf.nodes || [];\n  const connections = wf.connections || {};\n  let triggerType = 'manual';\n  for (const node of nodes) {\n    const t = node.type || '';\n    if (t.includes('scheduleTrigger')) { triggerType = 'schedule'; break; }\n    if (t.includes('webhook') || t.includes('Webhook')) { triggerType = 'webhook'; break; }\n    if (t.includes('slackTrigger')) { triggerType = 'slack'; break; }\n    if (t.includes('executeWorkflowTrigger')) { triggerType = 'sub-workflow'; break; }\n    if (t.includes('manualTrigger')) { triggerType = 'manual'; }\n  }\n  const outputs = new Set();\n  for (const node of nodes) {\n    const t = (node.type || '').toLowerCase();\n    if (t.includes('slack') && !t.includes('trigger')) outputs.add('Slack');\n    if (t.includes('clickup')) outputs.add('ClickUp');\n    if (t.includes('googlesheets')) outputs.add('Google Sheets');\n    if (t.includes('googledrive')) outputs.add('Google Drive');\n    if (t.includes('gmail') || t.includes('emailsend')) outputs.add('Email');\n    if (t.includes('github')) outputs.add('GitHub');\n    if (t.includes('datatable')) outputs.add('n8n DataTable');\n    if (t.includes('executeworkflow') && !t.includes('trigger')) outputs.add('Sub-workflow');\n    if (t.includes('httprequest')) outputs.add('HTTP API');\n  }\n  const subWorkflows = [];\n  for (const node of nodes) {\n    if ((node.type || '').includes('executeWorkflow') && !(node.type || '').includes('Trigger')) {\n      const wfId = node.parameters?.workflowId?.value || node.parameters?.workflowId || '';\n      subWorkflows.push(node.name + ' > ' + wfId);\n    }\n  }\n  let inputSchema = '';\n  for (const node of nodes) {\n    if ((node.type || '').includes('executeWorkflowTrigger')) {\n      const inputs = node.parameters?.workflowInputs?.values || [];\n      inputSchema = inputs.map(i => i.name + ': ' + (i.type || 'string')).join(', ');\n    }\n  }\n  const nodeTypes = nodes.map(n => n.type + ':' + n.name).sort().join('|');\n  const connKeys = Object.entries(connections).map(([k, v]) => {\n    const targets = (v.main || []).flat().map(c => c.node).join(',');\n    return k + '->' + targets;\n  }).sort().join('|');\n  const hashInput = nodeTypes + '::' + connKeys;\n  let hash = 0;\n  for (let i = 0; i < hashInput.length; i++) {\n    hash = ((hash << 5) - hash) + hashInput.charCodeAt(i);\n    hash = hash & hash;\n  }\n  const structureHash = Math.abs(hash).toString(16);\n  const existing = existingMap[wf.id];\n  const needsDescription = !existing || existing.hash !== structureHash;\n  let description = '';\n  if (needsDescription) {\n    const triggerDesc = { 'schedule': 'Runs on a schedule', 'webhook': 'Triggered by webhook', 'slack': 'Triggered by Slack events', 'sub-workflow': 'Called as a sub-workflow', 'manual': 'Manually triggered' }[triggerType] || 'Manually triggered';\n    const outputList = Array.from(outputs);\n    const outputDesc = outputList.length > 0 ? 'Outputs to ' + outputList.join(', ') + '.' : '';\n    const subDesc = subWorkflows.length > 0 ? 'Calls: ' + subWorkflows.map(s => s.split(' >')[0]).join(', ') + '.' : '';\n    description = (triggerDesc + '. ' + outputDesc + ' ' + subDesc).trim();\n  } else {\n    description = existing.description;\n  }\n  const filename = wf.name.replace(/^\\[(\\d+[a-z]?)\\]\\s*/i, '$1-').replace(/^\\[T\\]\\s*/i, 'tool-').replace(/[^a-zA-Z0-9\\-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').toLowerCase() + '.json';\n  const needsGitHubPush = !existing || existing.lastUpdated !== wf.updatedAt;\n  const cleanWf = { ...wf };\n  delete cleanWf.shared;\n  delete cleanWf.activeVersion;\n  const workflowJson = JSON.stringify(cleanWf, null, 2);\n  results.push({ json: { workflowId: wf.id, name: wf.name, active: wf.active, triggerType, description, inputSchema, outputDestinations: Array.from(outputs).join(', '), subWorkflowsCalled: subWorkflows.join('; '), tags: (wf.tags || []).map(t => t.name).join(', '), nodeCount: nodes.length, errorHandler: wf.settings?.errorWorkflow || '', structureHash, needsGitHubPush, needsDescription, filename, workflowJson, lastUpdated: wf.updatedAt, lastChecked: new Date().toISOString() } });\n}\nreturn results;"
+        "jsCode": "const workflows = $('Get Export Workflows').all();\nconst registryRows = $input.all();\nconst existingMap = {};\nfor (const row of registryRows) {\n  const r = row.json;\n  if (r['Workflow ID']) {\n    existingMap[r['Workflow ID']] = {\n      hash: r['Structure Hash'] || '',\n      description: r['Description'] || '',\n      lastUpdated: r['Last Updated'] || ''\n    };\n  }\n}\nconst results = [];\nfor (const item of workflows) {\n  const wf = item.json;\n  const nodes = wf.nodes || [];\n  const connections = wf.connections || {};\n  let triggerType = 'manual';\n  for (const node of nodes) {\n    const t = node.type || '';\n    if (t.includes('scheduleTrigger')) { triggerType = 'schedule'; break; }\n    if (t.includes('webhook') || t.includes('Webhook')) { triggerType = 'webhook'; break; }\n    if (t.includes('slackTrigger')) { triggerType = 'slack'; break; }\n    if (t.includes('executeWorkflowTrigger')) { triggerType = 'sub-workflow'; break; }\n    if (t.includes('manualTrigger')) { triggerType = 'manual'; }\n  }\n  const outputs = new Set();\n  for (const node of nodes) {\n    const t = (node.type || '').toLowerCase();\n    if (t.includes('slack') && !t.includes('trigger')) outputs.add('Slack');\n    if (t.includes('clickup')) outputs.add('ClickUp');\n    if (t.includes('googlesheets')) outputs.add('Google Sheets');\n    if (t.includes('googledrive')) outputs.add('Google Drive');\n    if (t.includes('gmail') || t.includes('emailsend')) outputs.add('Email');\n    if (t.includes('github')) outputs.add('GitHub');\n    if (t.includes('datatable')) outputs.add('n8n DataTable');\n    if (t.includes('executeworkflow') && !t.includes('trigger')) outputs.add('Sub-workflow');\n    if (t.includes('httprequest')) outputs.add('HTTP API');\n  }\n  const subWorkflows = [];\n  for (const node of nodes) {\n    if ((node.type || '').includes('executeWorkflow') && !(node.type || '').includes('Trigger')) {\n      const wfId = node.parameters?.workflowId?.value || node.parameters?.workflowId || '';\n      subWorkflows.push(node.name + ' > ' + wfId);\n    }\n  }\n  let inputSchema = '';\n  for (const node of nodes) {\n    if ((node.type || '').includes('executeWorkflowTrigger')) {\n      const inputs = node.parameters?.workflowInputs?.values || [];\n      inputSchema = inputs.map(i => i.name + ': ' + (i.type || 'string')).join(', ');\n    }\n  }\n  const nodeTypes = nodes.map(n => n.type + ':' + n.name).sort().join('|');\n  const connKeys = Object.entries(connections).map(([k, v]) => {\n    const targets = (v.main || []).flat().map(c => c.node).join(',');\n    return k + '->' + targets;\n  }).sort().join('|');\n  const hashInput = nodeTypes + '::' + connKeys;\n  let hash = 0;\n  for (let i = 0; i < hashInput.length; i++) {\n    hash = ((hash << 5) - hash) + hashInput.charCodeAt(i);\n    hash = hash & hash;\n  }\n  const structureHash = Math.abs(hash).toString(16);\n  const existing = existingMap[wf.id];\n  const needsDescription = !existing || existing.hash !== structureHash;\n  let description = '';\n  if (needsDescription) {\n    description = '[pending LLM]';\n  } else {\n    description = existing.description;\n  }\n  const filename = wf.name.replace(/^\\[(\\d+[a-z]?)\\]\\s*/i, '$1-').replace(/^\\[T\\]\\s*/i, 'tool-').replace(/[^a-zA-Z0-9\\-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').toLowerCase() + '.json';\n  const needsGitHubPush = !existing || existing.lastUpdated !== wf.updatedAt;\n  const cleanWf = { ...wf };\n  delete cleanWf.shared;\n  delete cleanWf.activeVersion;\n  const workflowJson = JSON.stringify(cleanWf, null, 2);\n  const nodesSummary = nodes.map(n => {\n    const shortType = (n.type || '').split('.').pop();\n    return n.name + ' (' + shortType + ')';\n  }).join(', ');\n  const connectionsSummary = Object.entries(connections).map(([source, conns]) => {\n    const dests = (conns.main || []).flat().map(c => c.node).join(', ');\n    return source + ' -> ' + dests;\n  }).join('; ');\n  results.push({ json: { workflowId: wf.id, name: wf.name, active: wf.active, triggerType, description, inputSchema, outputDestinations: Array.from(outputs).join(', '), subWorkflowsCalled: subWorkflows.join('; '), tags: (wf.tags || []).map(t => t.name).join(', '), nodeCount: nodes.length, errorHandler: wf.settings?.errorWorkflow || '', structureHash, needsGitHubPush, needsDescription, filename, workflowJson, nodesSummary, connectionsSummary, lastUpdated: wf.updatedAt, lastChecked: new Date().toISOString() } });\n}\nreturn results;"
       }
     },
     {
@@ -557,19 +557,6 @@
       "webhookId": "0a4759b6-4367-4280-bf29-24bd909e3f70"
     },
     {
-      "id": "b5baa9ed-fbcb-4118-9499-c67fb8955a5c",
-      "name": "Generate Descriptions",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        780,
-        380
-      ],
-      "parameters": {
-        "jsCode": "const items = $input.all();\nconst results = [];\nconst API_KEY = 'AIzaSyAD15K6pfu_sjnzdDIoNBQ9vPpawnC0nVg';\n\nfor (const item of items) {\n  if (!item.json.needsDescription) {\n    results.push(item);\n    continue;\n  }\n  try {\n    const prompt = 'Describe this n8n automation workflow in 1-2 concise sentences. Focus on what it automates and why. Be specific about the business purpose.\\n\\nName: ' + item.json.name + '\\nTrigger: ' + item.json.triggerType + '\\nOutputs to: ' + (item.json.outputDestinations || 'None') + '\\nSub-workflows: ' + (item.json.subWorkflowsCalled || 'None') + '\\nInput schema: ' + (item.json.inputSchema || 'None') + '\\nTags: ' + (item.json.tags || 'None');\n    const resp = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + API_KEY, {\n      method: 'POST',\n      headers: { 'Content-Type': 'application/json' },\n      body: JSON.stringify({\n        contents: [{ parts: [{ text: prompt }] }],\n        generationConfig: { maxOutputTokens: 150, temperature: 0.3 }\n      })\n    });\n    const data = await resp.json();\n    const desc = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();\n    results.push({ json: { ...item.json, description: desc || item.json.description } });\n  } catch (e) {\n    results.push(item);\n  }\n}\n\nreturn results;"
-      }
-    },
-    {
       "id": "db13c701-e8ed-4092-adf8-804ad6443b2f",
       "name": "Build Summary",
       "type": "n8n-nodes-base.code",
@@ -579,7 +566,48 @@
         380
       ],
       "parameters": {
-        "jsCode": "const allItems = $('Generate Descriptions').all();\nconst changedItems = $('Filter Changed Only').all();\nconst total = allItems.length;\nconst changed = changedItems.length;\n\nconst lines = [\n  '*n8n Workflow Export Complete*',\n  total + ' workflows tracked | ' + changed + ' pushed to GitHub'\n];\n\nif (changed > 0) {\n  lines.push('');\n  lines.push('*Updated:*');\n  for (const item of changedItems) {\n    const url = 'https://github.com/alex-ahbadvisors/alex-os-automations/blob/main/n8n-workflows/' + item.json.filename;\n    lines.push('\\u2022 <' + url + '|' + item.json.name + '>');\n  }\n}\n\nreturn [{ json: { slackMessage: lines.join('\\n') } }];"
+        "jsCode": "const allItems = $('Apply Description').all();\nconst changedItems = $('Filter Changed Only').all();\nconst total = allItems.length;\nconst changed = changedItems.length;\n\nconst lines = [\n  '*n8n Workflow Export Complete*',\n  total + ' workflows tracked | ' + changed + ' pushed to GitHub'\n];\n\nif (changed > 0) {\n  lines.push('');\n  lines.push('*Updated:*');\n  for (const item of changedItems) {\n    const url = 'https://github.com/alex-ahbadvisors/alex-os-automations/blob/main/n8n-workflows/' + item.json.filename;\n    lines.push('\\u2022 <' + url + '|' + item.json.name + '>');\n  }\n}\n\nreturn [{ json: { slackMessage: lines.join('\\n') } }];"
+      }
+    },
+    {
+      "id": "da3b8cbe-cf21-49ea-b916-2d419fce7d03",
+      "name": "Google Gemini",
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        780,
+        380
+      ],
+      "parameters": {
+        "resource": "text",
+        "operation": "message",
+        "modelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "models/gemini-2.0-flash",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "text": "={{ $json.needsDescription ? 'You are documenting n8n automation workflows for a consulting practice (AHB Advisors). Write a description that is useful for both a human operator and an AI assistant managing this system.\\n\\nInclude:\\n1. What the workflow does and its business purpose (1-2 sentences)\\n2. Key data flow: what it reads, processes, and writes\\n3. What triggers it and what outputs it produces\\n\\nBe specific and concise. 3-5 sentences max. No bullet points or markdown — just plain text.\\n\\nWorkflow: ' + $json.name + '\\nTrigger type: ' + $json.triggerType + '\\nNodes: ' + $json.nodesSummary + '\\nData flow: ' + $json.connectionsSummary + '\\nOutputs to: ' + ($json.outputDestinations || 'None') + '\\nSub-workflows called: ' + ($json.subWorkflowsCalled || 'None') + '\\nInput schema: ' + ($json.inputSchema || 'None') + '\\nTags: ' + ($json.tags || 'None') : 'Respond with exactly one word: SKIP' }}",
+        "options": {}
+      },
+      "credentials": {
+        "googlePalmApi": {
+          "id": "evXFdQR9T97JyGPN",
+          "name": "Gemini API"
+        }
+      }
+    },
+    {
+      "id": "4199f79c-695f-43b2-901f-4136fd9ba1c5",
+      "name": "Apply Description",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        380
+      ],
+      "parameters": {
+        "jsCode": "const geminiItems = $input.all();\nconst originals = $('Parse & Compare').all();\nconst results = [];\n\nfor (let i = 0; i < geminiItems.length; i++) {\n  const original = originals[i]?.json || {};\n  const response = (geminiItems[i].json.text || geminiItems[i].json.output || '').trim();\n  if (response.toUpperCase().startsWith('SKIP') || !response) {\n    results.push({ json: { ...original } });\n  } else {\n    results.push({ json: { ...original, description: response } });\n  }\n}\n\nreturn results;"
       }
     }
   ],
@@ -632,14 +660,25 @@
       "main": [
         [
           {
-            "node": "Generate Descriptions",
+            "node": "Google Gemini",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Generate Descriptions": {
+    "Google Gemini": {
+      "main": [
+        [
+          {
+            "node": "Apply Description",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply Description": {
       "main": [
         [
           {
@@ -767,7 +806,7 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "versionId": "c307f231-a983-4d5b-b47a-2b69a25b2b67",
+  "versionId": "748ba7e8-0ee7-4cc0-8b7f-efb69cd8c17b",
   "activeVersionId": null,
   "triggerCount": 0,
   "tags": [
