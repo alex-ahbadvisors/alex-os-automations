@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-03-10T02:12:08.551Z",
+  "updatedAt": "2026-03-10T02:41:49.978Z",
   "createdAt": "2026-01-01T21:30:12.307Z",
   "id": "DKrAVjDY2QDLr72W",
   "name": "Export n8n Workflows",
@@ -570,34 +570,6 @@
       }
     },
     {
-      "id": "da3b8cbe-cf21-49ea-b916-2d419fce7d03",
-      "name": "Google Gemini",
-      "type": "@n8n/n8n-nodes-langchain.googleGemini",
-      "typeVersion": 1,
-      "position": [
-        780,
-        380
-      ],
-      "parameters": {
-        "resource": "text",
-        "operation": "message",
-        "modelId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "models/gemini-2.0-flash",
-          "cachedResultName": "models/gemini-2.0-flash"
-        },
-        "text": "={{ $json.needsDescription ? 'You are documenting n8n automation workflows for a consulting practice (AHB Advisors). Write a description that is useful for both a human operator and an AI assistant managing this system.\\n\\nInclude:\\n1. What the workflow does and its business purpose (1-2 sentences)\\n2. Key data flow: what it reads, processes, and writes\\n3. What triggers it and what outputs it produces\\n\\nBe specific and concise. 3-5 sentences max. No bullet points or markdown — just plain text.\\n\\nWorkflow: ' + $json.name + '\\nTrigger type: ' + $json.triggerType + '\\nNodes: ' + $json.nodesSummary + '\\nData flow: ' + $json.connectionsSummary + '\\nOutputs to: ' + ($json.outputDestinations || 'None') + '\\nSub-workflows called: ' + ($json.subWorkflowsCalled || 'None') + '\\nInput schema: ' + ($json.inputSchema || 'None') + '\\nTags: ' + ($json.tags || 'None') : 'Respond with exactly one word: SKIP' }}",
-        "options": {}
-      },
-      "credentials": {
-        "googlePalmApi": {
-          "id": "evXFdQR9T97JyGPN",
-          "name": "Gemini API"
-        }
-      }
-    },
-    {
       "id": "4199f79c-695f-43b2-901f-4136fd9ba1c5",
       "name": "Apply Description",
       "type": "n8n-nodes-base.code",
@@ -607,7 +579,39 @@
         380
       ],
       "parameters": {
-        "jsCode": "const geminiItems = $input.all();\nconst originals = $('Parse & Compare').all();\nconst results = [];\n\nfor (let i = 0; i < geminiItems.length; i++) {\n  const original = originals[i]?.json || {};\n  const response = (geminiItems[i].json.text || geminiItems[i].json.output || '').trim();\n  if (response.toUpperCase().startsWith('SKIP') || !response) {\n    results.push({ json: { ...original } });\n  } else {\n    results.push({ json: { ...original, description: response } });\n  }\n}\n\nreturn results;"
+        "jsCode": "const llmItems = $input.all();\nconst originals = $('Parse & Compare').all();\nconst results = [];\n\nfor (let i = 0; i < llmItems.length; i++) {\n  const original = originals[i]?.json || {};\n  const j = llmItems[i].json;\n  // Anthropic returns content as array: content[0].text\n  let response = '';\n  if (j.text) {\n    response = j.text;\n  } else if (j.output) {\n    response = j.output;\n  } else if (Array.isArray(j.content) && j.content[0]?.text) {\n    response = j.content[0].text;\n  } else if (typeof j.content === 'string') {\n    response = j.content;\n  } else if (j.message) {\n    response = j.message;\n  }\n  response = response.trim();\n  if (response.toUpperCase().startsWith('SKIP') || !response) {\n    results.push({ json: { ...original } });\n  } else {\n    results.push({ json: { ...original, description: response } });\n  }\n}\n\nreturn results;"
+      }
+    },
+    {
+      "id": "a872aa90-510d-4208-a811-9f39eb6e261f",
+      "name": "Generate Description",
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        896,
+        136
+      ],
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-haiku-4-5-20251001",
+          "mode": "list",
+          "cachedResultName": "claude-haiku-4-5-20251001"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ $json.needsDescription ? 'You are documenting n8n automation workflows for a consulting practice (AHB Advisors). Write a description that is useful for both a human operator and an AI assistant managing this system.\\n\\nInclude:\\n1. What the workflow does and its business purpose (1-2 sentences)\\n2. Key data flow: what it reads, processes, and writes\\n3. What triggers it and what outputs it produces\\n\\nBe specific and concise. 3-5 sentences max. No bullet points or markdown — just plain text.\\n\\nWorkflow: ' + $json.name + '\\nTrigger type: ' + $json.triggerType + '\\nNodes: ' + $json.nodesSummary + '\\nData flow: ' + $json.connectionsSummary + '\\nOutputs to: ' + ($json.outputDestinations || 'None') + '\\nSub-workflows called: ' + ($json.subWorkflowsCalled || 'None') + '\\nInput schema: ' + ($json.inputSchema || 'None') + '\\nTags: ' + ($json.tags || 'None') : 'Respond with exactly one word: SKIP' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "anthropicApi": {
+          "id": "PdQDpy0E1BohbFDv",
+          "name": "Anthropic account"
+        }
       }
     }
   ],
@@ -650,28 +654,6 @@
         [
           {
             "node": "Parse & Compare",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Parse & Compare": {
-      "main": [
-        [
-          {
-            "node": "Google Gemini",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Google Gemini": {
-      "main": [
-        [
-          {
-            "node": "Apply Description",
             "type": "main",
             "index": 0
           }
@@ -795,6 +777,28 @@
           }
         ]
       ]
+    },
+    "Parse & Compare": {
+      "main": [
+        [
+          {
+            "node": "Generate Description",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Description": {
+      "main": [
+        [
+          {
+            "node": "Apply Description",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -806,7 +810,7 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "versionId": "748ba7e8-0ee7-4cc0-8b7f-efb69cd8c17b",
+  "versionId": "84cfc7e7-ba23-41d5-867e-54c2a079cb9e",
   "activeVersionId": null,
   "triggerCount": 0,
   "tags": [
