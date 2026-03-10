@@ -1,0 +1,510 @@
+{
+  "updatedAt": "2026-03-10T00:11:32.959Z",
+  "createdAt": "2026-03-09T21:48:19.398Z",
+  "id": "566ks5Nlg2F5rvzO",
+  "name": "Weekly Goals Reminder",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Monday 9 AM Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "getAll",
+        "team": "9011763462",
+        "space": "90113618058",
+        "folder": "90114444483",
+        "list": "901113252663",
+        "returnAll": false,
+        "limit": 5,
+        "filters": {
+          "includeClosed": true,
+          "orderBy": "created"
+        }
+      },
+      "id": "get-tasks",
+      "name": "Get Weekly Goals Tasks",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        224,
+        0
+      ],
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "limit-one",
+      "name": "Get Most Recent",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        448,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "get",
+        "id": "={{ $json.id }}"
+      },
+      "id": "get-task-detail",
+      "name": "Get Task Details",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        672,
+        0
+      ],
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const task = $input.first().json;\nconst checklists = task.checklists || [];\n\nlet totalItems = 0;\nlet completedItems = 0;\nconst carryForwards = [];\n\nfor (const checklist of checklists) {\n  for (const item of (checklist.items || [])) {\n    totalItems++;\n    if (item.resolved) {\n      completedItems++;\n    } else {\n      carryForwards.push({\n        name: item.name,\n        checklist: checklist.name\n      });\n    }\n  }\n}\n\nconst completionPct = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;\n\nconst now = new Date();\nconst year = now.getFullYear();\nconst month = String(now.getMonth() + 1).padStart(2, '0');\nconst day = String(now.getDate()).padStart(2, '0');\nconst taskName = `${year}-${month}-${day} Weekly Goals`;\n\nconst friday = new Date(now);\nfriday.setDate(friday.getDate() + 4);\n\nreturn [{\n  json: {\n    lastWeekTaskName: task.name || 'Unknown',\n    lastWeekTaskUrl: task.url || '',\n    totalItems,\n    completedItems,\n    completionPct,\n    carryForwards,\n    carryForwardCount: carryForwards.length,\n    newTaskName: taskName,\n    fridayDate: friday.toISOString()\n  }\n}];"
+      },
+      "id": "parse-scorecard",
+      "name": "Parse Scorecard",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "team": "9011763462",
+        "space": "90113618058",
+        "folder": "90114444483",
+        "list": "901113252663",
+        "name": "={{ $json.newTaskName }}",
+        "additionalFields": {
+          "assignees": [
+            120026283
+          ],
+          "dueDate": "={{ $json.fridayDate }}",
+          "dueDateTime": true,
+          "priority": 2,
+          "status": "in progress"
+        }
+      },
+      "id": "create-task",
+      "name": "Create Weekly Goals Task",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        0
+      ],
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "checklist",
+        "task": "={{ $json.id }}",
+        "name": "Monthly Context"
+      },
+      "id": "checklist-monthly",
+      "name": "Create Checklist: Monthly Context",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        0
+      ],
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "checklist",
+        "task": "={{ $('Create Weekly Goals Task').item.json.id }}",
+        "name": "Alex Goals"
+      },
+      "id": "checklist-alex",
+      "name": "Create Checklist: Alex Goals",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        1552,
+        0
+      ],
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "checklist",
+        "task": "={{ $('Create Weekly Goals Task').item.json.id }}",
+        "name": "Kendra Goals"
+      },
+      "id": "checklist-kendra",
+      "name": "Create Checklist: Kendra Goals",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        0
+      ],
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "checklist",
+        "task": "={{ $('Create Weekly Goals Task').item.json.id }}",
+        "name": "Last Week Scorecard"
+      },
+      "id": "checklist-scorecard",
+      "name": "Create Checklist: Last Week Scorecard",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        1984,
+        0
+      ],
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "channel",
+              "name": "channel",
+              "value": "C0AJQH5NFPS",
+              "type": "string"
+            },
+            {
+              "id": "message",
+              "name": "message",
+              "value": "={{ '*Weekly Goals Session Ready*\\n\\n*Last week:* ' + $('Parse Scorecard').item.json.lastWeekTaskName + '\\n• ' + $('Parse Scorecard').item.json.completedItems + '/' + $('Parse Scorecard').item.json.totalItems + ' complete (' + $('Parse Scorecard').item.json.completionPct + '%)\\n• ' + $('Parse Scorecard').item.json.carryForwardCount + ' carry-forwards\\n\\n' + ($('Parse Scorecard').item.json.carryForwardCount > 0 ? '*Carry-forwards:*\\n' + $('Parse Scorecard').item.json.carryForwards.map(cf => '• ' + cf.name).join('\\n') + '\\n\\n' : '') + '*New task created:* <' + $('Create Weekly Goals Task').item.json.url + '|' + $('Parse Scorecard').item.json.newTaskName + '>\\n\\nRun your weekly goals session when ready.' }}",
+              "type": "string"
+            },
+            {
+              "id": "source_workflow",
+              "name": "source_workflow",
+              "value": "Weekly Goals Reminder",
+              "type": "string"
+            },
+            {
+              "id": "message_type",
+              "name": "message_type",
+              "value": "text",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "format-slack",
+      "name": "Format Slack Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2208,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "JSM1IAZ8Bj4miEck",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/JSM1IAZ8Bj4miEck",
+          "cachedResultName": "Abel Slack Flow Handler"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "channel": "={{ $json.channel }}",
+            "message": "={{ $json.message }}",
+            "source_workflow": "={{ $json.source_workflow }}",
+            "message_type": "={{ $json.message_type }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "channel",
+              "displayName": "channel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "source_workflow",
+              "displayName": "source_workflow",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "message_type",
+              "displayName": "message_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "thread_ts",
+              "displayName": "thread_ts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "id",
+        "options": {}
+      },
+      "id": "slack-send",
+      "name": "Call Abel Slack Flow Handler",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2432,
+        0
+      ],
+      "webhookId": "204979d6-63c5-4b70-a39c-603abcb91ad6"
+    }
+  ],
+  "connections": {
+    "Monday 9 AM Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Weekly Goals Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Weekly Goals Tasks": {
+      "main": [
+        [
+          {
+            "node": "Get Most Recent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Most Recent": {
+      "main": [
+        [
+          {
+            "node": "Get Task Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Task Details": {
+      "main": [
+        [
+          {
+            "node": "Parse Scorecard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Scorecard": {
+      "main": [
+        [
+          {
+            "node": "Create Weekly Goals Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Weekly Goals Task": {
+      "main": [
+        [
+          {
+            "node": "Create Checklist: Monthly Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Checklist: Monthly Context": {
+      "main": [
+        [
+          {
+            "node": "Create Checklist: Alex Goals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Checklist: Alex Goals": {
+      "main": [
+        [
+          {
+            "node": "Create Checklist: Kendra Goals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Checklist: Kendra Goals": {
+      "main": [
+        [
+          {
+            "node": "Create Checklist: Last Week Scorecard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Checklist: Last Week Scorecard": {
+      "main": [
+        [
+          {
+            "node": "Format Slack Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Slack Message": {
+      "main": [
+        [
+          {
+            "node": "Call Abel Slack Flow Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/New_York",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "errorWorkflow": "Ka01FqAuhDXin0Kn"
+  },
+  "staticData": {
+    "node:Monday 9 AM Trigger": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": null,
+  "versionId": "19cd79a7-d54e-4b82-a6d8-10eb600f9275",
+  "activeVersionId": "19cd79a7-d54e-4b82-a6d8-10eb600f9275",
+  "triggerCount": 1,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    },
+    {
+      "updatedAt": "2026-03-02T03:16:47.446Z",
+      "createdAt": "2026-03-02T03:16:47.446Z",
+      "id": "W2Wf7gvhRrIYpYGx",
+      "name": "chief-of-staff"
+    },
+    {
+      "updatedAt": "2026-03-04T23:28:06.468Z",
+      "createdAt": "2026-03-04T23:28:06.468Z",
+      "id": "p1gDI9QAauVslxUO",
+      "name": "abel"
+    }
+  ]
+}
