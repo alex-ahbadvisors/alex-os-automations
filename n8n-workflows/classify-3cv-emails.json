@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-03-10T00:12:28.823Z",
+  "updatedAt": "2026-03-11T04:46:28.969Z",
   "createdAt": "2026-03-04T02:35:07.480Z",
   "id": "49WHtcLZUIAghZ1U",
   "name": "Classify 3CV Emails",
@@ -7,58 +7,67 @@
   "isArchived": false,
   "nodes": [
     {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "3cv-classifier",
-        "options": {}
-      },
+      "id": "ed0d3c46-9875-44c1-bafd-6385925be7ae",
+      "name": "3CV Email Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
         0,
         0
       ],
-      "id": "ed0d3c46-9875-44c1-bafd-6385925be7ae",
-      "name": "3CV Email Webhook",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "3cv-classifier",
+        "options": {}
+      },
       "webhookId": "3cv-classifier-001"
     },
     {
-      "parameters": {
-        "operation": "get",
-        "dataTableId": {
-          "__rl": true,
-          "value": "0vn16FxfW2ObiSGc",
-          "mode": "id"
-        },
-        "filters": {
-          "conditions": []
-        },
-        "limit": 200
-      },
+      "id": "31fa4f62-8228-4c38-9dfb-3b68dec1082d",
+      "name": "Get Missive Labels",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
         224,
         0
       ],
-      "id": "31fa4f62-8228-4c38-9dfb-3b68dec1082d",
-      "name": "Get Missive Labels",
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "0vn16FxfW2ObiSGc",
+          "mode": "id",
+          "cachedResultName": "0vn16FxfW2ObiSGc"
+        },
+        "filters": {
+          "conditions": []
+        },
+        "limit": 200
+      },
       "alwaysOutputData": true
     },
     {
-      "parameters": {
-        "jsCode": "// Check if conversation already has a client label.\n// If yes → skip AI. If no → extract email content for classification.\n//\n// Handles both Missive webhook shapes:\n//   Rule trigger:    body.latest_message\n//   Comment trigger:  body.message\n\nconst webhook = $('3CV Email Webhook').first().json;\nconst body = webhook.body || webhook;\nconst conversation = body.conversation || {};\n\n// Extract message from either webhook shape\nconst message = body.latest_message || body.message || (body.messages || [])[0] || {};\n\n// Current conversation labels\nconst convLabelIds = new Set(\n  (conversation.shared_labels || []).map(l => l.id)\n);\n\n// Filter DataTable to recipient leaf labels (client-eligible)\nconst allLabels = $('Get Missive Labels').all();\nconst clientLabels = allLabels.filter(l => {\n  const j = l.json;\n  return j.category === 'Recipients'\n    && j.is_leaf === 'true'\n    && ['Current Clients', 'Prospects', 'Former clients'].includes(j.sub_category);\n});\n\n// Check if any existing label is already a client label\nconst existingClientLabels = clientLabels\n  .filter(cl => convLabelIds.has(cl.json.label_id))\n  .map(cl => cl.json.label_name);\n\nif (existingClientLabels.length > 0) {\n  return [{ alreadyClassified: true }];\n}\n\n// Extract email content from whichever message shape we got\nconst subject = conversation.subject || message.subject || '';\nconst emailBody = (message.body || message.preview || '')\n  .replace(/<[^>]*>/g, ' ')\n  .replace(/\\s+/g, ' ')\n  .substring(0, 3000);\n\nreturn [{\n  alreadyClassified: false,\n  conversationId: conversation.id,\n  subject: subject,\n  emailBody: emailBody\n}];"
-      },
+      "id": "1b5acb7a-1367-4aa4-be15-2bdcbe1047ab",
+      "name": "Check Existing Labels",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         448,
         0
       ],
-      "id": "1b5acb7a-1367-4aa4-be15-2bdcbe1047ab",
-      "name": "Check Existing Labels"
+      "parameters": {
+        "jsCode": "// Check if conversation already has a client label.\n// If yes → skip AI. If no → extract email content for classification.\n//\n// Handles both Missive webhook shapes:\n//   Rule trigger:    body.latest_message\n//   Comment trigger:  body.message\n\nconst webhook = $('3CV Email Webhook').first().json;\nconst body = webhook.body || webhook;\nconst conversation = body.conversation || {};\n\n// Extract message from either webhook shape\nconst message = body.latest_message || body.message || (body.messages || [])[0] || {};\n\n// Current conversation labels\nconst convLabelIds = new Set(\n  (conversation.shared_labels || []).map(l => l.id)\n);\n\n// Filter DataTable to recipient leaf labels (client-eligible)\nconst allLabels = $('Get Missive Labels').all();\nconst clientLabels = allLabels.filter(l => {\n  const j = l.json;\n  return j.category === 'Recipients'\n    && j.is_leaf === 'true'\n    && ['Current Clients', 'Prospects', 'Former clients'].includes(j.sub_category);\n});\n\n// Check if any existing label is already a client label\nconst existingClientLabels = clientLabels\n  .filter(cl => convLabelIds.has(cl.json.label_id))\n  .map(cl => cl.json.label_name);\n\nif (existingClientLabels.length > 0) {\n  return [{ alreadyClassified: true }];\n}\n\n// Extract email content from whichever message shape we got\nconst subject = conversation.subject || message.subject || '';\nconst emailBody = (message.body || message.preview || '')\n  .replace(/<[^>]*>/g, ' ')\n  .replace(/\\s+/g, ' ')\n  .substring(0, 3000);\n\nreturn [{\n  alreadyClassified: false,\n  conversationId: conversation.id,\n  subject: subject,\n  emailBody: emailBody\n}];"
+      }
     },
     {
+      "id": "a5502217-163a-4887-9c7c-5cc82b0ea731",
+      "name": "Already Classified?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        0
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -81,63 +90,38 @@
           "combinator": "and"
         },
         "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        672,
-        0
-      ],
-      "id": "a5502217-163a-4887-9c7c-5cc82b0ea731",
-      "name": "Already Classified?"
-    },
-    {
-      "parameters": {
-        "authentication": "oAuth2",
-        "operation": "get",
-        "id": "868hqgk20",
-        "includeMarkdownDescription": true
-      },
-      "type": "n8n-nodes-base.clickUp",
-      "typeVersion": 1,
-      "position": [
-        896,
-        0
-      ],
-      "id": "56bfdc2d-f79a-4c6c-a6d3-c115fca9bf16",
-      "name": "Email Classifier Prompt",
-      "executeOnce": true,
-      "retryOnFail": true,
-      "maxTries": 2,
-      "credentials": {
-        "clickUpOAuth2Api": {
-          "id": "WiEsUqUCPM9Xds21",
-          "name": "ClickUp Alex Oauth"
-        }
       }
     },
     {
-      "parameters": {
-        "promptType": "define",
-        "text": "=<EMAIL>\nSubject: {{ $('Check Existing Labels').first().json.subject }}\n\nBody:\n{{ $('Check Existing Labels').first().json.emailBody }}\n</EMAIL>",
-        "hasOutputParser": true,
-        "options": {
-          "systemMessage": "={{ $json.markdown_description }}"
-        }
-      },
+      "id": "739ea913-7a9e-4fcd-919d-0eef8320b243",
+      "name": "Classification Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
       "position": [
         1120,
         0
       ],
-      "id": "739ea913-7a9e-4fcd-919d-0eef8320b243",
-      "name": "Classification Agent",
+      "parameters": {
+        "promptType": "define",
+        "text": "=<EMAIL>\nSubject: {{ $('Check Existing Labels').first().json.subject }}\n\nBody:\n{{ $('Check Existing Labels').first().json.emailBody }}\n</EMAIL>",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "={{ $json.content }}"
+        }
+      },
       "retryOnFail": true,
       "maxTries": 2,
       "waitBetweenTries": 500
     },
     {
+      "id": "609ce2d7-f8a7-4a57-b81e-3f659ccae254",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1136,
+        224
+      ],
       "parameters": {
         "model": {
           "__rl": true,
@@ -147,14 +131,6 @@
         },
         "options": {}
       },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        1136,
-        224
-      ],
-      "id": "609ce2d7-f8a7-4a57-b81e-3f659ccae254",
-      "name": "OpenAI Chat Model",
       "credentials": {
         "openAiApi": {
           "id": "FPFFI1NvOtGMoh30",
@@ -163,12 +139,21 @@
       }
     },
     {
+      "id": "0438594e-cf1d-4c9a-a02e-bac9764bf5f9",
+      "name": "Find Client Labels",
+      "type": "n8n-nodes-base.dataTableTool",
+      "typeVersion": 1,
+      "position": [
+        1264,
+        224
+      ],
       "parameters": {
         "operation": "get",
         "dataTableId": {
           "__rl": true,
           "value": "0vn16FxfW2ObiSGc",
-          "mode": "id"
+          "mode": "id",
+          "cachedResultName": "0vn16FxfW2ObiSGc"
         },
         "filters": {
           "conditions": [
@@ -180,30 +165,30 @@
           ]
         },
         "returnAll": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Return_All', ``, 'boolean') }}"
-      },
-      "type": "n8n-nodes-base.dataTableTool",
-      "typeVersion": 1,
-      "position": [
-        1264,
-        224
-      ],
-      "id": "0438594e-cf1d-4c9a-a02e-bac9764bf5f9",
-      "name": "Find Client Labels"
+      }
     },
     {
-      "parameters": {
-        "jsCode": "  // Parse Classification Agent structured output                       \n  // Output parser returns: { clients: [...], label_ids: [...] }\n\n  const agentOutput = $('Classification Agent').first().json;\n  const conversationId = $('Check Existing Labels').first().json.conversationId;\n\n  // With structured output parser, output is already an object\n  const output = agentOutput.output || {};\n  const labelIds = output.label_ids || [];\n\n  if (labelIds.length === 0) {\n    return [{ conversationId, labelIds: [], skip: true }];\n  }\n\n  return [{ conversationId, labelIds, skip: false }];"
-      },
+      "id": "c6b5148b-fc28-432f-b7bf-c56fdda09014",
+      "name": "Resolve Label IDs",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         1472,
         0
       ],
-      "id": "c6b5148b-fc28-432f-b7bf-c56fdda09014",
-      "name": "Resolve Label IDs"
+      "parameters": {
+        "jsCode": "  // Parse Classification Agent structured output                       \n  // Output parser returns: { clients: [...], label_ids: [...] }\n\n  const agentOutput = $('Classification Agent').first().json;\n  const conversationId = $('Check Existing Labels').first().json.conversationId;\n\n  // With structured output parser, output is already an object\n  const output = agentOutput.output || {};\n  const labelIds = output.label_ids || [];\n\n  if (labelIds.length === 0) {\n    return [{ conversationId, labelIds: [], skip: true }];\n  }\n\n  return [{ conversationId, labelIds, skip: false }];"
+      }
     },
     {
+      "id": "dbc6813d-524a-4b59-b838-65fa4dc398c4",
+      "name": "Labels to Apply?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1696,
+        0
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -226,17 +211,17 @@
           "combinator": "and"
         },
         "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        1696,
-        0
-      ],
-      "id": "dbc6813d-524a-4b59-b838-65fa4dc398c4",
-      "name": "Labels to Apply?"
+      }
     },
     {
+      "id": "f482967a-2af5-48aa-9f73-3527bdddeb18",
+      "name": "Apply Missive Labels",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1920,
+        0
+      ],
       "parameters": {
         "method": "POST",
         "url": "https://public.missiveapp.com/v1/posts",
@@ -253,14 +238,6 @@
           }
         }
       },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1920,
-        0
-      ],
-      "id": "f482967a-2af5-48aa-9f73-3527bdddeb18",
-      "name": "Apply Missive Labels",
       "credentials": {
         "httpBearerAuth": {
           "id": "naMGpImlvunQE8Zi",
@@ -269,18 +246,60 @@
       }
     },
     {
-      "parameters": {
-        "schemaType": "manual",
-        "inputSchema": "  {                                                                                                                                                                                     \n    \"type\": \"object\",                                                                                                                                                                   \n    \"properties\": {                                                                                                                                                                     \n      \"clients\": {                                                                                                                                                                    \n        \"type\": \"array\",\n        \"items\": { \"type\": \"string\" },\n        \"description\": \"Client label names matched from the Missive Labels DataTable, e.g. MC - Mastercard. Empty array if no client match.\"\n      },\n      \"label_ids\": {\n        \"type\": \"array\",\n        \"items\": { \"type\": \"string\" },\n        \"description\": \"Corresponding Missive label_id values from the DataTable tool lookup. Empty array if no client match.\"\n      }\n    },\n    \"required\": [\"clients\", \"label_ids\"]\n  }"
-      },
+      "id": "76e978a7-0953-4ca7-88bd-8b9a9261a62c",
+      "name": "Structured Output Parser",
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
         1344,
         256
       ],
-      "id": "76e978a7-0953-4ca7-88bd-8b9a9261a62c",
-      "name": "Structured Output Parser"
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "  {                                                                                                                                                                                     \n    \"type\": \"object\",                                                                                                                                                                   \n    \"properties\": {                                                                                                                                                                     \n      \"clients\": {                                                                                                                                                                    \n        \"type\": \"array\",\n        \"items\": { \"type\": \"string\" },\n        \"description\": \"Client label names matched from the Missive Labels DataTable, e.g. MC - Mastercard. Empty array if no client match.\"\n      },\n      \"label_ids\": {\n        \"type\": \"array\",\n        \"items\": { \"type\": \"string\" },\n        \"description\": \"Corresponding Missive label_id values from the DataTable tool lookup. Empty array if no client match.\"\n      }\n    },\n    \"required\": [\"clients\", \"label_ids\"]\n  }"
+      }
+    },
+    {
+      "id": "fetch-prompt-1",
+      "name": "Fetch Classifier Prompt",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        896,
+        0
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "DvSBQSUtfhIdjCVR",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "clickup_id": "868hqgk20"
+          },
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false,
+          "schema": [
+            {
+              "id": "clickup_id",
+              "displayName": "clickup_id",
+              "type": "string",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "options": []
+            }
+          ]
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "executeOnce": true
     }
   ],
   "connections": {
@@ -311,29 +330,6 @@
         [
           {
             "node": "Already Classified?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Already Classified?": {
-      "main": [
-        [],
-        [
-          {
-            "node": "Email Classifier Prompt",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Email Classifier Prompt": {
-      "main": [
-        [
-          {
-            "node": "Classification Agent",
             "type": "main",
             "index": 0
           }
@@ -405,16 +401,41 @@
           }
         ]
       ]
+    },
+    "Already Classified?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Fetch Classifier Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Classifier Prompt": {
+      "main": [
+        [
+          {
+            "node": "Classification Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
     "executionOrder": "v1",
-    "availableInMCP": true
+    "availableInMCP": true,
+    "errorWorkflow": "Ka01FqAuhDXin0Kn",
+    "callerPolicy": "workflowsFromSameOwner"
   },
   "staticData": null,
   "meta": null,
-  "versionId": "5224fd62-5bfa-4e9b-a734-245fcd71bd9e",
-  "activeVersionId": "5224fd62-5bfa-4e9b-a734-245fcd71bd9e",
+  "versionId": "2f0e9089-d5ce-48bc-b534-be03bf756348",
+  "activeVersionId": "2f0e9089-d5ce-48bc-b534-be03bf756348",
   "triggerCount": 1,
   "tags": [
     {
