@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-03-10T00:20:21.824Z",
+  "updatedAt": "2026-03-10T03:00:04.359Z",
   "createdAt": "2025-10-24T20:46:54.121Z",
   "id": "v3WtMhbmRSFL1Kq6",
   "name": "Abel Slack Event Handler",
@@ -7,37 +7,45 @@
   "isArchived": false,
   "nodes": [
     {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "abel-interaction-b35e4ef1-5f17-4223-ba5c-0b7680cc58d9",
-        "options": {}
-      },
+      "id": "17c02337-3c60-40d7-8e5b-c72ae92c4beb",
+      "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
         0,
         -544
       ],
-      "id": "17c02337-3c60-40d7-8e5b-c72ae92c4beb",
-      "name": "Webhook",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "abel-interaction-b35e4ef1-5f17-4223-ba5c-0b7680cc58d9",
+        "options": {}
+      },
       "webhookId": "b35e4ef1-5f17-4223-ba5c-0b7680cc58d9"
     },
     {
-      "parameters": {
-        "mode": "raw",
-        "jsonOutput": "={{ $json.body.payload }}",
-        "options": {}
-      },
+      "id": "df24ebbd-30a3-4745-90ac-5111b2396d2e",
+      "name": "Payload",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
         224,
         -544
       ],
-      "id": "df24ebbd-30a3-4745-90ac-5111b2396d2e",
-      "name": "Payload"
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.body.payload }}",
+        "options": {}
+      }
     },
     {
+      "id": "d2bc4ffe-84a0-4555-8f3d-e3d34f6af73c",
+      "name": "Create Meeting Tasks",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        -448
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -71,17 +79,17 @@
           "combinator": "and"
         },
         "options": {}
-      },
-      "type": "n8n-nodes-base.filter",
-      "typeVersion": 2.2,
-      "position": [
-        448,
-        -448
-      ],
-      "id": "d2bc4ffe-84a0-4555-8f3d-e3d34f6af73c",
-      "name": "Create Meeting Tasks"
+      }
     },
     {
+      "id": "8418dc8e-d371-4571-81a4-c0fe38d45349",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        1344,
+        -464
+      ],
       "parameters": {
         "rules": {
           "values": [
@@ -140,17 +148,17 @@
         "options": {
           "fallbackOutput": "extra"
         }
-      },
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.3,
-      "position": [
-        1344,
-        -464
-      ],
-      "id": "8418dc8e-d371-4571-81a4-c0fe38d45349",
-      "name": "Switch"
+      }
     },
     {
+      "id": "a2971a1b-bbde-4bc6-a870-3e5e4fdcfae2",
+      "name": "Send Duplicate Msg",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1568,
+        -640
+      ],
       "parameters": {
         "select": "channel",
         "channelId": {
@@ -179,23 +187,23 @@
           }
         }
       },
-      "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.3,
-      "position": [
-        1568,
-        -640
-      ],
-      "id": "a2971a1b-bbde-4bc6-a870-3e5e4fdcfae2",
-      "name": "Send Duplicate Msg",
-      "webhookId": "f157de3a-962b-44d6-b090-51b97a1c74b4",
       "credentials": {
         "slackApi": {
           "id": "DvovCyTPlCPUoL2k",
           "name": "Abel N8N Token"
         }
-      }
+      },
+      "webhookId": "f157de3a-962b-44d6-b090-51b97a1c74b4"
     },
     {
+      "id": "450f3f22-25f9-4f1d-9843-350986ed4de9",
+      "name": "Send In Progress Msg",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1568,
+        -448
+      ],
       "parameters": {
         "select": "channel",
         "channelId": {
@@ -223,23 +231,23 @@
           }
         }
       },
-      "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.3,
-      "position": [
-        1568,
-        -448
-      ],
-      "id": "450f3f22-25f9-4f1d-9843-350986ed4de9",
-      "name": "Send In Progress Msg",
-      "webhookId": "f157de3a-962b-44d6-b090-51b97a1c74b4",
       "credentials": {
         "slackApi": {
           "id": "DvovCyTPlCPUoL2k",
           "name": "Abel N8N Token"
         }
-      }
+      },
+      "webhookId": "f157de3a-962b-44d6-b090-51b97a1c74b4"
     },
     {
+      "id": "220b1b86-f967-47eb-8bf1-f60c53e49473",
+      "name": "Clickup List",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        672,
+        -640
+      ],
       "parameters": {
         "operation": "get",
         "dataTableId": {
@@ -258,17 +266,17 @@
           ]
         },
         "returnAll": true
-      },
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1,
-      "position": [
-        672,
-        -640
-      ],
-      "id": "220b1b86-f967-47eb-8bf1-f60c53e49473",
-      "name": "Clickup List"
+      }
     },
     {
+      "id": "fffe35cd-68d5-43b9-be25-12773ce777d8",
+      "name": "Selected List",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        -640
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -281,32 +289,32 @@
           ]
         },
         "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        896,
-        -640
-      ],
-      "id": "fffe35cd-68d5-43b9-be25-12773ce777d8",
-      "name": "Selected List"
+      }
     },
     {
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {}
-      },
+      "id": "f8de1d99-fa3f-4be3-931b-c09bdb3a7a74",
+      "name": "Meeting Note",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
         1120,
         -448
       ],
-      "id": "f8de1d99-fa3f-4be3-931b-c09bdb3a7a74",
-      "name": "Meeting Note"
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      }
     },
     {
+      "id": "357135bd-a3ac-400d-8bdf-bcde26b24150",
+      "name": "Meeting Note1",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        672,
+        -448
+      ],
       "parameters": {
         "operation": "get",
         "dataTableId": {
@@ -325,17 +333,17 @@
           ]
         },
         "limit": 1
-      },
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1,
-      "position": [
-        672,
-        -448
-      ],
-      "id": "357135bd-a3ac-400d-8bdf-bcde26b24150",
-      "name": "Meeting Note1"
+      }
     },
     {
+      "id": "40866b14-e3f7-4987-9807-cb1051784db7",
+      "name": "Edit Fields1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        -448
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -349,17 +357,17 @@
         },
         "includeOtherFields": true,
         "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        896,
-        -448
-      ],
-      "id": "40866b14-e3f7-4987-9807-cb1051784db7",
-      "name": "Edit Fields1"
+      }
     },
     {
+      "id": "6ea71eca-8fbc-4e68-99d1-37419a2f675d",
+      "name": "Draft Email HITL Response?",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        -64
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -410,17 +418,17 @@
           "combinator": "and"
         },
         "options": {}
-      },
-      "type": "n8n-nodes-base.filter",
-      "typeVersion": 2.2,
-      "position": [
-        448,
-        -64
-      ],
-      "id": "6ea71eca-8fbc-4e68-99d1-37419a2f675d",
-      "name": "Draft Email HITL Response?"
+      }
     },
     {
+      "id": "ff170ad1-3ea7-49af-89e6-f4c7e0d7dbfc",
+      "name": "Continue Followup Email Draft",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        896,
+        -64
+      ],
       "parameters": {
         "method": "POST",
         "url": "={{ $json.actions[0].value }}",
@@ -441,24 +449,24 @@
         },
         "options": {}
       },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        896,
-        -64
-      ],
-      "id": "ff170ad1-3ea7-49af-89e6-f4c7e0d7dbfc",
-      "name": "Continue Followup Email Draft",
-      "executeOnce": false,
       "credentials": {
         "httpHeaderAuth": {
           "id": "CKqpgVPBQ4TDvQkt",
           "name": "Abel Secret Key"
         }
       },
+      "executeOnce": false,
       "onError": "continueErrorOutput"
     },
     {
+      "id": "9f03278d-80bd-4c4a-8ee1-fc322eda1d1b",
+      "name": "Draft Follow Up Email",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1344,
+        -64
+      ],
       "parameters": {
         "workflowId": {
           "__rl": true,
@@ -484,7 +492,8 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "number",
-              "removed": false
+              "removed": false,
+              "options": []
             },
             {
               "id": "runHitl",
@@ -494,7 +503,8 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "boolean",
-              "removed": false
+              "removed": false,
+              "options": []
             },
             {
               "id": "hitlResponse",
@@ -504,7 +514,8 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "string",
-              "removed": false
+              "removed": false,
+              "options": []
             }
           ],
           "attemptToConvertTypes": false,
@@ -513,17 +524,17 @@
         "options": {
           "waitForSubWorkflow": false
         }
-      },
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.3,
-      "position": [
-        1344,
-        -64
-      ],
-      "id": "9f03278d-80bd-4c4a-8ee1-fc322eda1d1b",
-      "name": "Draft Follow Up Email"
+      }
     },
     {
+      "id": "344a0a15-2ce2-41d7-8b2c-b3a1dfe1eadc",
+      "name": "Meeting Note2",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        -64
+      ],
       "parameters": {
         "operation": "get",
         "dataTableId": {
@@ -543,17 +554,17 @@
           ]
         },
         "limit": 1
-      },
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1,
-      "position": [
-        1120,
-        -64
-      ],
-      "id": "344a0a15-2ce2-41d7-8b2c-b3a1dfe1eadc",
-      "name": "Meeting Note2"
+      }
     },
     {
+      "id": "fbacb23b-d37d-470f-9422-324f77d26a7d",
+      "name": "HITL Action",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        672,
+        -64
+      ],
       "parameters": {
         "rules": {
           "values": [
@@ -609,17 +620,17 @@
           ]
         },
         "options": {}
-      },
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.3,
-      "position": [
-        672,
-        -64
-      ],
-      "id": "fbacb23b-d37d-470f-9422-324f77d26a7d",
-      "name": "HITL Action"
+      }
     },
     {
+      "id": "ef29bf6b-e079-43f3-a64f-b44ef0ab797f",
+      "name": "Cancel Followup Email Draft",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        896,
+        -256
+      ],
       "parameters": {
         "method": "POST",
         "url": "={{ $json.actions[0].value }}",
@@ -636,24 +647,24 @@
         },
         "options": {}
       },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        896,
-        -256
-      ],
-      "id": "ef29bf6b-e079-43f3-a64f-b44ef0ab797f",
-      "name": "Cancel Followup Email Draft",
-      "executeOnce": false,
       "credentials": {
         "httpHeaderAuth": {
           "id": "CKqpgVPBQ4TDvQkt",
           "name": "Abel Secret Key"
         }
       },
+      "executeOnce": false,
       "onError": "continueErrorOutput"
     },
     {
+      "id": "07db02c3-2f28-461c-8788-f084ca9cb291",
+      "name": "Clickup List1",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        672,
+        -1216
+      ],
       "parameters": {
         "operation": "get",
         "dataTableId": {
@@ -672,17 +683,17 @@
           ]
         },
         "returnAll": true
-      },
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1,
-      "position": [
-        672,
-        -1216
-      ],
-      "id": "07db02c3-2f28-461c-8788-f084ca9cb291",
-      "name": "Clickup List1"
+      }
     },
     {
+      "id": "3ce2b087-5fe9-4594-96e9-7924a0f98fbd",
+      "name": "Selected List1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        -1216
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -695,17 +706,17 @@
           ]
         },
         "options": {}
-      },
+      }
+    },
+    {
+      "id": "4b2ab133-4946-4938-b8d1-ac0c749dae94",
+      "name": "Edit Fields",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
         896,
-        -1216
+        -1024
       ],
-      "id": "3ce2b087-5fe9-4594-96e9-7924a0f98fbd",
-      "name": "Selected List1"
-    },
-    {
       "parameters": {
         "assignments": {
           "assignments": [
@@ -719,17 +730,17 @@
         },
         "includeOtherFields": true,
         "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        896,
-        -1024
-      ],
-      "id": "4b2ab133-4946-4938-b8d1-ac0c749dae94",
-      "name": "Edit Fields"
+      }
     },
     {
+      "id": "b4aa3e61-f7f4-4469-9cdd-0e0541ce492b",
+      "name": "Create Email To-Dos",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        -1024
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -763,17 +774,17 @@
           "combinator": "and"
         },
         "options": {}
-      },
-      "type": "n8n-nodes-base.filter",
-      "typeVersion": 2.2,
-      "position": [
-        448,
-        -1024
-      ],
-      "id": "b4aa3e61-f7f4-4469-9cdd-0e0541ce492b",
-      "name": "Create Email To-Dos"
+      }
     },
     {
+      "id": "8879e036-1463-4141-902e-23bc5a6e2b0c",
+      "name": "Email To-Do Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        672,
+        -1024
+      ],
       "parameters": {
         "operation": "get",
         "dataTableId": {
@@ -792,32 +803,32 @@
           ]
         },
         "limit": 1
-      },
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1,
-      "position": [
-        672,
-        -1024
-      ],
-      "id": "8879e036-1463-4141-902e-23bc5a6e2b0c",
-      "name": "Email To-Do Table"
+      }
     },
     {
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {}
-      },
+      "id": "47b476c0-e0f9-45db-b291-efce3edafaf5",
+      "name": "Email To-Do Combine",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
         1120,
         -1024
       ],
-      "id": "47b476c0-e0f9-45db-b291-efce3edafaf5",
-      "name": "Email To-Do Combine"
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      }
     },
     {
+      "id": "90d39e09-1c11-4560-a201-7c2fe1acd2eb",
+      "name": "Switch Email",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        1344,
+        -1040
+      ],
       "parameters": {
         "rules": {
           "values": [
@@ -876,17 +887,17 @@
         "options": {
           "fallbackOutput": "extra"
         }
-      },
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.3,
-      "position": [
-        1344,
-        -1040
-      ],
-      "id": "90d39e09-1c11-4560-a201-7c2fe1acd2eb",
-      "name": "Switch Email"
+      }
     },
     {
+      "id": "7fc7ceae-dfaa-42dd-9baf-cb13cb17157a",
+      "name": "Send Duplicate Msg Email To-Do",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1568,
+        -1216
+      ],
       "parameters": {
         "select": "channel",
         "channelId": {
@@ -915,23 +926,23 @@
           }
         }
       },
-      "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.3,
-      "position": [
-        1568,
-        -1216
-      ],
-      "id": "7fc7ceae-dfaa-42dd-9baf-cb13cb17157a",
-      "name": "Send Duplicate Msg Email To-Do",
-      "webhookId": "f157de3a-962b-44d6-b090-51b97a1c74b4",
       "credentials": {
         "slackApi": {
           "id": "DvovCyTPlCPUoL2k",
           "name": "Abel N8N Token"
         }
-      }
+      },
+      "webhookId": "f157de3a-962b-44d6-b090-51b97a1c74b4"
     },
     {
+      "id": "d6210326-886f-4fc1-a971-b2622ce07146",
+      "name": "Send In Progress Email To-Do",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1568,
+        -1024
+      ],
       "parameters": {
         "select": "channel",
         "channelId": {
@@ -959,23 +970,23 @@
           }
         }
       },
-      "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.3,
-      "position": [
-        1568,
-        -1024
-      ],
-      "id": "d6210326-886f-4fc1-a971-b2622ce07146",
-      "name": "Send In Progress Email To-Do",
-      "webhookId": "f157de3a-962b-44d6-b090-51b97a1c74b4",
       "credentials": {
         "slackApi": {
           "id": "DvovCyTPlCPUoL2k",
           "name": "Abel N8N Token"
         }
-      }
+      },
+      "webhookId": "f157de3a-962b-44d6-b090-51b97a1c74b4"
     },
     {
+      "id": "9986e4bd-6c87-4be6-b81b-21dd75c53f00",
+      "name": "Call [4] Create Tasks from Slack",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1568,
+        -256
+      ],
       "parameters": {
         "workflowId": {
           "__rl": true,
@@ -1013,7 +1024,8 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "number",
-              "removed": false
+              "removed": false,
+              "options": []
             },
             {
               "id": "slackChannel",
@@ -1023,7 +1035,8 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "string",
-              "removed": false
+              "removed": false,
+              "options": []
             },
             {
               "id": "slackMessageEvent",
@@ -1033,7 +1046,8 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "object",
-              "removed": false
+              "removed": false,
+              "options": []
             },
             {
               "id": "selectedListRowId",
@@ -1043,7 +1057,8 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "number",
-              "removed": false
+              "removed": false,
+              "options": []
             }
           ],
           "attemptToConvertTypes": false,
@@ -1053,17 +1068,17 @@
         "options": {
           "waitForSubWorkflow": false
         }
-      },
+      }
+    },
+    {
+      "id": "5e1b6511-47e5-41b3-bcd7-28e9babda2db",
+      "name": "Call [3] Create Tasks from Slack Email To-Do",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
       "position": [
         1568,
-        -256
+        -832
       ],
-      "name": "Call [4] Create Tasks from Slack",
-      "id": "9986e4bd-6c87-4be6-b81b-21dd75c53f00"
-    },
-    {
       "parameters": {
         "workflowId": {
           "__rl": true,
@@ -1101,7 +1116,8 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "number",
-              "removed": false
+              "removed": false,
+              "options": []
             },
             {
               "id": "slackChannel",
@@ -1111,7 +1127,8 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "string",
-              "removed": false
+              "removed": false,
+              "options": []
             },
             {
               "id": "slackMessageEvent",
@@ -1121,7 +1138,8 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "object",
-              "removed": false
+              "removed": false,
+              "options": []
             },
             {
               "id": "selectedListRowId",
@@ -1131,7 +1149,8 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "number",
-              "removed": false
+              "removed": false,
+              "options": []
             }
           ],
           "attemptToConvertTypes": false,
@@ -1141,17 +1160,17 @@
         "options": {
           "waitForSubWorkflow": false
         }
-      },
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.2,
-      "position": [
-        1568,
-        -832
-      ],
-      "name": "Call [3] Create Tasks from Slack Email To-Do",
-      "id": "5e1b6511-47e5-41b3-bcd7-28e9babda2db"
+      }
     },
     {
+      "id": "a8a6b960-c7e6-41a7-8822-547c62274efc",
+      "name": "Filter",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        -832
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -1185,17 +1204,17 @@
           "combinator": "and"
         },
         "options": {}
-      },
-      "type": "n8n-nodes-base.filter",
-      "typeVersion": 2.3,
-      "position": [
-        448,
-        -832
-      ],
-      "id": "a8a6b960-c7e6-41a7-8822-547c62274efc",
-      "name": "Filter"
+      }
     },
     {
+      "id": "9a5e4cd2-1b78-417b-a11b-4a2f5c539194",
+      "name": "Call [5] Handle Not To-Do",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        672,
+        -832
+      ],
       "parameters": {
         "workflowId": {
           "__rl": true,
@@ -1219,7 +1238,8 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "number",
-              "removed": false
+              "removed": false,
+              "options": []
             },
             {
               "id": "slackThreadTs",
@@ -1229,7 +1249,8 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "string",
-              "removed": true
+              "removed": true,
+              "options": []
             },
             {
               "id": "slackChannel",
@@ -1239,22 +1260,15 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "string",
-              "removed": true
+              "removed": true,
+              "options": []
             }
           ],
           "attemptToConvertTypes": false,
           "convertFieldsToString": true
         },
         "options": {}
-      },
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.3,
-      "position": [
-        672,
-        -832
-      ],
-      "id": "9a5e4cd2-1b78-417b-a11b-4a2f5c539194",
-      "name": "Call [5] Handle Not To-Do"
+      }
     }
   ],
   "connections": {
@@ -1561,8 +1575,8 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "versionId": "03e80fe1-5842-4877-85de-9a066cac2a93",
-  "activeVersionId": "03e80fe1-5842-4877-85de-9a066cac2a93",
+  "versionId": "dd3b4ed8-d375-4b73-9219-90d302efe2f5",
+  "activeVersionId": "dd3b4ed8-d375-4b73-9219-90d302efe2f5",
   "triggerCount": 1,
   "tags": [
     {
