@@ -1,0 +1,273 @@
+{
+  "updatedAt": "2026-03-13T04:20:33.412Z",
+  "createdAt": "2026-03-12T18:17:35.082Z",
+  "id": "lq8ucYib7ZWFvj9p",
+  "name": "Build 3CV Contacts from Email Archive",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "5eee5f53-9c19-44f7-9cf8-b49ae418a755",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        560,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/15v3LEix9-d3HduxsKlubzlIm_uIv8LTmO5i13Gs_2qU/edit",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Email Archive",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "aaff676b-23ba-40ff-abe6-eadb31a2fb33",
+      "name": "Read Email Archive",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        784,
+        -144
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "80VJb4L9NWLlKxVM",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Reads from Email Archive tab (already structured)\n// Columns: Message ID, Thread ID, Date, From Name, From Email, To, CC, BCC, Subject\nvar items = $input.all();\nvar myEmail = 'abrownstein@3cventures.com';\nvar contactMap = {};\n\nfunction parseEmailHeader(headerStr) {\n  if (!headerStr) return [];\n  var results = [];\n  var parts = String(headerStr).split(/,(?=(?:[^<]*<[^>]*>)*[^>]*$)/);\n  for (var i = 0; i < parts.length; i++) {\n    var part = parts[i].trim();\n    if (!part) continue;\n    var angleMatch = part.match(/^(.+?)\\s*<([^>]+)>/);\n    if (angleMatch) {\n      results.push({ name: angleMatch[1].trim().replace(/^\"|\"$/g, ''), email: angleMatch[2].trim().toLowerCase() });\n    } else {\n      var emailOnly = part.replace(/[<>]/g, '').trim().toLowerCase();\n      if (emailOnly.includes('@')) {\n        results.push({ name: '', email: emailOnly });\n      }\n    }\n  }\n  return results;\n}\n\nfunction addContact(email, name, relationship, subj, dt) {\n  if (!email || email === myEmail) return;\n  if (/noreply|no-reply|mailer-daemon|notifications?@|calendar-notification|postmaster/i.test(email)) return;\n  if (!contactMap[email]) {\n    contactMap[email] = { email: email, name: name || '', relationships: {}, subjects: [], dates: [], count: 0 };\n  }\n  var c = contactMap[email];\n  if (name && (!c.name || c.name.length < name.length)) { c.name = name; }\n  c.relationships[relationship] = true;\n  if (subj) { c.subjects.push(dt + ': ' + subj); }\n  if (dt) { c.dates.push(new Date(dt || 0).getTime()); }\n  c.count = c.count + 1;\n}\n\nfor (var idx = 0; idx < items.length; idx++) {\n  var row = items[idx].json;\n  // Archive tab columns (already structured)\n  var fromEmail = row['From Email'] || '';\n  var fromName = row['From Name'] || '';\n  var toStr = row['To'] || '';\n  var ccStr = row['CC'] || '';\n  var bccStr = row['BCC'] || '';\n  var subject = row['Subject'] || '';\n  var dateStr = row['Date'] || '';\n\n  var isSentByMe = fromEmail.toLowerCase() === myEmail;\n\n  // Parse To/CC/BCC (these are raw header strings from the archive)\n  var toParsed = parseEmailHeader(toStr);\n  var ccParsed = parseEmailHeader(ccStr);\n  var bccParsed = parseEmailHeader(bccStr);\n\n  if (isSentByMe) {\n    for (var t = 0; t < toParsed.length; t++) { addContact(toParsed[t].email, toParsed[t].name, 'Sent To', subject, dateStr); }\n    for (var c1 = 0; c1 < ccParsed.length; c1++) { addContact(ccParsed[c1].email, ccParsed[c1].name, 'Sent To (CC)', subject, dateStr); }\n    for (var b1 = 0; b1 < bccParsed.length; b1++) { addContact(bccParsed[b1].email, bccParsed[b1].name, 'Sent To (BCC)', subject, dateStr); }\n  } else {\n    // Received from sender\n    addContact(fromEmail, fromName, 'Received From', subject, dateStr);\n    // Others on To/CC with me\n    for (var t2 = 0; t2 < toParsed.length; t2++) {\n      if (toParsed[t2].email !== myEmail) { addContact(toParsed[t2].email, toParsed[t2].name, 'Co-Recipient (To)', subject, dateStr); }\n    }\n    for (var c2 = 0; c2 < ccParsed.length; c2++) {\n      if (ccParsed[c2].email !== myEmail) { addContact(ccParsed[c2].email, ccParsed[c2].name, 'Co-Recipient (CC)', subject, dateStr); }\n    }\n  }\n}\n\nvar keys = Object.keys(contactMap);\nvar results = [];\nfor (var k = 0; k < keys.length; k++) {\n  var contact = contactMap[keys[k]];\n  var relTypes = Object.keys(contact.relationships).sort().join(', ');\n  var fullName = contact.name || '';\n  var firstName = '';\n  var lastName = '';\n  if (fullName) {\n    var nameParts = fullName.split(/\\s+/);\n    firstName = nameParts[0] || '';\n    lastName = nameParts.slice(1).join(' ') || '';\n  }\n  var domain = contact.email.split('@')[1] || '';\n  var company = domain.split('.')[0] || '';\n  company = company.charAt(0).toUpperCase() + company.slice(1);\n  var validDates = contact.dates.filter(function(d) { return d > 0; });\n  var firstDate = '';\n  var lastDate = '';\n  if (validDates.length > 0) {\n    validDates.sort(function(a, b) { return a - b; });\n    firstDate = new Date(validDates[0]).toLocaleDateString('en-US', { timeZone: 'America/New_York' });\n    lastDate = new Date(validDates[validDates.length - 1]).toLocaleDateString('en-US', { timeZone: 'America/New_York' });\n  }\n  var uniqueSubjects = [];\n  var seen = {};\n  for (var s = contact.subjects.length - 1; s >= 0 && uniqueSubjects.length < 20; s--) {\n    if (!seen[contact.subjects[s]]) { seen[contact.subjects[s]] = true; uniqueSubjects.unshift(contact.subjects[s]); }\n  }\n  results.push({\n    json: {\n      'Email Address': contact.email,\n      'Full Name': fullName,\n      'First Name': firstName,\n      'Last Name': lastName,\n      'Company': company,\n      'Relationship': relTypes,\n      'Email Count': contact.count,\n      'First Interaction': firstDate,\n      'Last Interaction': lastDate,\n      'Subjects & Dates': uniqueSubjects.join(' | '),\n      'LinkedIn Connected': ''\n    }\n  });\n}\nresults.sort(function(a, b) { return b.json['Email Count'] - a.json['Email Count']; });\nreturn results;"
+      },
+      "id": "a482a3e3-18b4-4dfd-99d1-d3aa4630cc5c",
+      "name": "Aggregate Contacts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        -144
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/15v3LEix9-d3HduxsKlubzlIm_uIv8LTmO5i13Gs_2qU/edit",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Contacts",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Email Address"
+          ],
+          "schema": [
+            {
+              "id": "Email Address",
+              "displayName": "Email Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Full Name",
+              "displayName": "Full Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "First Name",
+              "displayName": "First Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Last Name",
+              "displayName": "Last Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Relationship",
+              "displayName": "Relationship",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email Count",
+              "displayName": "Email Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "First Interaction",
+              "displayName": "First Interaction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Last Interaction",
+              "displayName": "Last Interaction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Subjects & Dates",
+              "displayName": "Subjects & Dates",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "LinkedIn Connected",
+              "displayName": "LinkedIn Connected",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "useAppend": true
+        }
+      },
+      "id": "80351e0a-0aba-4548-93a2-6302e50efad8",
+      "name": "Write Contacts",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1232,
+        -144
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "80VJb4L9NWLlKxVM",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Email Archive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Email Archive": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Contacts": {
+      "main": [
+        [
+          {
+            "node": "Write Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": 2400,
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "versionId": "c7a16eab-0bc5-4425-9461-c589480be023",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    }
+  ]
+}
