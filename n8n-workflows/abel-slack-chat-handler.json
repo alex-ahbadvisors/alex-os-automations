@@ -1,13 +1,20 @@
 {
-  "updatedAt": "2026-02-03T20:23:38.322Z",
+  "updatedAt": "2026-03-10T03:00:06.282Z",
   "createdAt": "2025-10-25T18:12:20.684Z",
   "id": "aIHT5Qqg1gWY75Ml",
   "name": "Abel Slack Chat Handler",
-  "description": null,
   "active": true,
   "isArchived": false,
   "nodes": [
     {
+      "id": "26ef0e01-bac7-448d-9993-41ee1f29d808",
+      "name": "Slack Trigger",
+      "type": "n8n-nodes-base.slackTrigger",
+      "typeVersion": 1,
+      "position": [
+        64,
+        176
+      ],
       "parameters": {
         "trigger": [
           "any_event"
@@ -15,23 +22,23 @@
         "watchWorkspace": true,
         "options": {}
       },
-      "type": "n8n-nodes-base.slackTrigger",
-      "typeVersion": 1,
-      "position": [
-        64,
-        172
-      ],
-      "id": "26ef0e01-bac7-448d-9993-41ee1f29d808",
-      "name": "Slack Trigger",
-      "webhookId": "61abd708-345c-412f-9dda-0be02dcf3820",
       "credentials": {
         "slackApi": {
           "id": "DvovCyTPlCPUoL2k",
           "name": "Abel N8N Token"
         }
-      }
+      },
+      "webhookId": "61abd708-345c-412f-9dda-0be02dcf3820"
     },
     {
+      "id": "7b365cf7-5ee5-4703-b131-98b8f2d67b41",
+      "name": "Is Alex",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        288,
+        176
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -55,49 +62,49 @@
           "combinator": "and"
         },
         "options": {}
-      },
-      "type": "n8n-nodes-base.filter",
-      "typeVersion": 2.2,
-      "position": [
-        288,
-        172
-      ],
-      "id": "7b365cf7-5ee5-4703-b131-98b8f2d67b41",
-      "name": "Is Alex"
+      }
     },
     {
-      "parameters": {},
+      "id": "ac52ace2-f0bb-46cf-9f7e-3bd4e0d53f10",
+      "name": "Simple Memory",
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
         1648,
         528
       ],
-      "id": "ac52ace2-f0bb-46cf-9f7e-3bd4e0d53f10",
-      "name": "Simple Memory"
+      "parameters": {}
     },
     {
+      "id": "8ffb3f87-d29f-43e5-b00c-90c02a457eeb",
+      "name": "Abel Chat Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2064,
+        272
+      ],
       "parameters": {
         "promptType": "define",
         "text": "={{ $json.text }}",
         "options": {
-          "systemMessage": "=You are Abel \u2014 a capable, honest, and resourceful AI assistant that helps the user through conversation and by using your tools.\n\nYou\u2019re the user\u2019s main point of contact: conversational, practical, and decisive.  \nYou handle most requests directly \u2014 retrieving information, summarizing notes, finding resources, or simply chatting naturally.\n\n---\n\n### General Behavior\n- Be helpful and clear in every response.\n- Use your tools to search, summarize, or retrieve information whenever relevant.\n- Engage conversationally \u2014 sound natural and competent, not mechanical.\n- Take initiative: act when the request is clear; use *Send Follow-Up Message* only when you truly need clarification.\n- If the user just wants to chat, chat. If they want results, deliver.\n\n---\n\n### When to Use DeepThinker\nDeepThinker is your analytical partner \u2014 use it *only* when a request clearly requires deeper reasoning or structured synthesis.  \nExamples:\n- \u201cAnalyze\u2026\u201d / \u201cCompare\u2026\u201d / \u201cIdentify trends\u2026\u201d  \n- \u201cSummarize the key takeaways from this transcript.\u201d  \n- \u201cGenerate a strategy brief or recommendation.\u201d\n\nWhen you do:\n1. Summarize what you already know.  \n2. Create a short **analysis brief** (goal, context, relevant notes).  \n3. Pass that brief as the user message to DeepThinker.  \n4. Integrate DeepThinker\u2019s output into a cohesive final response for the user.\n\nOtherwise, handle the request yourself.\n\n---\n\n### Tool Overview\n- **Thread_History**:\n  Use this tool to download the history of the slack thread. Always use then when the user's request seems vague or you need to remember the large context of the conversation.\n\n- **Search_MeetingNotes:**  \n  Search meetings by `name`, `sourceUrl`, or `storedTranscriptUrl` (partial OR search).  \n  The tool can optionally include transcripts when needed for analysis.  \n  Use the `overview` field for a quick summary, and rely on ClickUp notes (`taskId`) for full context.  \n  Always include `notesUrl` (or `<https://app.clickup.com/t/<taskId>|Open in ClickUp>` if missing).\n- Use Search_Meeting_Notes_Table to find notes by date\n\n- **Get_Clickup_Task_By_TaskId:**  \n  Fetch the *live*, up-to-date version of meeting notes from ClickUp using `taskId`.\n\n- **Send_Followup_Msg:**  \n  Ask clarifying questions or share quick progress updates before final output.\n\n- **DeepThinker:**  \n  Use for analytical or reasoning-heavy tasks (pattern recognition, recommendations, multi-meeting synthesis).\n\n---\n\n### Communication Style\n- Respond in **Slack Markdown** (`*bold*`, `_italics_`, bullets, `<URL|Label>` links).  \n- Be professional, conversational, and concise.  \n- Provide summaries before details; always include relevant links for context.  \n- Never fabricate. If something isn\u2019t available, say so and suggest the next step.\n\n---\n\n**Remember:** You lead the interaction. DeepThinker assists only when deep reasoning is required.",
+          "systemMessage": "=You are Abel — a capable, honest, and resourceful AI assistant that helps the user through conversation and by using your tools.\n\nYou’re the user’s main point of contact: conversational, practical, and decisive.  \nYou handle most requests directly — retrieving information, summarizing notes, finding resources, or simply chatting naturally.\n\n---\n\n### General Behavior\n- Be helpful and clear in every response.\n- Use your tools to search, summarize, or retrieve information whenever relevant.\n- Engage conversationally — sound natural and competent, not mechanical.\n- Take initiative: act when the request is clear; use *Send Follow-Up Message* only when you truly need clarification.\n- If the user just wants to chat, chat. If they want results, deliver.\n\n---\n\n### When to Use DeepThinker\nDeepThinker is your analytical partner — use it *only* when a request clearly requires deeper reasoning or structured synthesis.  \nExamples:\n- “Analyze…” / “Compare…” / “Identify trends…”  \n- “Summarize the key takeaways from this transcript.”  \n- “Generate a strategy brief or recommendation.”\n\nWhen you do:\n1. Summarize what you already know.  \n2. Create a short **analysis brief** (goal, context, relevant notes).  \n3. Pass that brief as the user message to DeepThinker.  \n4. Integrate DeepThinker’s output into a cohesive final response for the user.\n\nOtherwise, handle the request yourself.\n\n---\n\n### Tool Overview\n- **Thread_History**:\n  Use this tool to download the history of the slack thread. Always use then when the user's request seems vague or you need to remember the large context of the conversation.\n\n- **Search_MeetingNotes:**  \n  Search meetings by `name`, `sourceUrl`, or `storedTranscriptUrl` (partial OR search).  \n  The tool can optionally include transcripts when needed for analysis.  \n  Use the `overview` field for a quick summary, and rely on ClickUp notes (`taskId`) for full context.  \n  Always include `notesUrl` (or `<https://app.clickup.com/t/<taskId>|Open in ClickUp>` if missing).\n- Use Search_Meeting_Notes_Table to find notes by date\n\n- **Get_Clickup_Task_By_TaskId:**  \n  Fetch the *live*, up-to-date version of meeting notes from ClickUp using `taskId`.\n\n- **Send_Followup_Msg:**  \n  Ask clarifying questions or share quick progress updates before final output.\n\n- **DeepThinker:**  \n  Use for analytical or reasoning-heavy tasks (pattern recognition, recommendations, multi-meeting synthesis).\n\n---\n\n### Communication Style\n- Respond in **Slack Markdown** (`*bold*`, `_italics_`, bullets, `<URL|Label>` links).  \n- Be professional, conversational, and concise.  \n- Provide summaries before details; always include relevant links for context.  \n- Never fabricate. If something isn’t available, say so and suggest the next step.\n\n---\n\n**Remember:** You lead the interaction. DeepThinker assists only when deep reasoning is required.",
           "maxIterations": 15,
           "passthroughBinaryImages": true
         }
       },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 2.2,
-      "position": [
-        2056,
-        268
-      ],
-      "id": "8ffb3f87-d29f-43e5-b00c-90c02a457eeb",
-      "name": "Abel Chat Agent",
       "retryOnFail": true,
       "waitBetweenTries": 300
     },
     {
+      "id": "83cf24c1-6be3-4d50-a912-39243b1a0f79",
+      "name": "Reply Msg",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        2928,
+        272
+      ],
       "parameters": {
         "select": "={{ $('Msg').item.json.channel.startsWith('U') ? 'user' : 'channel' }}",
         "channelId": {
@@ -120,37 +127,29 @@
           }
         }
       },
-      "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.3,
-      "position": [
-        2928,
-        268
-      ],
-      "id": "83cf24c1-6be3-4d50-a912-39243b1a0f79",
-      "name": "Reply Msg",
-      "webhookId": "fc91fb92-eb55-44e0-8d29-ce8275198c51",
       "credentials": {
         "slackApi": {
           "id": "DvovCyTPlCPUoL2k",
           "name": "Abel N8N Token"
         }
-      }
+      },
+      "webhookId": "fc91fb92-eb55-44e0-8d29-ce8275198c51"
     },
     {
-      "parameters": {
-        "authentication": "oAuth2",
-        "operation": "get",
-        "id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Task_ID', `Retrieve a task. For meeting notes, user the taskId property.`, 'string') }}",
-        "includeSubtasks": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Include_Subtasks', `Only retrieve subtasks when user wants detailed information.`, 'boolean') }}"
-      },
+      "id": "448341c7-3d80-4ffe-8ac5-64d4c2a52550",
+      "name": "Get_Clickup_Task_By_TaskId",
       "type": "n8n-nodes-base.clickUpTool",
       "typeVersion": 1,
       "position": [
         1792,
         592
       ],
-      "id": "448341c7-3d80-4ffe-8ac5-64d4c2a52550",
-      "name": "Get_Clickup_Task_By_TaskId",
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "get",
+        "id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Task_ID', `Retrieve a task. For meeting notes, user the taskId property.`, 'string') }}",
+        "includeSubtasks": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Include_Subtasks', `Only retrieve subtasks when user wants detailed information.`, 'boolean') }}"
+      },
       "credentials": {
         "clickUpOAuth2Api": {
           "id": "WiEsUqUCPM9Xds21",
@@ -159,6 +158,14 @@
       }
     },
     {
+      "id": "b60166dd-59d7-4bfa-be1b-acff90a3bc3d",
+      "name": "Send_Followup_Msg",
+      "type": "n8n-nodes-base.slackTool",
+      "typeVersion": 2.3,
+      "position": [
+        1920,
+        496
+      ],
       "parameters": {
         "select": "user",
         "user": {
@@ -176,52 +183,52 @@
           }
         }
       },
-      "type": "n8n-nodes-base.slackTool",
-      "typeVersion": 2.3,
-      "position": [
-        1920,
-        492
-      ],
-      "id": "b60166dd-59d7-4bfa-be1b-acff90a3bc3d",
-      "name": "Send_Followup_Msg",
-      "webhookId": "964ba306-0ac1-4c6a-9299-82a18a1f1843",
       "credentials": {
         "slackApi": {
           "id": "DvovCyTPlCPUoL2k",
           "name": "Abel N8N Token"
         }
-      }
+      },
+      "webhookId": "964ba306-0ac1-4c6a-9299-82a18a1f1843"
     },
     {
-      "parameters": {
-        "toolDescription": "A specialized analytical sub-agent that performs deep reasoning and structured synthesis when needed.\nUse this tool when the user\u2019s request clearly requires multi-step analysis, insight generation, or reasoning across complex data (e.g., transcripts, multiple meetings, or trend reports).\n\nInput: Provide your own analysis brief \u2014 summarizing the goal, user ask, context, and any decoded notes or transcripts.\nOutput: DeepThinker returns a concise, Slack-Markdown response ready for the user.",
-        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
-        "options": {
-          "systemMessage": "You are DeepThinker \u2014 Abel\u2019s internal analytical partner.\n\nAbel calls you only when a task requires deeper reasoning, multi-step synthesis, or insight extraction.\nYou are not user-facing; your role is to produce a clear, concise Slack-Markdown answer that Abel can relay.\n\nGuidelines:\n- Treat Abel\u2019s message as your analysis brief.\n- Think through the problem methodically, reason in steps, and produce actionable insights.\n- Focus on clarity, structure, and evidence-based reasoning.\n- Format in Slack Markdown with short sections: *Summary*, *Insights*, *Next Steps*, *References*.\n- Be factual and precise. If data is missing, state it clearly and provide your best analysis.",
-          "passthroughBinaryImages": true
-        }
-      },
+      "id": "1adc0f60-421b-443d-92fd-2dd732c76a3e",
+      "name": "DeepThinker",
       "type": "@n8n/n8n-nodes-langchain.agentTool",
       "typeVersion": 2.2,
       "position": [
         2048,
-        492
+        496
       ],
-      "id": "1adc0f60-421b-443d-92fd-2dd732c76a3e",
-      "name": "DeepThinker"
+      "parameters": {
+        "toolDescription": "A specialized analytical sub-agent that performs deep reasoning and structured synthesis when needed.\nUse this tool when the user’s request clearly requires multi-step analysis, insight generation, or reasoning across complex data (e.g., transcripts, multiple meetings, or trend reports).\n\nInput: Provide your own analysis brief — summarizing the goal, user ask, context, and any decoded notes or transcripts.\nOutput: DeepThinker returns a concise, Slack-Markdown response ready for the user.",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "You are DeepThinker — Abel’s internal analytical partner.\n\nAbel calls you only when a task requires deeper reasoning, multi-step synthesis, or insight extraction.\nYou are not user-facing; your role is to produce a clear, concise Slack-Markdown answer that Abel can relay.\n\nGuidelines:\n- Treat Abel’s message as your analysis brief.\n- Think through the problem methodically, reason in steps, and produce actionable insights.\n- Focus on clarity, structure, and evidence-based reasoning.\n- Format in Slack Markdown with short sections: *Summary*, *Insights*, *Next Steps*, *References*.\n- Be factual and precise. If data is missing, state it clearly and provide your best analysis.",
+          "passthroughBinaryImages": true
+        }
+      }
     },
     {
-      "parameters": {},
+      "id": "5f228b3a-34cb-4f8a-889e-75da4e40ae86",
+      "name": "Simple Memory1",
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
         2080,
         704
       ],
-      "id": "5f228b3a-34cb-4f8a-889e-75da4e40ae86",
-      "name": "Simple Memory1"
+      "parameters": {}
     },
     {
+      "id": "29678d7e-204b-4bef-bd42-5a9aa3e312e5",
+      "name": "Normal Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1472,
+        496
+      ],
       "parameters": {
         "model": {
           "__rl": true,
@@ -234,14 +241,6 @@
           "maxRetries": 2
         }
       },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        1472,
-        496
-      ],
-      "id": "29678d7e-204b-4bef-bd42-5a9aa3e312e5",
-      "name": "Normal Chat Model",
       "credentials": {
         "openAiApi": {
           "id": "FPFFI1NvOtGMoh30",
@@ -250,6 +249,14 @@
       }
     },
     {
+      "id": "f0a8a2db-d341-46c7-83d5-9ff75b7ace9b",
+      "name": "Thinking Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1936,
+        704
+      ],
       "parameters": {
         "model": {
           "__rl": true,
@@ -262,14 +269,6 @@
           "maxRetries": 2
         }
       },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        1936,
-        700
-      ],
-      "id": "f0a8a2db-d341-46c7-83d5-9ff75b7ace9b",
-      "name": "Thinking Model",
       "credentials": {
         "openAiApi": {
           "id": "FPFFI1NvOtGMoh30",
@@ -278,6 +277,14 @@
       }
     },
     {
+      "id": "31455a91-5a4a-4e26-8a80-9f1d7a2a02a8",
+      "name": "Send_Followup_Msg1",
+      "type": "n8n-nodes-base.slackTool",
+      "typeVersion": 2.3,
+      "position": [
+        2192,
+        768
+      ],
       "parameters": {
         "select": "user",
         "user": {
@@ -295,74 +302,23 @@
           }
         }
       },
-      "type": "n8n-nodes-base.slackTool",
-      "typeVersion": 2.3,
-      "position": [
-        2192,
-        768
-      ],
-      "id": "31455a91-5a4a-4e26-8a80-9f1d7a2a02a8",
-      "name": "Send_Followup_Msg1",
-      "webhookId": "964ba306-0ac1-4c6a-9299-82a18a1f1843",
       "credentials": {
         "slackApi": {
           "id": "DvovCyTPlCPUoL2k",
           "name": "Abel N8N Token"
         }
-      }
+      },
+      "webhookId": "964ba306-0ac1-4c6a-9299-82a18a1f1843"
     },
     {
-      "parameters": {
-        "workflowId": {
-          "__rl": true,
-          "value": "dT1erow5dTdS3R0Z",
-          "mode": "list",
-          "cachedResultUrl": "/workflow/dT1erow5dTdS3R0Z",
-          "cachedResultName": "Tool: Search Meeting Notes"
-        },
-        "workflowInputs": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "keywordOrPhrase": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('keywordOrPhrase', ``, 'string') }}",
-            "includeTranscript": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('includeTranscript', ``, 'boolean') }}"
-          },
-          "matchingColumns": [],
-          "schema": [
-            {
-              "id": "keywordOrPhrase",
-              "displayName": "keywordOrPhrase",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "canBeUsedToMatch": true,
-              "type": "string",
-              "removed": false
-            },
-            {
-              "id": "includeTranscript",
-              "displayName": "includeTranscript",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "canBeUsedToMatch": true,
-              "type": "boolean",
-              "removed": false
-            }
-          ],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false
-        }
-      },
+      "id": "f408b3a5-fc26-43e3-924f-6adf5b597df1",
+      "name": "Search_MeetingNotes",
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2.2,
       "position": [
         2336,
-        492
+        496
       ],
-      "id": "f408b3a5-fc26-43e3-924f-6adf5b597df1",
-      "name": "Search_MeetingNotes"
-    },
-    {
       "parameters": {
         "workflowId": {
           "__rl": true,
@@ -387,7 +343,8 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "string",
-              "removed": false
+              "removed": false,
+              "options": []
             },
             {
               "id": "includeTranscript",
@@ -397,23 +354,77 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "boolean",
-              "removed": false
+              "removed": false,
+              "options": []
             }
           ],
           "attemptToConvertTypes": false,
           "convertFieldsToString": false
         }
-      },
+      }
+    },
+    {
+      "id": "cf40870a-42c8-4ad4-8289-cdf850d9193b",
+      "name": "Search_MeetingNotes1",
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2.2,
       "position": [
         2352,
         704
       ],
-      "id": "cf40870a-42c8-4ad4-8289-cdf850d9193b",
-      "name": "Search_MeetingNotes1"
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "dT1erow5dTdS3R0Z",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/dT1erow5dTdS3R0Z",
+          "cachedResultName": "Tool: Search Meeting Notes"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "keywordOrPhrase": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('keywordOrPhrase', ``, 'string') }}",
+            "includeTranscript": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('includeTranscript', ``, 'boolean') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "keywordOrPhrase",
+              "displayName": "keywordOrPhrase",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false,
+              "options": []
+            },
+            {
+              "id": "includeTranscript",
+              "displayName": "includeTranscript",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "boolean",
+              "removed": false,
+              "options": []
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      }
     },
     {
+      "id": "9c68a18c-3e2a-47f8-865a-a409a20073fa",
+      "name": "Search_Meeting_Notes_Table",
+      "type": "n8n-nodes-base.dataTableTool",
+      "typeVersion": 1,
+      "position": [
+        2480,
+        560
+      ],
       "parameters": {
         "operation": "get",
         "dataTableId": {
@@ -437,17 +448,17 @@
             }
           ]
         }
-      },
-      "type": "n8n-nodes-base.dataTableTool",
-      "typeVersion": 1,
-      "position": [
-        2480,
-        560
-      ],
-      "id": "9c68a18c-3e2a-47f8-865a-a409a20073fa",
-      "name": "Search_Meeting_Notes_Table"
+      }
     },
     {
+      "id": "508b5197-6731-4bf2-8a9a-68ce5abe1168",
+      "name": "Thread_History",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        2592,
+        496
+      ],
       "parameters": {
         "workflowId": {
           "__rl": true,
@@ -472,7 +483,8 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "string",
-              "removed": false
+              "removed": false,
+              "options": []
             },
             {
               "id": "messageTs",
@@ -482,39 +494,40 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "string",
-              "removed": false
+              "removed": false,
+              "options": []
             }
           ],
           "attemptToConvertTypes": false,
           "convertFieldsToString": false
         }
-      },
-      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
-      "typeVersion": 2.2,
-      "position": [
-        2592,
-        492
-      ],
-      "id": "508b5197-6731-4bf2-8a9a-68ce5abe1168",
-      "name": "Thread_History"
+      }
     },
     {
+      "id": "33b2e4fe-ad60-40dc-802e-c0646d771040",
+      "name": "Msg",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1312,
+        272
+      ],
       "parameters": {
         "mode": "raw",
         "jsonOutput": "={{ Object.assign( $('Slack Trigger').item.json, \n{\n  sessionId: $('Slack Trigger').item.json.team || $('Slack Trigger').item.json.channel || $('Slack Trigger').item.json.thread_ts\n} \n).toJsonString()}}",
         "includeOtherFields": true,
         "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        1312,
-        268
-      ],
-      "id": "33b2e4fe-ad60-40dc-802e-c0646d771040",
-      "name": "Msg"
+      }
     },
     {
+      "id": "701ae25f-a49f-4e31-be18-750166d50f22",
+      "name": "If thread is for a meeting note?",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        512,
+        176
+      ],
       "parameters": {
         "operation": "rowExists",
         "dataTableId": {
@@ -534,18 +547,18 @@
           ]
         }
       },
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1,
-      "position": [
-        512,
-        172
-      ],
-      "id": "701ae25f-a49f-4e31-be18-750166d50f22",
-      "name": "If thread is for a meeting note?",
       "alwaysOutputData": true,
       "executeOnce": false
     },
     {
+      "id": "44b0afb7-de93-460b-a977-c52cfc518516",
+      "name": "Classification Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1040,
+        272
+      ],
       "parameters": {
         "model": {
           "__rl": true,
@@ -557,14 +570,6 @@
           "maxRetries": 2
         }
       },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        1032,
-        272
-      ],
-      "id": "44b0afb7-de93-460b-a977-c52cfc518516",
-      "name": "Classification Model",
       "credentials": {
         "openAiApi": {
           "id": "FPFFI1NvOtGMoh30",
@@ -573,6 +578,14 @@
       }
     },
     {
+      "id": "e3bc7bd2-b8a0-4f83-ab52-faf14339705b",
+      "name": "Nudge to Pick a Project",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1312,
+        0
+      ],
       "parameters": {
         "select": "={{ $json.channel.startsWith('U') ? 'user' : 'channel' }}",
         "channelId": {
@@ -595,23 +608,23 @@
           }
         }
       },
-      "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.3,
-      "position": [
-        1312,
-        0
-      ],
-      "id": "e3bc7bd2-b8a0-4f83-ab52-faf14339705b",
-      "name": "Nudge to Pick a Project",
-      "webhookId": "fc91fb92-eb55-44e0-8d29-ce8275198c51",
       "credentials": {
         "slackApi": {
           "id": "DvovCyTPlCPUoL2k",
           "name": "Abel N8N Token"
         }
-      }
+      },
+      "webhookId": "fc91fb92-eb55-44e0-8d29-ce8275198c51"
     },
     {
+      "id": "d36bf22d-3bf2-4b7b-a200-d62310f1a7d7",
+      "name": "If",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        736,
+        176
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -635,17 +648,17 @@
           "combinator": "and"
         },
         "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        736,
-        172
-      ],
-      "id": "d36bf22d-3bf2-4b7b-a200-d62310f1a7d7",
-      "name": "If"
+      }
     },
     {
+      "id": "b7a58710-474d-41ff-a3c2-1239aa8874a5",
+      "name": "IsConfirmation",
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        960,
+        48
+      ],
       "parameters": {
         "inputText": "={{ $json.text }}",
         "categories": {
@@ -659,17 +672,17 @@
         "options": {
           "fallback": "other"
         }
-      },
-      "type": "@n8n/n8n-nodes-langchain.textClassifier",
-      "typeVersion": 1.1,
-      "position": [
-        960,
-        48
-      ],
-      "id": "b7a58710-474d-41ff-a3c2-1239aa8874a5",
-      "name": "IsConfirmation"
+      }
     },
     {
+      "id": "a060322a-fd92-42aa-90f0-67ba73ec1b62",
+      "name": "Call '[T] Draft an Email In Missive'",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        2720,
+        496
+      ],
       "parameters": {
         "description": "Use this tool to draft Emails for Alex. \nONLY USE WHEN EXPLICITLY TOLD TO DRAFT AN EMAIL. DO NOT OFFER TO DRAFT AN EMAIL.",
         "workflowId": {
@@ -698,7 +711,8 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "string",
-              "removed": false
+              "removed": false,
+              "options": []
             },
             {
               "id": "userRequest",
@@ -708,7 +722,8 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "string",
-              "removed": false
+              "removed": false,
+              "options": []
             },
             {
               "id": "slackThreadId",
@@ -718,21 +733,14 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "string",
-              "removed": false
+              "removed": false,
+              "options": []
             }
           ],
           "attemptToConvertTypes": false,
           "convertFieldsToString": false
         }
-      },
-      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
-      "typeVersion": 2.2,
-      "position": [
-        2720,
-        492
-      ],
-      "id": "a060322a-fd92-42aa-90f0-67ba73ec1b62",
-      "name": "Call '[T] Draft an Email In Missive'"
+      }
     }
   ],
   "connections": {
@@ -912,11 +920,6 @@
         ]
       ]
     },
-    "Reply Msg": {
-      "main": [
-        []
-      ]
-    },
     "If thread is for a meeting note?": {
       "main": [
         [
@@ -997,11 +1000,16 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "versionId": "e64d6194-4f1e-4085-b3f0-6ab448d04c40",
-  "activeVersionId": "e64d6194-4f1e-4085-b3f0-6ab448d04c40",
-  "versionCounter": 61,
+  "versionId": "327d2a31-8a5b-4cfd-9674-9ee5cde185fb",
+  "activeVersionId": "327d2a31-8a5b-4cfd-9674-9ee5cde185fb",
   "triggerCount": 1,
   "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    },
     {
       "updatedAt": "2026-01-01T21:31:31.119Z",
       "createdAt": "2026-01-01T21:31:31.119Z",
