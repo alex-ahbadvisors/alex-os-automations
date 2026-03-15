@@ -1,0 +1,378 @@
+{
+  "updatedAt": "2026-03-12T16:40:52.138Z",
+  "createdAt": "2026-03-12T16:12:47.552Z",
+  "id": "4nrLsvLBhTptgtmD",
+  "name": "Export 3CV Calendar to Google Sheets",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "df961a39-d0fa-4e9d-9cb8-fb6e41c6e1ed",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "field-start",
+              "name": "startDate",
+              "value": "2024-08-01T00:00:00-04:00",
+              "type": "string"
+            },
+            {
+              "id": "field-end",
+              "name": "endDate",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0c540763-9e9c-433e-8569-bd17b090f6d1",
+      "name": "Set Date Range",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1424,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "abrownstein@3cventures.com",
+          "mode": "id"
+        },
+        "returnAll": true,
+        "timeMin": "={{ $json.startDate }}",
+        "timeMax": "={{ $json.endDate }}",
+        "options": {}
+      },
+      "id": "9604318a-0598-4ecd-9b33-68956d00c6bc",
+      "name": "Google Calendar - Get All Events",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1648,
+        -16
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "fAlWUPQusqRoIfh1",
+          "name": "3CV Calendar"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Best-effort client tagging — no filtering, every event passes through\nconst clientPatterns = [\n  { pattern: /nielsen/i, client: 'Nielsen' },\n  { pattern: /walmart|wmt\\b/i, client: 'Walmart Connect' },\n  { pattern: /hearst/i, client: 'Hearst' },\n  { pattern: /jpmc|jp\\s*morgan|chase/i, client: 'JPMC' },\n  { pattern: /snap\\b/i, client: 'Snap' },\n  { pattern: /fox\\b|tubi/i, client: 'Fox/Tubi' },\n  { pattern: /sony/i, client: 'Sony' },\n  { pattern: /qualcomm/i, client: 'Qualcomm' },\n  { pattern: /mastercard/i, client: 'Mastercard' },\n  { pattern: /doordash/i, client: 'DoorDash' },\n  { pattern: /disney/i, client: 'Disney' },\n  { pattern: /samba/i, client: 'Samba.TV' },\n  { pattern: /zeta/i, client: 'Zeta' },\n  { pattern: /home\\s*depot/i, client: 'The Home Depot' },\n  { pattern: /spectrum|charter/i, client: 'Spectrum/Charter' },\n  { pattern: /publicis/i, client: 'Publicis (via Hearst)' },\n  { pattern: /best\\s*buy/i, client: 'Best Buy' },\n  { pattern: /roku/i, client: 'Roku' },\n  { pattern: /criteo/i, client: 'Criteo' },\n  { pattern: /xumo/i, client: 'Xumo' },\n  { pattern: /mediaocean/i, client: 'MediaOcean' },\n  { pattern: /mek\\b|kassan|michael k/i, client: '3CV Internal' }\n];\n\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const e = item.json;\n  const title = (e.summary || '').trim();\n  const location = e.location || '';\n  const attendees = e.attendees || [];\n  const organizerEmail = (e.organizer || {}).email || '';\n\n  // Skip cancelled events and events you declined\n  if (e.status === 'cancelled') continue;\n  if (e.myResponseStatus === 'declined') continue;\n\n  // Best-effort client tag (empty if no match)\n  let client = '';\n  for (const cp of clientPatterns) {\n    if (cp.pattern.test(title)) {\n      client = cp.client;\n      break;\n    }\n  }\n\n  // Extract structured data\n  const startDT = e.start ? (e.start.dateTime || e.start.date || '') : '';\n  const endDT = e.end ? (e.end.dateTime || e.end.date || '') : '';\n  const isAllDay = !e.start || !e.start.dateTime;\n\n  let durationMinutes = '';\n  if (startDT && endDT && !isAllDay) {\n    const startMs = new Date(startDT).getTime();\n    const endMs = new Date(endDT).getTime();\n    durationMinutes = Math.round((endMs - startMs) / 60000);\n  }\n\n  let dateStr = '';\n  if (startDT) {\n    dateStr = new Date(startDT).toLocaleDateString('en-US', { timeZone: 'America/New_York' });\n  }\n\n  let startTimeStr = '';\n  let endTimeStr = '';\n  if (!isAllDay && startDT) {\n    startTimeStr = new Date(startDT).toLocaleTimeString('en-US', {\n      timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hour12: true\n    });\n    endTimeStr = new Date(endDT).toLocaleTimeString('en-US', {\n      timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hour12: true\n    });\n  }\n\n  let dayOfWeek = '';\n  if (startDT) {\n    dayOfWeek = new Date(startDT).toLocaleDateString('en-US', {\n      timeZone: 'America/New_York', weekday: 'long'\n    });\n  }\n\n  let weekNumber = '';\n  if (startDT) {\n    const d = new Date(startDT);\n    const jan1 = new Date(d.getFullYear(), 0, 1);\n    weekNumber = Math.ceil((((d - jan1) / 86400000) + jan1.getDay() + 1) / 7);\n  }\n\n  const attendeeNames = attendees\n    .filter(a => (a.email || '') !== 'alex@ahbadvisors.com' && (a.email || '') !== 'abrownstein@3cventures.com')\n    .map(a => a.displayName || (a.email || '').split('@')[0])\n    .join(', ');\n\n  const attendeeEmailsStr = attendees\n    .filter(a => (a.email || '') !== 'alex@ahbadvisors.com' && (a.email || '') !== 'abrownstein@3cventures.com')\n    .map(a => a.email)\n    .join(', ');\n\n  const myStatus = e.myResponseStatus || e.status || 'confirmed';\n  const organizerName = (e.organizer || {}).displayName || organizerEmail;\n\n  results.push({\n    json: {\n      'Event ID': e.id || 'no-id-' + results.length,\n      'Date': dateStr,\n      'Day': dayOfWeek,\n      'Week': weekNumber,\n      'Start Time': startTimeStr,\n      'End Time': endTimeStr,\n      'Duration (min)': durationMinutes,\n      'Event Title': title || '(No title)',\n      'Client': client,\n      'Meeting Type': client ? 'Client Meeting' : '',\n      'Attendees': attendeeNames,\n      'Attendee Emails': attendeeEmailsStr,\n      'Attendee Count': attendees.length,\n      'My Response': myStatus,\n      'Organizer': organizerName,\n      'Location': location ? location.substring(0, 200) : '',\n      'All Day': isAllDay ? 'Yes' : 'No',\n      'Calendar Link': e.htmlLink || ''\n    }\n  });\n}\n\nresults.sort((a, b) => {\n  const dateA = new Date(a.json['Date']);\n  const dateB = new Date(b.json['Date']);\n  return dateA - dateB;\n});\n\nreturn results;"
+      },
+      "id": "a5af2d74-26e2-47c3-ac21-02598874b3f8",
+      "name": "Classify & Structure Events",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1872,
+        -16
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1wDRWYAQ5g9tD6lFfm_QDEQqMyhWkpSI1hmF9DTBC0mE/edit",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "3CV Events",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Event ID"
+          ],
+          "schema": [
+            {
+              "id": "Event ID",
+              "displayName": "Event ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Day",
+              "displayName": "Day",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Week",
+              "displayName": "Week",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Start Time",
+              "displayName": "Start Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "End Time",
+              "displayName": "End Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Duration (min)",
+              "displayName": "Duration (min)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Event Title",
+              "displayName": "Event Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Client",
+              "displayName": "Client",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Meeting Type",
+              "displayName": "Meeting Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Attendees",
+              "displayName": "Attendees",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Attendee Emails",
+              "displayName": "Attendee Emails",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Attendee Count",
+              "displayName": "Attendee Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "My Response",
+              "displayName": "My Response",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Organizer",
+              "displayName": "Organizer",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "All Day",
+              "displayName": "All Day",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Calendar Link",
+              "displayName": "Calendar Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "useAppend": true
+        }
+      },
+      "id": "e35dae79-3d4f-4a85-9e2d-bc93e12b3a99",
+      "name": "Google Sheets - Append or Update",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2096,
+        -16
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "80VJb4L9NWLlKxVM",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Date Range",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Date Range": {
+      "main": [
+        [
+          {
+            "node": "Google Calendar - Get All Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Calendar - Get All Events": {
+      "main": [
+        [
+          {
+            "node": "Classify & Structure Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify & Structure Events": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Append or Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "versionId": "ef3e1e7b-1352-47a5-9227-443f40d93b0a",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    }
+  ]
+}
