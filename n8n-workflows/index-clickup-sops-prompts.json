@@ -1,0 +1,598 @@
+{
+  "updatedAt": "2026-03-11T03:51:20.254Z",
+  "createdAt": "2026-03-10T09:00:13.945Z",
+  "id": "0eMMQbbUNsr24w8W",
+  "name": "Index ClickUp SOPs & Prompts",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 1,
+              "triggerAtMinute": 43
+            }
+          ]
+        }
+      },
+      "id": "trigger-1",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        144,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "getAll",
+        "team": "9011763462",
+        "space": "90113618058",
+        "folder": "90115735544",
+        "list": "901109653624",
+        "filters": {
+          "subtasks": true
+        }
+      },
+      "id": "clickup-get-sops",
+      "name": "Get SOPs from Equipment DB",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        368,
+        0
+      ],
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1",
+              "name": "clickup_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "f2",
+              "name": "name",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "f3",
+              "name": "content",
+              "value": "={{ $json.text_content || $json.description || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "f4",
+              "name": "status",
+              "value": "={{ $json.status.status }}",
+              "type": "string"
+            },
+            {
+              "id": "f5",
+              "name": "date_updated",
+              "value": "={{ $json.date_updated }}",
+              "type": "string"
+            },
+            {
+              "id": "f6",
+              "name": "parent_task_id",
+              "value": "={{ $json.parent || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "f7",
+              "name": "clickup_url",
+              "value": "={{ $json.url }}",
+              "type": "string"
+            },
+            {
+              "id": "f8",
+              "name": "last_synced",
+              "value": "={{ DateTime.now().toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "f9",
+              "name": "date_created",
+              "value": "={{ $json.date_created }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "edit-fields-1",
+      "name": "Extract SOP Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        816,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "xKXiWlfSsZu1pkoi",
+          "mode": "id",
+          "cachedResultName": "SOP Prompt Cache",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/xKXiWlfSsZu1pkoi"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "clickup_id",
+              "keyValue": "={{ $json.clickup_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "clickup_id": "={{ $json.clickup_id }}",
+            "name": "={{ $json.name }}",
+            "content": "={{ $json.content }}",
+            "status": "={{ $json.status }}",
+            "date_updated": "={{ $json.date_updated }}",
+            "parent_task_id": "={{ $json.parent_task_id }}",
+            "clickup_url": "={{ $json.clickup_url }}",
+            "last_synced": "={{ $json.last_synced }}",
+            "date_created": "={{ $json.date_created }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "clickup_id",
+              "displayName": "clickup_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
+            },
+            {
+              "id": "content",
+              "displayName": "content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
+            },
+            {
+              "id": "date_updated",
+              "displayName": "date_updated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
+            },
+            {
+              "id": "parent_task_id",
+              "displayName": "parent_task_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
+            },
+            {
+              "id": "clickup_url",
+              "displayName": "clickup_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
+            },
+            {
+              "id": "last_synced",
+              "displayName": "last_synced",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
+            },
+            {
+              "id": "date_created",
+              "displayName": "date_created",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "upsert-1",
+      "name": "Upsert to SOP Cache",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "xKXiWlfSsZu1pkoi",
+          "mode": "id",
+          "cachedResultName": "SOP Prompt Cache",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/xKXiWlfSsZu1pkoi"
+        },
+        "returnAll": true
+      },
+      "id": "dt-read-back",
+      "name": "Get Rows Missing Summary",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        1264,
+        0
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "fs1",
+              "leftValue": "={{ $json.summary }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "fs2",
+              "leftValue": "={{ $json.content }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "filter-no-summary",
+      "name": "Filter Empty Summaries",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1488,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-haiku-4-5-20251001",
+          "mode": "list",
+          "cachedResultName": "claude-haiku-4-5-20251001"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ 'You are summarizing SOPs and prompts for a consulting practice automation system. Write exactly 1-2 sentences describing what this SOP/prompt does, who uses it, and when. Be specific and concise. No bullet points.\\n\\nName: ' + $json.name + '\\nContent: ' + ($json.content || '').substring(0, 2000) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "haiku-summarize",
+      "name": "Summarize with Haiku",
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        1712,
+        0
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "PdQDpy0E1BohbFDv",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "su1",
+              "name": "clickup_id",
+              "value": "={{ $('Filter Empty Summaries').item.json.clickup_id }}",
+              "type": "string"
+            },
+            {
+              "id": "su2",
+              "name": "summary",
+              "value": "={{ $json.content[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "prep-summary-update",
+      "name": "Prep Summary Update",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2064,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "xKXiWlfSsZu1pkoi",
+          "mode": "id",
+          "cachedResultName": "SOP Prompt Cache",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/xKXiWlfSsZu1pkoi"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "clickup_id",
+              "keyValue": "={{ $json.clickup_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "summary": "={{ $json.summary }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "dt-update-summary",
+      "name": "Update Summary",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        2288,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Only keep tasks tagged 'n8n-prompt'\nconst items = $input.all();\nreturn items.filter(item => \n  item.json.tags?.some(tag => tag.name === 'n8n-prompt')\n);\n"
+      },
+      "id": "filter-by-tag",
+      "name": "Filter n8n-prompt Tag",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get SOPs from Equipment DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract SOP Fields": {
+      "main": [
+        [
+          {
+            "node": "Upsert to SOP Cache",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert to SOP Cache": {
+      "main": [
+        [
+          {
+            "node": "Get Rows Missing Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Rows Missing Summary": {
+      "main": [
+        [
+          {
+            "node": "Filter Empty Summaries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Empty Summaries": {
+      "main": [
+        [
+          {
+            "node": "Summarize with Haiku",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize with Haiku": {
+      "main": [
+        [
+          {
+            "node": "Prep Summary Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Summary Update": {
+      "main": [
+        [
+          {
+            "node": "Update Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get SOPs from Equipment DB": {
+      "main": [
+        [
+          {
+            "node": "Filter n8n-prompt Tag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter n8n-prompt Tag": {
+      "main": [
+        [
+          {
+            "node": "Extract SOP Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/New_York",
+    "saveDataSuccessExecution": "none",
+    "errorWorkflow": "Ka01FqAuhDXin0Kn",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "versionId": "63c21fe7-4599-42a3-9246-8ef11a0822e3",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    }
+  ]
+}
