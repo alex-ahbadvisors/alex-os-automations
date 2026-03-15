@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-03-10T00:11:32.959Z",
+  "updatedAt": "2026-03-10T02:59:30.440Z",
   "createdAt": "2026-03-09T21:48:19.398Z",
   "id": "566ks5Nlg2F5rvzO",
   "name": "Weekly Goals Reminder",
@@ -7,6 +7,14 @@
   "isArchived": false,
   "nodes": [
     {
+      "id": "schedule-trigger",
+      "name": "Monday 9 AM Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
       "parameters": {
         "rule": {
           "interval": [
@@ -16,17 +24,17 @@
             }
           ]
         }
-      },
-      "id": "schedule-trigger",
-      "name": "Monday 9 AM Trigger",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.3,
-      "position": [
-        0,
-        0
-      ]
+      }
     },
     {
+      "id": "get-tasks",
+      "name": "Get Weekly Goals Tasks",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        224,
+        0
+      ],
       "parameters": {
         "authentication": "oAuth2",
         "operation": "getAll",
@@ -41,14 +49,6 @@
           "orderBy": "created"
         }
       },
-      "id": "get-tasks",
-      "name": "Get Weekly Goals Tasks",
-      "type": "n8n-nodes-base.clickUp",
-      "typeVersion": 1,
-      "position": [
-        224,
-        0
-      ],
       "credentials": {
         "clickUpOAuth2Api": {
           "id": "WiEsUqUCPM9Xds21",
@@ -57,7 +57,6 @@
       }
     },
     {
-      "parameters": {},
       "id": "limit-one",
       "name": "Get Most Recent",
       "type": "n8n-nodes-base.limit",
@@ -65,14 +64,10 @@
       "position": [
         448,
         0
-      ]
+      ],
+      "parameters": {}
     },
     {
-      "parameters": {
-        "authentication": "oAuth2",
-        "operation": "get",
-        "id": "={{ $json.id }}"
-      },
       "id": "get-task-detail",
       "name": "Get Task Details",
       "type": "n8n-nodes-base.clickUp",
@@ -81,6 +76,11 @@
         672,
         0
       ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "get",
+        "id": "={{ $json.id }}"
+      },
       "credentials": {
         "clickUpOAuth2Api": {
           "id": "WiEsUqUCPM9Xds21",
@@ -89,9 +89,6 @@
       }
     },
     {
-      "parameters": {
-        "jsCode": "const task = $input.first().json;\nconst checklists = task.checklists || [];\n\nlet totalItems = 0;\nlet completedItems = 0;\nconst carryForwards = [];\n\nfor (const checklist of checklists) {\n  for (const item of (checklist.items || [])) {\n    totalItems++;\n    if (item.resolved) {\n      completedItems++;\n    } else {\n      carryForwards.push({\n        name: item.name,\n        checklist: checklist.name\n      });\n    }\n  }\n}\n\nconst completionPct = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;\n\nconst now = new Date();\nconst year = now.getFullYear();\nconst month = String(now.getMonth() + 1).padStart(2, '0');\nconst day = String(now.getDate()).padStart(2, '0');\nconst taskName = `${year}-${month}-${day} Weekly Goals`;\n\nconst friday = new Date(now);\nfriday.setDate(friday.getDate() + 4);\n\nreturn [{\n  json: {\n    lastWeekTaskName: task.name || 'Unknown',\n    lastWeekTaskUrl: task.url || '',\n    totalItems,\n    completedItems,\n    completionPct,\n    carryForwards,\n    carryForwardCount: carryForwards.length,\n    newTaskName: taskName,\n    fridayDate: friday.toISOString()\n  }\n}];"
-      },
       "id": "parse-scorecard",
       "name": "Parse Scorecard",
       "type": "n8n-nodes-base.code",
@@ -99,9 +96,20 @@
       "position": [
         880,
         0
-      ]
+      ],
+      "parameters": {
+        "jsCode": "const task = $input.first().json;\nconst checklists = task.checklists || [];\n\nlet totalItems = 0;\nlet completedItems = 0;\nconst carryForwards = [];\n\nfor (const checklist of checklists) {\n  for (const item of (checklist.items || [])) {\n    totalItems++;\n    if (item.resolved) {\n      completedItems++;\n    } else {\n      carryForwards.push({\n        name: item.name,\n        checklist: checklist.name\n      });\n    }\n  }\n}\n\nconst completionPct = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;\n\nconst now = new Date();\nconst year = now.getFullYear();\nconst month = String(now.getMonth() + 1).padStart(2, '0');\nconst day = String(now.getDate()).padStart(2, '0');\nconst taskName = `${year}-${month}-${day} Weekly Goals`;\n\nconst friday = new Date(now);\nfriday.setDate(friday.getDate() + 4);\n\nreturn [{\n  json: {\n    lastWeekTaskName: task.name || 'Unknown',\n    lastWeekTaskUrl: task.url || '',\n    totalItems,\n    completedItems,\n    completionPct,\n    carryForwards,\n    carryForwardCount: carryForwards.length,\n    newTaskName: taskName,\n    fridayDate: friday.toISOString()\n  }\n}];"
+      }
     },
     {
+      "id": "create-task",
+      "name": "Create Weekly Goals Task",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        0
+      ],
       "parameters": {
         "authentication": "oAuth2",
         "team": "9011763462",
@@ -119,14 +127,6 @@
           "status": "in progress"
         }
       },
-      "id": "create-task",
-      "name": "Create Weekly Goals Task",
-      "type": "n8n-nodes-base.clickUp",
-      "typeVersion": 1,
-      "position": [
-        1104,
-        0
-      ],
       "credentials": {
         "clickUpOAuth2Api": {
           "id": "WiEsUqUCPM9Xds21",
@@ -135,12 +135,6 @@
       }
     },
     {
-      "parameters": {
-        "authentication": "oAuth2",
-        "resource": "checklist",
-        "task": "={{ $json.id }}",
-        "name": "Monthly Context"
-      },
       "id": "checklist-monthly",
       "name": "Create Checklist: Monthly Context",
       "type": "n8n-nodes-base.clickUp",
@@ -149,6 +143,12 @@
         1328,
         0
       ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "checklist",
+        "task": "={{ $json.id }}",
+        "name": "Monthly Context"
+      },
       "credentials": {
         "clickUpOAuth2Api": {
           "id": "WiEsUqUCPM9Xds21",
@@ -157,12 +157,6 @@
       }
     },
     {
-      "parameters": {
-        "authentication": "oAuth2",
-        "resource": "checklist",
-        "task": "={{ $('Create Weekly Goals Task').item.json.id }}",
-        "name": "Alex Goals"
-      },
       "id": "checklist-alex",
       "name": "Create Checklist: Alex Goals",
       "type": "n8n-nodes-base.clickUp",
@@ -171,6 +165,12 @@
         1552,
         0
       ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "checklist",
+        "task": "={{ $('Create Weekly Goals Task').item.json.id }}",
+        "name": "Alex Goals"
+      },
       "credentials": {
         "clickUpOAuth2Api": {
           "id": "WiEsUqUCPM9Xds21",
@@ -179,12 +179,6 @@
       }
     },
     {
-      "parameters": {
-        "authentication": "oAuth2",
-        "resource": "checklist",
-        "task": "={{ $('Create Weekly Goals Task').item.json.id }}",
-        "name": "Kendra Goals"
-      },
       "id": "checklist-kendra",
       "name": "Create Checklist: Kendra Goals",
       "type": "n8n-nodes-base.clickUp",
@@ -193,6 +187,12 @@
         1760,
         0
       ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "checklist",
+        "task": "={{ $('Create Weekly Goals Task').item.json.id }}",
+        "name": "Kendra Goals"
+      },
       "credentials": {
         "clickUpOAuth2Api": {
           "id": "WiEsUqUCPM9Xds21",
@@ -201,12 +201,6 @@
       }
     },
     {
-      "parameters": {
-        "authentication": "oAuth2",
-        "resource": "checklist",
-        "task": "={{ $('Create Weekly Goals Task').item.json.id }}",
-        "name": "Last Week Scorecard"
-      },
       "id": "checklist-scorecard",
       "name": "Create Checklist: Last Week Scorecard",
       "type": "n8n-nodes-base.clickUp",
@@ -215,6 +209,12 @@
         1984,
         0
       ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "checklist",
+        "task": "={{ $('Create Weekly Goals Task').item.json.id }}",
+        "name": "Last Week Scorecard"
+      },
       "credentials": {
         "clickUpOAuth2Api": {
           "id": "WiEsUqUCPM9Xds21",
@@ -223,6 +223,14 @@
       }
     },
     {
+      "id": "format-slack",
+      "name": "Format Slack Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2208,
+        0
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -253,17 +261,17 @@
           ]
         },
         "options": {}
-      },
-      "id": "format-slack",
-      "name": "Format Slack Message",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        2208,
-        0
-      ]
+      }
     },
     {
+      "id": "slack-send",
+      "name": "Call Abel Slack Flow Handler",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2432,
+        0
+      ],
       "parameters": {
         "workflowId": {
           "__rl": true,
@@ -289,7 +297,8 @@
               "defaultMatch": false,
               "display": true,
               "canBeUsedToMatch": true,
-              "type": "string"
+              "type": "string",
+              "options": []
             },
             {
               "id": "message",
@@ -298,7 +307,8 @@
               "defaultMatch": false,
               "display": true,
               "canBeUsedToMatch": true,
-              "type": "string"
+              "type": "string",
+              "options": []
             },
             {
               "id": "source_workflow",
@@ -307,7 +317,8 @@
               "defaultMatch": false,
               "display": true,
               "canBeUsedToMatch": true,
-              "type": "string"
+              "type": "string",
+              "options": []
             },
             {
               "id": "message_type",
@@ -316,7 +327,8 @@
               "defaultMatch": false,
               "display": true,
               "canBeUsedToMatch": true,
-              "type": "string"
+              "type": "string",
+              "options": []
             },
             {
               "id": "thread_ts",
@@ -326,7 +338,8 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "string",
-              "removed": true
+              "removed": true,
+              "options": []
             }
           ],
           "attemptToConvertTypes": false,
@@ -335,14 +348,6 @@
         "mode": "id",
         "options": {}
       },
-      "id": "slack-send",
-      "name": "Call Abel Slack Flow Handler",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.3,
-      "position": [
-        2432,
-        0
-      ],
       "webhookId": "204979d6-63c5-4b70-a39c-603abcb91ad6"
     }
   ],
@@ -484,8 +489,8 @@
     }
   },
   "meta": null,
-  "versionId": "19cd79a7-d54e-4b82-a6d8-10eb600f9275",
-  "activeVersionId": "19cd79a7-d54e-4b82-a6d8-10eb600f9275",
+  "versionId": "44aa10e9-4bc5-4cf6-bb13-20d764a1564e",
+  "activeVersionId": "44aa10e9-4bc5-4cf6-bb13-20d764a1564e",
   "triggerCount": 1,
   "tags": [
     {
