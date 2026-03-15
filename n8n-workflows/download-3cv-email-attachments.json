@@ -1,0 +1,350 @@
+{
+  "updatedAt": "2026-03-14T20:18:38.136Z",
+  "createdAt": "2026-03-13T04:22:24.219Z",
+  "id": "bQ6fDgQ7ZUOZfLAP",
+  "name": "Download 3CV Email Attachments",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "1b7d2439-775d-43b1-b281-d34790f35eb3",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        5424,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "field-year",
+              "name": "year",
+              "value": "2024",
+              "type": "string"
+            },
+            {
+              "id": "field-month",
+              "name": "month",
+              "value": "8",
+              "type": "string"
+            },
+            {
+              "id": "field-folder",
+              "name": "driveFolderId",
+              "value": "1j2LBhq7nZ9I-hyq43XmvExX4UwiDq4lZ",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d26a7c10-31c4-4949-8f09-817af2069dc8",
+      "name": "Set Month",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        5648,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "returnAll": true,
+        "simple": false,
+        "filters": {
+          "q": "={{ 'has:attachment -filename:ics after:' + $json.year + '/' + String($json.month).padStart(2, '0') + '/01 before:' + ($json.month === '12' ? String(Number($json.year) + 1) : $json.year) + '/' + ($json.month === '12' ? '01' : String(Number($json.month) + 1).padStart(2, '0')) + '/01' }}"
+        },
+        "options": {
+          "dataPropertyAttachmentsPrefixName": "attachment_",
+          "downloadAttachments": true
+        }
+      },
+      "id": "ac8a2171-fce5-46b7-9452-411ee27754fa",
+      "name": "Gmail List Messages",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        5872,
+        -160
+      ],
+      "alwaysOutputData": true,
+      "webhookId": "6d922b80-a5d0-48f1-a007-1b6afcda3995",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dPOEsx0Jk4GPO7sP",
+          "name": "3CVentures Gmail"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "  // Gmail simple:false returns: from/to/cc as objects with .text,\n  // subject as string, date as ISO string. All lowercase.\n  var results = [];\n  var items = $input.all();\n\n  for (var i = 0; i < items.length; i++) {\n    var item = items[i];\n    var binary = item.binary || {};\n    var keys = Object.keys(binary);\n    if (keys.length === 0) continue;\n\n    // Date - ISO string like \"2024-08-30T19:43:47.000Z\"\n    var dateRaw = item.json.date || '';\n    var dateStr = '';\n    if (dateRaw) {\n      try {\n        var d = new Date(dateRaw);\n        if (!isNaN(d.getTime())) {\n          dateStr = d.toLocaleString('en-US', {\n            timeZone: 'America/New_York',\n            year: 'numeric', month: '2-digit', day: '2-digit',\n            hour: '2-digit', minute: '2-digit', hour12: true\n          });\n        }\n      } catch(e) {\n        dateStr = String(dateRaw).substring(0, 30);\n      }\n    }\n\n    // From/To/CC are objects with .text property, or strings\n    var fromRaw = '';\n    if (item.json.from) {\n      fromRaw = (typeof item.json.from === 'object') ? String(item.json.from.text || '') : String(item.json.from);\n    }\n    var toRaw = '';\n    if (item.json.to) {\n      toRaw = (typeof item.json.to === 'object') ? String(item.json.to.text || '') : String(item.json.to);\n    }\n    var ccRaw = '';\n    if (item.json.cc) {\n      ccRaw = (typeof item.json.cc === 'object') ? String(item.json.cc.text || '') : String(item.json.cc);\n    }\n\n    var subject = String(item.json.subject || '');\n    var messageId = String(item.json.id || item.json.messageId || '');\n\n    for (var k = 0; k < keys.length; k++) {\n      var key = keys[k];\n      var binaryItem = binary[key];\n      var originalName = String(binaryItem.fileName || 'attachment');\n      var mimeType = String(binaryItem.mimeType || '');\n      var fileSize = Number(binaryItem.fileSize || 0);\n\n      // Skip inline images with generic names\n      if (mimeType.indexOf('image/') === 0 && originalName.match(/^image[0-9]*\\./)) continue;\n      // Skip Word/Office temp files\n      if (originalName.match(/^~(WRD|\\$)/)) continue;\n      // Skip calendar invites\n      if (originalName.match(/\\.ics$/i) || mimeType === 'text/calendar') continue;\n      // Skip tiny tracking pixels (< 2KB images)\n      if (mimeType.indexOf('image/') === 0 && fileSize > 0 && fileSize < 2000) continue;\n\n      var newBinary = {};\n      newBinary['data'] = binaryItem;\n\n      results.push({\n        json: {\n          messageId: messageId,\n          date: dateStr,\n          from: fromRaw,\n          to: toRaw,\n          cc: ccRaw,\n          subject: subject,\n          attachmentTitle: originalName\n        },\n        binary: newBinary\n      });\n    }\n  }\n\n  return results;"
+      },
+      "id": "a4026dff-0f8b-48b5-8056-8856472733b8",
+      "name": "Process Attachments",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6096,
+        -160
+      ],
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "name": "={{ $json.attachmentTitle }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "={{ $('Set Month').first().json.driveFolderId }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "id": "3cae08b8-3e63-40e8-b88b-0a24ecaf6192",
+      "name": "Upload to Google Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        6320,
+        -160
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zCC4OdEB1yyc3uZv",
+          "name": "AHB Advisors Google Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine Drive response (webViewLink) with Process Attachments metadata\nvar driveItems = $input.all();\nvar metaItems = $('Process Attachments').all();\nvar results = [];\n\nfor (var i = 0; i < driveItems.length; i++) {\n  var drive = driveItems[i].json;\n  var meta = (i < metaItems.length) ? metaItems[i].json : {};\n  results.push({\n    json: {\n      'Date': meta.date || '',\n      'Subject': meta.subject || '',\n      'From': meta.from || '',\n      'To': meta.to || '',\n      'CC': meta.cc || '',\n      'Attachment Title': meta.attachmentTitle || String(drive.name || ''),\n      'Drive Link': String(drive.webViewLink || drive.webContentLink || ''),\n      'Message ID': meta.messageId || ''\n    }\n  });\n}\n\nreturn results;"
+      },
+      "id": "bed4b711-12f6-4b60-bf81-242d9ea93814",
+      "name": "Build Log Entry",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6544,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/15v3LEix9-d3HduxsKlubzlIm_uIv8LTmO5i13Gs_2qU/edit",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Attachments",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Message ID"
+          ],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "From",
+              "displayName": "From",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "To",
+              "displayName": "To",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "CC",
+              "displayName": "CC",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Attachment Title",
+              "displayName": "Attachment Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Drive Link",
+              "displayName": "Drive Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Message ID",
+              "displayName": "Message ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "useAppend": true
+        }
+      },
+      "id": "0d2d4458-b84e-445c-82df-46ab06c892db",
+      "name": "Log to Attachments Tab",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        6768,
+        -160
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "80VJb4L9NWLlKxVM",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Month",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Month": {
+      "main": [
+        [
+          {
+            "node": "Gmail List Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail List Messages": {
+      "main": [
+        [
+          {
+            "node": "Process Attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Attachments": {
+      "main": [
+        [
+          {
+            "node": "Upload to Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload to Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Build Log Entry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Log Entry": {
+      "main": [
+        [
+          {
+            "node": "Log to Attachments Tab",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "versionId": "c8a52014-89b6-48b5-ae9c-7a60d6b513cb",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    }
+  ]
+}
