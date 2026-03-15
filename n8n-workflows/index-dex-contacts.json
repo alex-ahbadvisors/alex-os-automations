@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-03-10T00:21:34.713Z",
+  "updatedAt": "2026-03-13T18:27:11.000Z",
   "createdAt": "2025-10-24T12:52:26.902Z",
   "id": "cqULgAUmfXH0bW13",
   "name": "Index Dex Contacts",
-  "active": true,
+  "active": false,
   "isArchived": false,
   "nodes": [
     {
@@ -489,7 +489,7 @@
   },
   "meta": null,
   "versionId": "ae92470c-8c55-47e8-8cab-58877bae0eec",
-  "activeVersionId": "ae92470c-8c55-47e8-8cab-58877bae0eec",
+  "activeVersionId": null,
   "triggerCount": 1,
   "tags": [
     {
