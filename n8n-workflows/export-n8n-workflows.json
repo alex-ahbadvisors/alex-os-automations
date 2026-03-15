@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-03-10T02:41:49.978Z",
+  "updatedAt": "2026-03-10T02:57:02.631Z",
   "createdAt": "2026-01-01T21:30:12.307Z",
   "id": "DKrAVjDY2QDLr72W",
   "name": "Export n8n Workflows",
-  "active": false,
+  "active": true,
   "isArchived": false,
   "nodes": [
     {
@@ -13,7 +13,7 @@
       "typeVersion": 1.2,
       "position": [
         0,
-        72
+        -24
       ],
       "parameters": {
         "rule": {
@@ -33,7 +33,7 @@
       "typeVersion": 1,
       "position": [
         0,
-        264
+        168
       ],
       "parameters": {}
     },
@@ -44,7 +44,7 @@
       "typeVersion": 1,
       "position": [
         224,
-        168
+        72
       ],
       "parameters": {
         "filters": {
@@ -72,7 +72,7 @@
       "typeVersion": 4.7,
       "position": [
         448,
-        168
+        72
       ],
       "parameters": {
         "documentId": {
@@ -103,7 +103,7 @@
       "typeVersion": 2,
       "position": [
         672,
-        168
+        72
       ],
       "parameters": {
         "jsCode": "const workflows = $('Get Export Workflows').all();\nconst registryRows = $input.all();\nconst existingMap = {};\nfor (const row of registryRows) {\n  const r = row.json;\n  if (r['Workflow ID']) {\n    existingMap[r['Workflow ID']] = {\n      hash: r['Structure Hash'] || '',\n      description: r['Description'] || '',\n      lastUpdated: r['Last Updated'] || ''\n    };\n  }\n}\nconst results = [];\nfor (const item of workflows) {\n  const wf = item.json;\n  const nodes = wf.nodes || [];\n  const connections = wf.connections || {};\n  let triggerType = 'manual';\n  for (const node of nodes) {\n    const t = node.type || '';\n    if (t.includes('scheduleTrigger')) { triggerType = 'schedule'; break; }\n    if (t.includes('webhook') || t.includes('Webhook')) { triggerType = 'webhook'; break; }\n    if (t.includes('slackTrigger')) { triggerType = 'slack'; break; }\n    if (t.includes('executeWorkflowTrigger')) { triggerType = 'sub-workflow'; break; }\n    if (t.includes('manualTrigger')) { triggerType = 'manual'; }\n  }\n  const outputs = new Set();\n  for (const node of nodes) {\n    const t = (node.type || '').toLowerCase();\n    if (t.includes('slack') && !t.includes('trigger')) outputs.add('Slack');\n    if (t.includes('clickup')) outputs.add('ClickUp');\n    if (t.includes('googlesheets')) outputs.add('Google Sheets');\n    if (t.includes('googledrive')) outputs.add('Google Drive');\n    if (t.includes('gmail') || t.includes('emailsend')) outputs.add('Email');\n    if (t.includes('github')) outputs.add('GitHub');\n    if (t.includes('datatable')) outputs.add('n8n DataTable');\n    if (t.includes('executeworkflow') && !t.includes('trigger')) outputs.add('Sub-workflow');\n    if (t.includes('httprequest')) outputs.add('HTTP API');\n  }\n  const subWorkflows = [];\n  for (const node of nodes) {\n    if ((node.type || '').includes('executeWorkflow') && !(node.type || '').includes('Trigger')) {\n      const wfId = node.parameters?.workflowId?.value || node.parameters?.workflowId || '';\n      subWorkflows.push(node.name + ' > ' + wfId);\n    }\n  }\n  let inputSchema = '';\n  for (const node of nodes) {\n    if ((node.type || '').includes('executeWorkflowTrigger')) {\n      const inputs = node.parameters?.workflowInputs?.values || [];\n      inputSchema = inputs.map(i => i.name + ': ' + (i.type || 'string')).join(', ');\n    }\n  }\n  const nodeTypes = nodes.map(n => n.type + ':' + n.name).sort().join('|');\n  const connKeys = Object.entries(connections).map(([k, v]) => {\n    const targets = (v.main || []).flat().map(c => c.node).join(',');\n    return k + '->' + targets;\n  }).sort().join('|');\n  const hashInput = nodeTypes + '::' + connKeys;\n  let hash = 0;\n  for (let i = 0; i < hashInput.length; i++) {\n    hash = ((hash << 5) - hash) + hashInput.charCodeAt(i);\n    hash = hash & hash;\n  }\n  const structureHash = Math.abs(hash).toString(16);\n  const existing = existingMap[wf.id];\n  const needsDescription = !existing || existing.hash !== structureHash;\n  let description = '';\n  if (needsDescription) {\n    description = '[pending LLM]';\n  } else {\n    description = existing.description;\n  }\n  const filename = wf.name.replace(/^\\[(\\d+[a-z]?)\\]\\s*/i, '$1-').replace(/^\\[T\\]\\s*/i, 'tool-').replace(/[^a-zA-Z0-9\\-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').toLowerCase() + '.json';\n  const needsGitHubPush = !existing || existing.lastUpdated !== wf.updatedAt;\n  const cleanWf = { ...wf };\n  delete cleanWf.shared;\n  delete cleanWf.activeVersion;\n  const workflowJson = JSON.stringify(cleanWf, null, 2);\n  const nodesSummary = nodes.map(n => {\n    const shortType = (n.type || '').split('.').pop();\n    return n.name + ' (' + shortType + ')';\n  }).join(', ');\n  const connectionsSummary = Object.entries(connections).map(([source, conns]) => {\n    const dests = (conns.main || []).flat().map(c => c.node).join(', ');\n    return source + ' -> ' + dests;\n  }).join('; ');\n  results.push({ json: { workflowId: wf.id, name: wf.name, active: wf.active, triggerType, description, inputSchema, outputDestinations: Array.from(outputs).join(', '), subWorkflowsCalled: subWorkflows.join('; '), tags: (wf.tags || []).map(t => t.name).join(', '), nodeCount: nodes.length, errorHandler: wf.settings?.errorWorkflow || '', structureHash, needsGitHubPush, needsDescription, filename, workflowJson, nodesSummary, connectionsSummary, lastUpdated: wf.updatedAt, lastChecked: new Date().toISOString() } });\n}\nreturn results;"
@@ -115,8 +115,8 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        896,
-        168
+        1472,
+        -24
       ],
       "parameters": {
         "operation": "appendOrUpdate",
@@ -323,7 +323,7 @@
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2.2,
       "position": [
-        1120,
+        1472,
         168
       ],
       "parameters": {
@@ -358,7 +358,7 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        1344,
+        1696,
         168
       ],
       "parameters": {
@@ -371,7 +371,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1568,
+        1920,
         -96
       ],
       "parameters": {
@@ -384,7 +384,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1792,
+        2144,
         -96
       ],
       "parameters": {
@@ -415,7 +415,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2016,
+        2368,
         -96
       ],
       "parameters": {
@@ -449,8 +449,8 @@
       "type": "n8n-nodes-base.github",
       "typeVersion": 1.1,
       "position": [
-        2240,
-        72
+        2592,
+        168
       ],
       "parameters": {
         "authentication": "oAuth2",
@@ -491,8 +491,8 @@
       "type": "n8n-nodes-base.github",
       "typeVersion": 1.1,
       "position": [
-        2240,
-        288
+        2592,
+        384
       ],
       "parameters": {
         "authentication": "oAuth2",
@@ -532,8 +532,8 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        1720,
-        380
+        2144,
+        96
       ],
       "parameters": {
         "select": "channel",
@@ -562,8 +562,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1500,
-        380
+        1920,
+        96
       ],
       "parameters": {
         "jsCode": "const allItems = $('Apply Description').all();\nconst changedItems = $('Filter Changed Only').all();\nconst total = allItems.length;\nconst changed = changedItems.length;\n\nconst lines = [\n  '*n8n Workflow Export Complete*',\n  total + ' workflows tracked | ' + changed + ' pushed to GitHub'\n];\n\nif (changed > 0) {\n  lines.push('');\n  lines.push('*Updated:*');\n  for (const item of changedItems) {\n    const url = 'https://github.com/alex-ahbadvisors/alex-os-automations/blob/main/n8n-workflows/' + item.json.filename;\n    lines.push('\\u2022 <' + url + '|' + item.json.name + '>');\n  }\n}\n\nreturn [{ json: { slackMessage: lines.join('\\n') } }];"
@@ -575,8 +575,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1000,
-        380
+        1248,
+        72
       ],
       "parameters": {
         "jsCode": "const llmItems = $input.all();\nconst originals = $('Parse & Compare').all();\nconst results = [];\n\nfor (let i = 0; i < llmItems.length; i++) {\n  const original = originals[i]?.json || {};\n  const j = llmItems[i].json;\n  // Anthropic returns content as array: content[0].text\n  let response = '';\n  if (j.text) {\n    response = j.text;\n  } else if (j.output) {\n    response = j.output;\n  } else if (Array.isArray(j.content) && j.content[0]?.text) {\n    response = j.content[0].text;\n  } else if (typeof j.content === 'string') {\n    response = j.content;\n  } else if (j.message) {\n    response = j.message;\n  }\n  response = response.trim();\n  if (response.toUpperCase().startsWith('SKIP') || !response) {\n    results.push({ json: { ...original } });\n  } else {\n    results.push({ json: { ...original, description: response } });\n  }\n}\n\nreturn results;"
@@ -589,7 +589,7 @@
       "typeVersion": 1,
       "position": [
         896,
-        136
+        72
       ],
       "parameters": {
         "modelId": {
@@ -804,15 +804,20 @@
   "settings": {
     "executionOrder": "v0",
     "callerPolicy": "workflowsFromSameOwner",
-    "availableInMCP": false
+    "availableInMCP": false,
+    "errorWorkflow": "Ka01FqAuhDXin0Kn"
   },
-  "staticData": null,
+  "staticData": {
+    "node:Weekly Sunday Midnight ET": {
+      "recurrenceRules": []
+    }
+  },
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "versionId": "84cfc7e7-ba23-41d5-867e-54c2a079cb9e",
-  "activeVersionId": null,
-  "triggerCount": 0,
+  "versionId": "ace0911a-bb42-410e-ba20-ff32645f6ab9",
+  "activeVersionId": "ace0911a-bb42-410e-ba20-ff32645f6ab9",
+  "triggerCount": 1,
   "tags": [
     {
       "updatedAt": "2026-03-10T00:11:31.515Z",
