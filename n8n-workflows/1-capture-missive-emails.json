@@ -1,13 +1,20 @@
 {
-  "updatedAt": "2026-02-03T19:29:01.193Z",
+  "updatedAt": "2026-03-11T05:26:52.948Z",
   "createdAt": "2025-12-26T15:26:31.241Z",
   "id": "BZpys9OcMz0suz0Y",
   "name": "[1] Capture Missive Emails",
-  "description": null,
   "active": true,
   "isArchived": false,
   "nodes": [
     {
+      "id": "8cfb1de2-c912-42ef-8eb0-35773cca9b8b",
+      "name": "OpenAI Chat Model1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1536,
+        112
+      ],
       "parameters": {
         "model": {
           "__rl": true,
@@ -20,14 +27,6 @@
           "timeout": 200000
         }
       },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        1536,
-        112
-      ],
-      "id": "8cfb1de2-c912-42ef-8eb0-35773cca9b8b",
-      "name": "OpenAI Chat Model1",
       "credentials": {
         "openAiApi": {
           "id": "FPFFI1NvOtGMoh30",
@@ -36,6 +35,14 @@
       }
     },
     {
+      "id": "d1ec0fec-b58e-4a7b-9afc-151b9a673087",
+      "name": "Existing Meeting Note",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        1088,
+        -128
+      ],
       "parameters": {
         "operation": "get",
         "dataTableId": {
@@ -56,17 +63,17 @@
         },
         "limit": 1
       },
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1,
-      "position": [
-        1088,
-        -128
-      ],
-      "id": "d1ec0fec-b58e-4a7b-9afc-151b9a673087",
-      "name": "Existing Meeting Note",
       "alwaysOutputData": true
     },
     {
+      "id": "be4845c6-b5dd-472d-bbea-407b6fda5c4f",
+      "name": "OpenAI Chat Model2",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2304,
+        304
+      ],
       "parameters": {
         "model": {
           "__rl": true,
@@ -78,14 +85,6 @@
           "reasoningEffort": "low"
         }
       },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        2304,
-        304
-      ],
-      "id": "be4845c6-b5dd-472d-bbea-407b6fda5c4f",
-      "name": "OpenAI Chat Model2",
       "credentials": {
         "openAiApi": {
           "id": "FPFFI1NvOtGMoh30",
@@ -94,6 +93,14 @@
       }
     },
     {
+      "id": "3425e052-6269-4bf5-b851-ef3d667f096c",
+      "name": "Meeting Overview",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2224,
+        80
+      ],
       "parameters": {
         "promptType": "define",
         "text": "=Generate an overview.\n---\n{{ $('Email To-Do').item.json.messages_body }}\n---\n{{ $('Email To-Do').item.json.messages_from_field_address }}\n---\n{{ $('Email To-Do').item.json.messages_to_fields0_address }}\n---\n{{ $('Email To-Do').item.json.messages_subject }}\n---\n{{ $('Email To-Do').item.json.shared_labels0_name_with_parent_names }}",
@@ -101,17 +108,17 @@
         "options": {
           "systemMessage": "=Generate a plain text overview of the email optimized for search and discoverability, 1500 characters max (but should be way shorter). Include the email date, recipients/senders and high-level overview of meeting objective and keywords.\n\nFormat for human and search engines like:\nA email on {date} from {sender} to {recipients}. \nTopics:\n- ...\n- ...\n- ...\nkey takeaways:\n- ...\n- ..."
         }
-      },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 2.2,
-      "position": [
-        2224,
-        80
-      ],
-      "id": "3425e052-6269-4bf5-b851-ef3d667f096c",
-      "name": "Meeting Overview"
+      }
     },
     {
+      "id": "4aa2e15a-d1b1-4ab1-a5cb-cc5abb3a5f09",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2576,
+        80
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -124,32 +131,32 @@
           ]
         },
         "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        2576,
-        80
-      ],
-      "id": "4aa2e15a-d1b1-4ab1-a5cb-cc5abb3a5f09",
-      "name": "Edit Fields"
+      }
     },
     {
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {}
-      },
+      "id": "87cb8b2d-21da-4005-8329-49de995c076a",
+      "name": "Merge",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
         2800,
         -176
       ],
-      "id": "87cb8b2d-21da-4005-8329-49de995c076a",
-      "name": "Merge"
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      }
     },
     {
+      "id": "7d65daa1-d816-4123-80f0-cf3ac15e0433",
+      "name": "If",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2288,
+        -272
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -173,17 +180,17 @@
           "combinator": "and"
         },
         "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        2288,
-        -272
-      ],
-      "id": "7d65daa1-d816-4123-80f0-cf3ac15e0433",
-      "name": "If"
+      }
     },
     {
+      "id": "1f3e8820-cb81-43d7-8ad5-32c2fac175e5",
+      "name": "Find_Contacts",
+      "type": "n8n-nodes-base.dataTableTool",
+      "typeVersion": 1,
+      "position": [
+        1664,
+        112
+      ],
       "parameters": {
         "operation": "get",
         "dataTableId": {
@@ -213,17 +220,17 @@
           ]
         },
         "returnAll": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Return_All', ``, 'boolean') }}"
-      },
+      }
+    },
+    {
+      "id": "839ac015-5366-48cd-8ce0-0ad139dd3cb3",
+      "name": "Find_Clients",
       "type": "n8n-nodes-base.dataTableTool",
       "typeVersion": 1,
       "position": [
-        1664,
+        1792,
         112
       ],
-      "id": "1f3e8820-cb81-43d7-8ad5-32c2fac175e5",
-      "name": "Find_Contacts"
-    },
-    {
       "parameters": {
         "operation": "get",
         "dataTableId": {
@@ -248,17 +255,17 @@
           ]
         },
         "returnAll": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Return_All', ``, 'boolean') }}"
-      },
-      "type": "n8n-nodes-base.dataTableTool",
-      "typeVersion": 1,
-      "position": [
-        1792,
-        112
-      ],
-      "id": "839ac015-5366-48cd-8ce0-0ad139dd3cb3",
-      "name": "Find_Clients"
+      }
     },
     {
+      "id": "754d19db-905b-4030-ade9-d94954413f9c",
+      "name": "Update Meeting Note",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        2576,
+        -368
+      ],
       "parameters": {
         "authentication": "oAuth2",
         "operation": "update",
@@ -269,14 +276,6 @@
           "startDate": "={{ $today }}"
         }
       },
-      "type": "n8n-nodes-base.clickUp",
-      "typeVersion": 1,
-      "position": [
-        2576,
-        -368
-      ],
-      "id": "754d19db-905b-4030-ade9-d94954413f9c",
-      "name": "Update Meeting Note",
       "credentials": {
         "clickUpOAuth2Api": {
           "id": "WiEsUqUCPM9Xds21",
@@ -285,36 +284,36 @@
       }
     },
     {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "6990338e-e8a7-4a2e-9a00-52e9191b5526",
-        "options": {}
-      },
+      "id": "40f2e9d5-39de-443f-9fd3-bacdd79a12a7",
+      "name": "Missive Webhook Connection",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
         -704,
         -128
       ],
-      "id": "40f2e9d5-39de-443f-9fd3-bacdd79a12a7",
-      "name": "Missive Webhook Connection",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "6990338e-e8a7-4a2e-9a00-52e9191b5526",
+        "options": {}
+      },
       "webhookId": "6990338e-e8a7-4a2e-9a00-52e9191b5526"
     },
     {
-      "parameters": {
-        "url": "=https://public.missiveapp.com/v1/messages/{{ $json.messageId }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpBearerAuth",
-        "options": {}
-      },
+      "id": "7e983b35-04b1-4b7f-ba0e-d79ad97ef923",
+      "name": "Missive Rest API Get Messages",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
         192,
         -128
       ],
-      "id": "7e983b35-04b1-4b7f-ba0e-d79ad97ef923",
-      "name": "Missive Rest API Get Messages",
+      "parameters": {
+        "url": "=https://public.missiveapp.com/v1/messages/{{ $json.messageId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
       "credentials": {
         "httpBearerAuth": {
           "id": "naMGpImlvunQE8Zi",
@@ -323,6 +322,14 @@
       }
     },
     {
+      "id": "b7a124f1-8ceb-42d1-b5c1-98a3291184d8",
+      "name": "Set fields for table",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        640,
+        -128
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -425,74 +432,49 @@
           ]
         },
         "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        640,
-        -128
-      ],
-      "id": "b7a124f1-8ceb-42d1-b5c1-98a3291184d8",
-      "name": "Set fields for table"
-    },
-    {
-      "parameters": {
-        "authentication": "oAuth2",
-        "operation": "get",
-        "id": "868gvgnzd",
-        "includeMarkdownDescription": true
-      },
-      "type": "n8n-nodes-base.clickUp",
-      "typeVersion": 1,
-      "position": [
-        1312,
-        -128
-      ],
-      "id": "624d6fb2-1808-4584-8b1c-2860e8a3b200",
-      "name": "Email Shell Prompt",
-      "executeOnce": true,
-      "retryOnFail": true,
-      "maxTries": 2,
-      "credentials": {
-        "clickUpOAuth2Api": {
-          "id": "WiEsUqUCPM9Xds21",
-          "name": "ClickUp Alex Oauth"
-        }
       }
     },
     {
-      "parameters": {},
+      "id": "3bad7e4e-0a30-482e-a76e-55c2529135bd",
+      "name": "Email To-Do",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
         864,
         -128
       ],
-      "id": "3bad7e4e-0a30-482e-a76e-55c2529135bd",
-      "name": "Email To-Do"
+      "parameters": {}
     },
     {
-      "parameters": {
-        "promptType": "define",
-        "text": "=Generate a Click-Up Shell for all To-Dos from this email:\n{{ $json.toJsonString() }}\n\n<TRANSCRIPT>\n{{ $('Email To-Do').item.json.toJsonString() }}\n</TRANSCRIPT>",
-        "hasOutputParser": true,
-        "options": {
-          "systemMessage": "={{ $('Email Shell Prompt').item.json.markdown_description }}"
-        }
-      },
+      "id": "9a975761-b2a7-487f-8606-c7a5749f3b9d",
+      "name": "Email To-Do Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
       "position": [
         1600,
         -128
       ],
-      "id": "9a975761-b2a7-487f-8606-c7a5749f3b9d",
-      "name": "Email To-Do Agent",
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate a Click-Up Shell for all To-Dos from this email:\n{{ $json.toJsonString() }}\n\n<TRANSCRIPT>\n{{ $('Email To-Do').item.json.toJsonString() }}\n</TRANSCRIPT>",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "={{ $('Fetch Email Shell Prompt').item.json.content }}"
+        }
+      },
       "retryOnFail": true,
       "maxTries": 2,
       "waitBetweenTries": 500
     },
     {
+      "id": "4e2c237f-fbfa-4829-87a0-82e661070e07",
+      "name": "Create Email To-Do Note",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        2576,
+        -176
+      ],
       "parameters": {
         "authentication": "oAuth2",
         "team": "9011763462",
@@ -506,14 +488,6 @@
           "markdownContent": true
         }
       },
-      "type": "n8n-nodes-base.clickUp",
-      "typeVersion": 1,
-      "position": [
-        2576,
-        -176
-      ],
-      "id": "4e2c237f-fbfa-4829-87a0-82e661070e07",
-      "name": "Create Email To-Do Note",
       "credentials": {
         "clickUpOAuth2Api": {
           "id": "WiEsUqUCPM9Xds21",
@@ -522,6 +496,14 @@
       }
     },
     {
+      "id": "adaad8fd-42ef-4258-9041-667e82a3dead",
+      "name": "Upsert Email To-Do",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        3024,
+        -176
+      ],
       "parameters": {
         "operation": "upsert",
         "dataTableId": {
@@ -571,7 +553,9 @@
               "display": true,
               "type": "string",
               "readOnly": false,
-              "removed": false
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
             },
             {
               "id": "messages_from_field_address",
@@ -581,7 +565,9 @@
               "display": true,
               "type": "string",
               "readOnly": false,
-              "removed": false
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
             },
             {
               "id": "messages_to_fields0_address",
@@ -591,7 +577,9 @@
               "display": true,
               "type": "string",
               "readOnly": false,
-              "removed": false
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
             },
             {
               "id": "messages_subject",
@@ -601,7 +589,9 @@
               "display": true,
               "type": "string",
               "readOnly": false,
-              "removed": false
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
             },
             {
               "id": "messages_body",
@@ -611,7 +601,9 @@
               "display": true,
               "type": "string",
               "readOnly": false,
-              "removed": false
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
             },
             {
               "id": "messages_conversation_id",
@@ -621,7 +613,9 @@
               "display": true,
               "type": "string",
               "readOnly": false,
-              "removed": false
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
             },
             {
               "id": "messages_delivered_at",
@@ -631,7 +625,9 @@
               "display": true,
               "type": "number",
               "readOnly": false,
-              "removed": false
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
             },
             {
               "id": "messages_conversation_web_url",
@@ -641,7 +637,9 @@
               "display": true,
               "type": "string",
               "readOnly": false,
-              "removed": false
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
             },
             {
               "id": "body_rule_id",
@@ -651,7 +649,9 @@
               "display": true,
               "type": "string",
               "readOnly": false,
-              "removed": false
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
             },
             {
               "id": "body_rule_description",
@@ -661,7 +661,9 @@
               "display": true,
               "type": "string",
               "readOnly": false,
-              "removed": false
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
             },
             {
               "id": "shared_labels0_name_with_parent_names",
@@ -671,7 +673,9 @@
               "display": true,
               "type": "string",
               "readOnly": false,
-              "removed": false
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
             },
             {
               "id": "taskId",
@@ -681,7 +685,9 @@
               "display": true,
               "type": "string",
               "readOnly": false,
-              "removed": false
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
             },
             {
               "id": "name",
@@ -691,7 +697,9 @@
               "display": true,
               "type": "string",
               "readOnly": false,
-              "removed": false
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
             },
             {
               "id": "date",
@@ -701,7 +709,9 @@
               "display": true,
               "type": "dateTime",
               "readOnly": false,
-              "removed": false
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
             },
             {
               "id": "notes",
@@ -711,7 +721,9 @@
               "display": true,
               "type": "string",
               "readOnly": false,
-              "removed": false
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
             },
             {
               "id": "overview",
@@ -721,7 +733,9 @@
               "display": true,
               "type": "string",
               "readOnly": false,
-              "removed": false
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
             },
             {
               "id": "metadata",
@@ -731,7 +745,9 @@
               "display": true,
               "type": "string",
               "readOnly": false,
-              "removed": true
+              "removed": true,
+              "canBeUsedToMatch": true,
+              "options": []
             },
             {
               "id": "slackNotificationThreadId",
@@ -741,7 +757,9 @@
               "display": true,
               "type": "string",
               "readOnly": false,
-              "removed": true
+              "removed": true,
+              "canBeUsedToMatch": true,
+              "options": []
             },
             {
               "id": "ackDraftId",
@@ -751,7 +769,9 @@
               "display": true,
               "type": "string",
               "readOnly": false,
-              "removed": false
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
             },
             {
               "id": "subtasks_first_agent",
@@ -761,24 +781,26 @@
               "display": true,
               "type": "string",
               "readOnly": false,
-              "removed": false
+              "removed": false,
+              "canBeUsedToMatch": true,
+              "options": []
             }
           ],
           "attemptToConvertTypes": false,
           "convertFieldsToString": false
         },
         "options": {}
-      },
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1,
-      "position": [
-        3024,
-        -176
-      ],
-      "id": "adaad8fd-42ef-4258-9041-667e82a3dead",
-      "name": "Upsert Email To-Do"
+      }
     },
     {
+      "id": "803152a1-87ed-4b9c-8869-c68610fd2f32",
+      "name": "Email Analysis_Raw",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2000,
+        -128
+      ],
       "parameters": {
         "mode": "raw",
         "jsonOutput": "={{ $json.output }}",
@@ -786,17 +808,17 @@
         "include": "selected",
         "includeFields": "={{ $('Set fields for table').item.json.messages_id }}, {{ $('Set fields for table').item.json.messages_from_field_address }}, {{ $('Set fields for table').item.json.messages_to_fields0_address }}, {{ $('Set fields for table').item.json.messages_subject }}, {{ $('Set fields for table').item.json.messages_body }}, {{ $('Set fields for table').item.json.messages_conversation_id }}, {{ $('Set fields for table').item.json.messages_delivered_at }}, {{ $('Set fields for table').item.json.messages_conversation_web_url }}, {{ $('Set fields for table').item.json.body_rule_id }}, {{ $('Set fields for table').item.json.body_rule_description }}, {{ $('Set fields for table').item.json.shared_labels0_name_with_parent_names }}",
         "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        2000,
-        -128
-      ],
-      "id": "803152a1-87ed-4b9c-8869-c68610fd2f32",
-      "name": "Email Analysis_Raw"
+      }
     },
     {
+      "id": "f1c37a19-f6d9-4da6-91b9-3fecffc93e9b",
+      "name": "Call '[1] Capture Transcript'",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -704,
+        624
+      ],
       "parameters": {
         "workflowId": {
           "__rl": true,
@@ -823,7 +845,8 @@
               "defaultMatch": false,
               "display": true,
               "canBeUsedToMatch": true,
-              "removed": false
+              "removed": false,
+              "options": []
             },
             {
               "id": "source",
@@ -833,7 +856,8 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "string",
-              "removed": false
+              "removed": false,
+              "options": []
             },
             {
               "id": "sourceId",
@@ -843,7 +867,8 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "string",
-              "removed": false
+              "removed": false,
+              "options": []
             },
             {
               "id": "transcriptContents",
@@ -853,7 +878,8 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "string",
-              "removed": false
+              "removed": false,
+              "options": []
             },
             {
               "id": "sourceUrl",
@@ -863,7 +889,8 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "string",
-              "removed": false
+              "removed": false,
+              "options": []
             }
           ],
           "attemptToConvertTypes": false,
@@ -873,17 +900,17 @@
         "options": {
           "waitForSubWorkflow": false
         }
-      },
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.3,
-      "position": [
-        -704,
-        624
-      ],
-      "id": "f1c37a19-f6d9-4da6-91b9-3fecffc93e9b",
-      "name": "Call '[1] Capture Transcript'"
+      }
     },
     {
+      "id": "aedeaea5-26b0-4c32-a0cb-b383dbed77c1",
+      "name": "Markdown",
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        416,
+        -128
+      ],
       "parameters": {
         "html": "={{ $json.messages.body }}",
         "destinationKey": "messages.body",
@@ -891,17 +918,17 @@
           "ignore": "img",
           "keepDataImages": false
         }
-      },
-      "type": "n8n-nodes-base.markdown",
-      "typeVersion": 1,
-      "position": [
-        416,
-        -128
-      ],
-      "id": "aedeaea5-26b0-4c32-a0cb-b383dbed77c1",
-      "name": "Markdown"
+      }
     },
     {
+      "id": "423a7d65-0d14-4ba0-acdf-e23ea3ad9aa8",
+      "name": "Filter",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        -32,
+        -128
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -925,17 +952,17 @@
           "combinator": "and"
         },
         "options": {}
-      },
-      "type": "n8n-nodes-base.filter",
-      "typeVersion": 2.3,
-      "position": [
-        -32,
-        -128
-      ],
-      "id": "423a7d65-0d14-4ba0-acdf-e23ea3ad9aa8",
-      "name": "Filter"
+      }
     },
     {
+      "id": "d99ee8f9-aef0-44fe-a390-81d77da9bcb3",
+      "name": "Lastest Message or Message Id",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -256,
+        -128
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -948,17 +975,17 @@
           ]
         },
         "options": {}
-      },
+      }
+    },
+    {
+      "id": "e7c29989-1477-4eed-951b-f987757508fd",
+      "name": "Simplify Missive Data",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -256,
-        -128
+        -704,
+        400
       ],
-      "id": "d99ee8f9-aef0-44fe-a390-81d77da9bcb3",
-      "name": "Lastest Message or Message Id"
-    },
-    {
       "parameters": {
         "assignments": {
           "assignments": [
@@ -1049,17 +1076,17 @@
           ]
         },
         "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        -704,
-        400
-      ],
-      "id": "e7c29989-1477-4eed-951b-f987757508fd",
-      "name": "Simplify Missive Data"
+      }
     },
     {
+      "id": "c61a870e-d512-4be2-bdc4-f57ce1fb7776",
+      "name": "Execution Data",
+      "type": "n8n-nodes-base.executionData",
+      "typeVersion": 1.1,
+      "position": [
+        -480,
+        -128
+      ],
       "parameters": {
         "dataToSave": {
           "values": [
@@ -1081,17 +1108,17 @@
             }
           ]
         }
-      },
-      "type": "n8n-nodes-base.executionData",
-      "typeVersion": 1.1,
-      "position": [
-        -480,
-        -128
-      ],
-      "id": "c61a870e-d512-4be2-bdc4-f57ce1fb7776",
-      "name": "Execution Data"
+      }
     },
     {
+      "id": "f3598f0f-5654-4c59-8657-b7953ad55bcf",
+      "name": "[2] Notify of Email To-Dos",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        3248,
+        -176
+      ],
       "parameters": {
         "workflowId": {
           "__rl": true,
@@ -1117,7 +1144,8 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "number",
-              "removed": false
+              "removed": false,
+              "options": []
             }
           ],
           "attemptToConvertTypes": false,
@@ -1127,15 +1155,49 @@
         "options": {
           "waitForSubWorkflow": false
         }
-      },
+      }
+    },
+    {
+      "id": "8fcd27b2-5f7e-485f-a733-f99ec623fad5",
+      "name": "Fetch Email Shell Prompt",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
       "position": [
-        3248,
-        -176
+        1312,
+        -128
       ],
-      "name": "[2] Notify of Email To-Dos",
-      "id": "f3598f0f-5654-4c59-8657-b7953ad55bcf"
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "DvSBQSUtfhIdjCVR",
+          "mode": "list"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "clickup_id": "868gvgnzd"
+          },
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false,
+          "schema": [
+            {
+              "id": "clickup_id",
+              "displayName": "clickup_id",
+              "type": "string",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "options": []
+            }
+          ]
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "executeOnce": true
     }
   ],
   "connections": {
@@ -1154,7 +1216,7 @@
       "main": [
         [
           {
-            "node": "Email Shell Prompt",
+            "node": "Fetch Email Shell Prompt",
             "type": "main",
             "index": 0
           }
@@ -1275,8 +1337,7 @@
             "type": "main",
             "index": 0
           }
-        ],
-        []
+        ]
       ]
     },
     "Set fields for table": {
@@ -1284,17 +1345,6 @@
         [
           {
             "node": "Email To-Do",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Email Shell Prompt": {
-      "main": [
-        [
-          {
-            "node": "Email To-Do Agent",
             "type": "main",
             "index": 0
           }
@@ -1394,16 +1444,22 @@
         ]
       ]
     },
-    "Simplify Missive Data": {
-      "main": [
-        []
-      ]
-    },
     "Execution Data": {
       "main": [
         [
           {
             "node": "Lastest Message or Message Id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Email Shell Prompt": {
+      "main": [
+        [
+          {
+            "node": "Email To-Do Agent",
             "type": "main",
             "index": 0
           }
@@ -1430,11 +1486,16 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "versionId": "a8f7b2d6-0154-4dbc-bdcd-6467cc0a62bc",
-  "activeVersionId": "a8f7b2d6-0154-4dbc-bdcd-6467cc0a62bc",
-  "versionCounter": 122,
+  "versionId": "c1108f19-8065-4d6b-9379-4507a3344f6c",
+  "activeVersionId": "c1108f19-8065-4d6b-9379-4507a3344f6c",
   "triggerCount": 1,
   "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    },
     {
       "updatedAt": "2026-01-01T21:31:31.119Z",
       "createdAt": "2026-01-01T21:31:31.119Z",
