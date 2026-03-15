@@ -132,6 +132,62 @@
 
 ---
 
+## P010: Gmail node `simple: false` field structure mismatch
+
+- **Status**: active
+- **Severity**: high
+- **Category**: api-mismatch
+- **Description**: The n8n Gmail node returns completely different data structures depending on the `simple` setting. With `simple: true`: headers are top-level **capitalized** strings (`From`, `To`, `Subject`, `Cc`), date is `internalDate` (millisecond timestamp). With `simple: false`: `from`, `to`, `cc` are **objects** with `.text` (formatted string) and `.value` (array of `{address, name}`). `subject` is a plain lowercase string. `date` is an ISO string (e.g., `"2024-08-30T19:43:47.000Z"`). There is NO `payload.headers` array and NO `internalDate`. Field names are all **lowercase**.
+- **Detection**: Find Code nodes downstream of Gmail nodes. Check which `simple` setting the Gmail node uses. If `simple: false`, flag any reference to capitalized headers (`From`, `To`, `Subject`), `internalDate`, or `payload.headers`. If `simple: true`, flag any reference to lowercase `from`, `to` objects or ISO `date` string.
+- **Fix**: For `simple: false` — access `from.text`, `to.text`, `cc.text` (objects), `subject` (string), `date` (ISO string). For `simple: true` — access `From`, `To`, `Subject`, `Cc` (strings), `internalDate` (ms timestamp). Always use `typeof` check: `(typeof item.json.from === 'object') ? item.json.from.text : String(item.json.from)`.
+- **Discovered**: 2026-03-13, Download 3CV Email Attachments — caused empty Date/From/To/Subject/CC in output for 4+ debugging rounds
+- **Times caught**: 0
+- **Times missed**: 4 (same session)
+
+---
+
+## P011: Cross-referencing nodes after transform nodes
+
+- **Status**: active
+- **Severity**: medium
+- **Category**: data-threading
+- **Description**: Using `$('NodeA').all()` in a Code node to retrieve data from an earlier node after an intermediate node that transforms items (e.g., Google Drive upload, HTTP Request) produces unreliable results. The transform node replaces `json` with its own response, and item pairing by index only works if every item succeeds and order is preserved. If any item fails or the transform changes item count, index matching breaks silently.
+- **Detection**: Find Code nodes that use `$('NodeName').all()` or `$('NodeName').item`. Check if there is a transform node (Google Drive, HTTP Request, any API call) between the referenced node and the current node. Flag as unreliable pairing.
+- **Fix**: (1) Branch the flow so both consumers read directly from the source node (parallel outputs), or (2) if sequential is required, verify item counts match and add fallback handling. Prefer branching for reliability.
+- **Discovered**: 2026-03-14, Download 3CV Email Attachments — metadata fields empty in sheet after Drive upload replaced json
+- **Times caught**: 0
+- **Times missed**: 1
+
+---
+
+## P012: Gmail node field types require defensive access
+
+- **Status**: active
+- **Severity**: medium
+- **Category**: api-mismatch
+- **Description**: Gmail node fields can be strings, objects, arrays, or numbers depending on context and `simple` setting. Calling string methods (`.match()`, `.split()`, `.substring()`) on an object produces `[object Object]` or throws "is not a function." Always wrap with `String()` before string operations, and use `typeof` checks for fields that might be objects (especially `from`, `to`, `cc` with `simple: false`).
+- **Detection**: Find Code nodes downstream of Gmail nodes. Flag any `.match()`, `.split()`, `.indexOf()`, or `.substring()` call on a Gmail field not preceded by a `String()` wrapper or `typeof` check.
+- **Fix**: `var fromRaw = (typeof item.json.from === 'object') ? String(item.json.from.text || '') : String(item.json.from || '');`
+- **Discovered**: 2026-03-13, Download 3CV Email Attachments — `fromRaw.match is not a function` error, `[object Object]` in filenames
+- **Times caught**: 0
+- **Times missed**: 2
+
+---
+
+## P013: Google Drive 503 rate limit on bulk uploads
+
+- **Status**: active
+- **Severity**: medium
+- **Category**: rate-limiting
+- **Description**: Google Drive API returns 503 "Service unavailable — transient failure" when uploading many files sequentially without throttling. Typical threshold is ~100-200 uploads in quick succession, but varies by account and time of day. The error is transient and retryable.
+- **Detection**: Find Google Drive upload nodes. If the workflow processes a variable or large number of items (connected to a loop, SplitInBatches, or a node that could produce 50+ items), flag as rate limit risk.
+- **Fix**: (1) Set the Drive node's **Settings → On Error → Retry on Fail** (3 retries, 5000ms wait). (2) If retries still fail, add a SplitInBatches node (batch size 50) with a Wait node (5-10s) in the loop-back path.
+- **Discovered**: 2026-03-15, Download 3CV Email Attachments — 503 after ~150 of 370 attachment uploads
+- **Times caught**: 0
+- **Times missed**: 1
+
+---
+
 # Adding New Patterns
 
 When a new failure is discovered during import testing:

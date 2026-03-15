@@ -298,6 +298,258 @@ def check_p009_convergence_no_try_catch(workflow, nodes, forward, reverse):
     return issues
 
 
+def check_p010_gmail_simple_false_fields(workflow, nodes, forward, reverse):
+    """P010: Gmail node simple:false field structure mismatch in downstream Code nodes."""
+    issues = []
+    # Find all Gmail nodes and their simple setting
+    gmail_nodes = {}
+    for node in nodes:
+        if "gmail" in node.get("type", "").lower():
+            simple = node.get("parameters", {}).get("simple", True)
+            gmail_nodes[node.get("name", "")] = simple
+
+    if not gmail_nodes:
+        return issues
+
+    for node in nodes:
+        if node.get("type", "") not in ("n8n-nodes-base.code", "n8n-nodes-base.function"):
+            continue
+        code = node.get("parameters", {}).get("jsCode", "") or node.get("parameters", {}).get("functionCode", "")
+        if not code:
+            continue
+
+        # Check if this Code node is downstream of a Gmail node (references it or processes its data)
+        refs = re.findall(r"\$\(['\"]([^'\"]+)['\"]\)", code)
+        gmail_upstream = [r for r in refs if r in gmail_nodes]
+
+        # Also check if any Gmail node feeds into this code node via connections
+        for gname, simple in gmail_nodes.items():
+            is_upstream = gname in gmail_upstream
+            if not is_upstream:
+                # Check if gmail node is a direct or indirect upstream via connections
+                visited = set()
+                queue = [gname]
+                while queue:
+                    current = queue.pop(0)
+                    if current in visited:
+                        continue
+                    visited.add(current)
+                    for target, _ in forward.get(current, []):
+                        if target == node.get("name", ""):
+                            is_upstream = True
+                            break
+                        queue.append(target)
+                    if is_upstream:
+                        break
+
+            if not is_upstream:
+                continue
+
+            if not simple:
+                # simple: false — flag capitalized headers, internalDate, payload.headers
+                bad_patterns = []
+                if re.search(r'\.From\b', code) and 'item.json.From' not in code.split('||')[0] if '||' not in code else True:
+                    if re.search(r'item\.json\.From\b', code) or re.search(r"\bFrom\b", code) and "getHeader" not in code:
+                        if not re.search(r'typeof.*from', code):
+                            bad_patterns.append("capitalized 'From' (use from.text)")
+                if re.search(r'item\.json\.To\b', code):
+                    bad_patterns.append("capitalized 'To' (use to.text)")
+                if re.search(r'item\.json\.Subject\b', code):
+                    bad_patterns.append("capitalized 'Subject' (use lowercase subject)")
+                if 'payload.headers' in code or 'payload\.headers' in code:
+                    bad_patterns.append("payload.headers (doesn't exist with simple:false)")
+                if 'internalDate' in code and 'item.json.date' not in code:
+                    bad_patterns.append("internalDate (use date as ISO string)")
+                if 'getHeader' in code:
+                    bad_patterns.append("getHeader helper for payload.headers (doesn't exist with simple:false)")
+
+                if bad_patterns:
+                    issues.append({
+                        "pattern": "P010",
+                        "severity": "HIGH",
+                        "node": node.get("name", "unknown"),
+                        "message": f"Node '{node.get('name')}' is downstream of Gmail '{gname}' (simple:false) but uses wrong field access: {'; '.join(bad_patterns)}. With simple:false, from/to/cc are objects with .text, subject is lowercase string, date is ISO string.",
+                        "fix": "Use: from.text, to.text, cc.text (objects), subject (string), date (ISO string). Wrap with typeof check: (typeof item.json.from === 'object') ? item.json.from.text : String(item.json.from)"
+                    })
+            else:
+                # simple: true — flag lowercase object access
+                bad_patterns = []
+                if re.search(r'item\.json\.from\.text', code):
+                    bad_patterns.append("from.text (with simple:true, From is a string)")
+                if re.search(r'item\.json\.to\.text', code):
+                    bad_patterns.append("to.text (with simple:true, To is a string)")
+                if re.search(r'item\.json\.date\b', code) and 'internalDate' not in code:
+                    bad_patterns.append("date (with simple:true, use internalDate)")
+
+                if bad_patterns:
+                    issues.append({
+                        "pattern": "P010",
+                        "severity": "HIGH",
+                        "node": node.get("name", "unknown"),
+                        "message": f"Node '{node.get('name')}' is downstream of Gmail '{gname}' (simple:true) but uses simple:false field patterns: {'; '.join(bad_patterns)}.",
+                        "fix": "With simple:true, use capitalized top-level strings: From, To, Subject, Cc, internalDate (ms timestamp)."
+                    })
+    return issues
+
+
+def check_p011_cross_reference_after_transform(workflow, nodes, forward, reverse):
+    """P011: $('NodeA').all() used in a Code node after an intermediate transform node."""
+    issues = []
+    transform_types = {
+        "n8n-nodes-base.googleDrive", "n8n-nodes-base.httpRequest",
+        "n8n-nodes-base.googleSheets", "n8n-nodes-base.s3",
+        "n8n-nodes-base.ftp", "n8n-nodes-base.awsS3",
+    }
+
+    for node in nodes:
+        if node.get("type", "") not in ("n8n-nodes-base.code", "n8n-nodes-base.function"):
+            continue
+        code = node.get("parameters", {}).get("jsCode", "") or node.get("parameters", {}).get("functionCode", "")
+        if not code:
+            continue
+
+        refs = re.findall(r"\$\(['\"]([^'\"]+)['\"]\)\.(all|first)\(\)", code)
+        if not refs:
+            continue
+
+        node_name = node.get("name", "")
+
+        for ref_name, _ in refs:
+            ref_node = get_node_by_name(nodes, ref_name)
+            if not ref_node:
+                continue
+
+            # Walk the path from ref_node to current node, check for transform nodes
+            visited = set()
+            queue = [(ref_name, [])]
+            while queue:
+                current, path = queue.pop(0)
+                if current in visited:
+                    continue
+                visited.add(current)
+                for target, _ in forward.get(current, []):
+                    new_path = path + [current]
+                    if target == node_name:
+                        # Check if any node in the path (excluding ref and current) is a transform
+                        for mid in new_path[1:]:  # skip the ref node itself
+                            mid_node = get_node_by_name(nodes, mid)
+                            if mid_node and mid_node.get("type", "") in transform_types:
+                                issues.append({
+                                    "pattern": "P011",
+                                    "severity": "MEDIUM",
+                                    "node": node_name,
+                                    "message": f"Node '{node_name}' cross-references $('{ref_name}') but transform node '{mid}' ({mid_node.get('type','')}) sits between them. The transform replaces json with its own response — index pairing may break.",
+                                    "fix": f"Branch the flow so '{node_name}' reads directly from '{ref_name}' (parallel output), or verify item counts match and add fallback handling."
+                                })
+                                break
+                    else:
+                        queue.append((target, new_path))
+    return issues
+
+
+def check_p012_gmail_field_type_safety(workflow, nodes, forward, reverse):
+    """P012: Gmail field types require defensive access — String() wrappers and typeof checks."""
+    issues = []
+    gmail_nodes = set()
+    for node in nodes:
+        if "gmail" in node.get("type", "").lower():
+            gmail_nodes.add(node.get("name", ""))
+
+    if not gmail_nodes:
+        return issues
+
+    string_methods = [r'\.match\(', r'\.split\(', r'\.indexOf\(', r'\.substring\(', r'\.startsWith\(', r'\.endsWith\(', r'\.replace\(', r'\.trim\(']
+
+    for node in nodes:
+        if node.get("type", "") not in ("n8n-nodes-base.code", "n8n-nodes-base.function"):
+            continue
+        code = node.get("parameters", {}).get("jsCode", "") or node.get("parameters", {}).get("functionCode", "")
+        if not code:
+            continue
+
+        # Check if downstream of Gmail
+        is_gmail_downstream = False
+        for gname in gmail_nodes:
+            visited = set()
+            queue = [gname]
+            while queue:
+                current = queue.pop(0)
+                if current in visited:
+                    continue
+                visited.add(current)
+                for target, _ in forward.get(current, []):
+                    if target == node.get("name", ""):
+                        is_gmail_downstream = True
+                        break
+                    queue.append(target)
+                if is_gmail_downstream:
+                    break
+            if is_gmail_downstream:
+                break
+
+        if not is_gmail_downstream:
+            continue
+
+        # Look for string methods called directly on Gmail fields without String() wrapper
+        gmail_fields = ['from', 'to', 'cc', 'From', 'To', 'Cc', 'subject', 'Subject']
+        unsafe_calls = []
+        for field in gmail_fields:
+            for method_pattern in string_methods:
+                # Match item.json.field.method() without preceding String()
+                pattern = rf'item\.json\.{field}{method_pattern}'
+                if re.search(pattern, code):
+                    # Check if there's a String() wrap or typeof check nearby
+                    if f'String(item.json.{field}' not in code and f'typeof item.json.{field}' not in code:
+                        unsafe_calls.append(f'item.json.{field}')
+
+        if unsafe_calls:
+            unique_calls = list(set(unsafe_calls))
+            issues.append({
+                "pattern": "P012",
+                "severity": "MEDIUM",
+                "node": node.get("name", "unknown"),
+                "message": f"Node '{node.get('name')}' calls string methods on Gmail fields without String() wrapper: {', '.join(unique_calls)}. Gmail fields can be objects — calling .match()/.split() on an object throws or produces '[object Object]'.",
+                "fix": "Wrap with String() before string ops: String(item.json.from || ''). For from/to/cc with simple:false, use typeof check: (typeof x === 'object') ? x.text : String(x)"
+            })
+    return issues
+
+
+def check_p013_drive_bulk_upload_rate_limit(workflow, nodes, forward, reverse):
+    """P013: Google Drive 503 rate limit on bulk uploads."""
+    issues = []
+    for node in nodes:
+        node_type = node.get("type", "")
+        if "googleDrive" not in node_type:
+            continue
+        # Check if this Drive node could receive many items
+        # Look at what feeds into it — if upstream is a Code node, SplitInBatches,
+        # Gmail getAll, or any node with returnAll: true, flag it
+        node_name = node.get("name", "")
+        settings = node.get("settings", {})
+        retry = settings.get("retryOnFail", False)
+
+        for source_name, _ in reverse.get(node_name, []):
+            source = get_node_by_name(nodes, source_name)
+            if not source:
+                continue
+            source_params = source.get("parameters", {})
+            high_volume = (
+                source_params.get("returnAll", False) or
+                source.get("type", "") in ("n8n-nodes-base.code", "n8n-nodes-base.function") or
+                "splitInBatches" in source.get("type", "").lower()
+            )
+            if high_volume and not retry:
+                issues.append({
+                    "pattern": "P013",
+                    "severity": "MEDIUM",
+                    "node": node_name,
+                    "message": f"Node '{node_name}' uploads to Google Drive and receives input from '{source_name}' which could produce many items. Without retry-on-fail, bulk uploads will hit 503 rate limits.",
+                    "fix": "Set Settings → On Error → Retry on Fail (3 retries, 5000ms wait). For 200+ items, add SplitInBatches (batch 50) with Wait (5-10s) before the upload."
+                })
+                break
+    return issues
+
+
 def check_code_nodes_for_dollar_refs(workflow, nodes, forward, reverse):
     """General scan: report all $() references in Code nodes for awareness."""
     info = []
@@ -332,6 +584,10 @@ def run_all_checks(workflow):
     all_issues += check_p006_missive_api(workflow, nodes, forward, reverse)
     all_issues += check_p007_clickup_date_filter(workflow, nodes, forward, reverse)
     all_issues += check_p009_convergence_no_try_catch(workflow, nodes, forward, reverse)
+    all_issues += check_p010_gmail_simple_false_fields(workflow, nodes, forward, reverse)
+    all_issues += check_p011_cross_reference_after_transform(workflow, nodes, forward, reverse)
+    all_issues += check_p012_gmail_field_type_safety(workflow, nodes, forward, reverse)
+    all_issues += check_p013_drive_bulk_upload_rate_limit(workflow, nodes, forward, reverse)
     all_issues += check_code_nodes_for_dollar_refs(workflow, nodes, forward, reverse)
 
     return all_issues, nodes
@@ -346,7 +602,7 @@ def print_report(filepath, issues, nodes):
     print(f"  n8n Pre-Import Validation Report")
     print(f"  Workflow: {workflow_name}")
     print(f"  Nodes: {node_count} total, {len(code_nodes)} Code nodes")
-    print(f"  Patterns checked: 9 (P001-P009 + general)")
+    print(f"  Patterns checked: 13 (P001-P013 + general)")
     print(f"{'='*60}\n")
 
     if not issues:
