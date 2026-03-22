@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-03-14T20:18:38.136Z",
+  "updatedAt": "2026-03-15T15:37:54.393Z",
   "createdAt": "2026-03-13T04:22:24.219Z",
   "id": "bQ6fDgQ7ZUOZfLAP",
   "name": "Download 3CV Email Attachments",
@@ -24,13 +24,13 @@
             {
               "id": "field-year",
               "name": "year",
-              "value": "2024",
+              "value": "2025",
               "type": "string"
             },
             {
               "id": "field-month",
               "name": "month",
-              "value": "8",
+              "value": "3",
               "type": "string"
             },
             {
@@ -119,6 +119,8 @@
         6320,
         -160
       ],
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "zCC4OdEB1yyc3uZv",
@@ -336,7 +338,7 @@
   },
   "staticData": null,
   "meta": null,
-  "versionId": "c8a52014-89b6-48b5-ae9c-7a60d6b513cb",
+  "versionId": "f4bb777a-b409-4068-9aab-7edbbc93b1a7",
   "activeVersionId": null,
   "triggerCount": 0,
   "tags": [
