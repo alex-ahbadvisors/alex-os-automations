@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-03-10T03:00:02.261Z",
+  "updatedAt": "2026-03-22T15:28:41.561Z",
   "createdAt": "2025-09-29T18:24:20.615Z",
   "id": "CSUlliGpgb4JDqBE",
   "name": "[1] Capture Transcript",
@@ -7,14 +7,6 @@
   "isArchived": false,
   "nodes": [
     {
-      "id": "f5911cd7-c1bc-4d03-8e15-14719a247597",
-      "name": "New Transcript",
-      "type": "n8n-nodes-base.googleDriveTrigger",
-      "typeVersion": 1,
-      "position": [
-        -112,
-        -640
-      ],
       "parameters": {
         "pollTimes": {
           "item": [
@@ -35,15 +27,28 @@
         "event": "fileCreated",
         "options": {}
       },
+      "id": "f5911cd7-c1bc-4d03-8e15-14719a247597",
+      "name": "New Transcript",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        -640
+      ],
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "zCC4OdEB1yyc3uZv",
           "name": "AHB Advisors Google Drive"
         }
-      },
-      "disabled": true
+      }
     },
     {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "get",
+        "id": "868fjh16h",
+        "includeMarkdownDescription": true
+      },
       "id": "cd8fbb38-46f8-423d-b4bb-c28ff634aa6e",
       "name": "Meeting Types",
       "type": "n8n-nodes-base.clickUp",
@@ -52,31 +57,17 @@
         1904,
         -352
       ],
-      "parameters": {
-        "authentication": "oAuth2",
-        "operation": "get",
-        "id": "868fjh16h",
-        "includeMarkdownDescription": true
-      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "executeOnce": true,
       "credentials": {
         "clickUpOAuth2Api": {
           "id": "WiEsUqUCPM9Xds21",
           "name": "ClickUp Alex Oauth"
         }
-      },
-      "retryOnFail": true,
-      "maxTries": 2,
-      "executeOnce": true
+      }
     },
     {
-      "id": "5165e3e1-ed78-4c62-9fc1-35c18fa84531",
-      "name": "OpenAI Chat Model",
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        2144,
-        -128
-      ],
       "parameters": {
         "model": {
           "__rl": true,
@@ -88,6 +79,14 @@
           "reasoningEffort": "low"
         }
       },
+      "id": "5165e3e1-ed78-4c62-9fc1-35c18fa84531",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2144,
+        -128
+      ],
       "credentials": {
         "openAiApi": {
           "id": "FPFFI1NvOtGMoh30",
@@ -96,6 +95,7 @@
       }
     },
     {
+      "parameters": {},
       "id": "b44519f1-bf30-4956-9040-30b146b34bb9",
       "name": "Transcript",
       "type": "n8n-nodes-base.noOp",
@@ -103,18 +103,9 @@
       "position": [
         1232,
         -352
-      ],
-      "parameters": {}
+      ]
     },
     {
-      "id": "08cb3f2d-4ee6-493c-8977-bfdfad0a3663",
-      "name": "Download file",
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
-      "position": [
-        560,
-        -736
-      ],
       "parameters": {
         "operation": "download",
         "fileId": {
@@ -133,6 +124,14 @@
           }
         }
       },
+      "id": "08cb3f2d-4ee6-493c-8977-bfdfad0a3663",
+      "name": "Download file",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        560,
+        -736
+      ],
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "zCC4OdEB1yyc3uZv",
@@ -141,6 +140,10 @@
       }
     },
     {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
       "id": "8ba90f20-5b02-4fdf-afc0-547dcf928e2e",
       "name": "Extract from File",
       "type": "n8n-nodes-base.extractFromFile",
@@ -148,21 +151,9 @@
       "position": [
         784,
         -736
-      ],
-      "parameters": {
-        "operation": "text",
-        "options": {}
-      }
+      ]
     },
     {
-      "id": "58a8765d-beea-413f-b878-ec31107546cd",
-      "name": "OpenAI Chat Model1",
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        2704,
-        -128
-      ],
       "parameters": {
         "model": {
           "__rl": true,
@@ -175,6 +166,14 @@
           "timeout": 200000
         }
       },
+      "id": "58a8765d-beea-413f-b878-ec31107546cd",
+      "name": "OpenAI Chat Model1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2704,
+        -128
+      ],
       "credentials": {
         "openAiApi": {
           "id": "FPFFI1NvOtGMoh30",
@@ -183,6 +182,11 @@
       }
     },
     {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.output }}",
+        "options": {}
+      },
       "id": "4323abc4-9f93-4562-bcc8-f00210ccffa2",
       "name": "Meeting Type",
       "type": "n8n-nodes-base.set",
@@ -190,22 +194,9 @@
       "position": [
         2480,
         -352
-      ],
-      "parameters": {
-        "mode": "raw",
-        "jsonOutput": "={{ $json.output }}",
-        "options": {}
-      }
+      ]
     },
     {
-      "id": "5e2a6b20-7497-4f04-a6de-fe887c5a9a69",
-      "name": "Pull File Metadata",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        1008,
-        -832
-      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -254,17 +245,17 @@
           ]
         },
         "options": {}
-      }
+      },
+      "id": "5e2a6b20-7497-4f04-a6de-fe887c5a9a69",
+      "name": "Pull File Metadata",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1008,
+        -832
+      ]
     },
     {
-      "id": "627a1c03-acdc-419e-9aea-c5d3d784c5b9",
-      "name": "Meeting Note Agent",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 2.2,
-      "position": [
-        2768,
-        -352
-      ],
       "parameters": {
         "promptType": "define",
         "text": "=Generate meeting notes for this meeting:\n{{ $json.toJsonString() }}\n\n<TRANSCRIPT>\n{{ $('Transcript').item.json.toJsonString() }}\n</TRANSCRIPT>",
@@ -273,19 +264,19 @@
           "systemMessage": "={{ $('Meeting Notes Prompt').item.json.markdown_description }}"
         }
       },
+      "id": "627a1c03-acdc-419e-9aea-c5d3d784c5b9",
+      "name": "Meeting Note Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2768,
+        -352
+      ],
       "retryOnFail": true,
       "maxTries": 2,
       "waitBetweenTries": 500
     },
     {
-      "id": "22d71013-e16b-4910-a225-18aa61edae9d",
-      "name": "Categorization Agent",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 2.2,
-      "position": [
-        2128,
-        -352
-      ],
       "parameters": {
         "promptType": "define",
         "text": "=<MEETING TYPES>\n{{ $json.markdown_description }}\n</MEETING TYPES>\n\n<LIST OF CLIENTS & PROSPECTS>\nFrom clients data table, which has current live clients, prospects, and former clients\n</LIST OF CLIENTS & PROSPECTS>\n\n<TRANSCRIPT>\n{{ $('Transcript').item.json.toJsonString() }}\n</TRANSCRIPT>",
@@ -293,17 +284,17 @@
         "options": {
           "systemMessage": "You are a precise meeting classifier. Read the meeting type reference and the transcript, then output STRICT JSON (no markdown, no commentary) with exactly this schema:\n\n{\n  \"topLevelBucket\": \"string\",\n  \"categories\": [\"string\"]\n}\n\nINSTRUCTIONS\n1) Parse `meetingTypes` to determine:\n   a) The valid top-level buckets (e.g., \"Internal\", \"Client\", \"Vendor / Partner\", \"Personal\", \"Other External\") — treat whatever appears in meetingTypes as authoritative.\n   b) For each bucket, its allowed subcategory labels (category names only; ignore definitions except for meaning).\n\n2) Choose exactly ONE `topLevelBucket` that best fits the transcript based on:\n   - Attendee composition (internal-only vs client/vendor/external).\n   - Meeting purpose (status, sales, delivery, demo, interview, networking, personal, etc.).\n   If multiple buckets seem plausible, select the single most likely based on strongest textual evidence (attendees > purpose > agenda keywords).\n\n3) `categories` must include ONLY subcategories that belong to the chosen `topLevelBucket`. \n   - Include 1–3 subcategories that best match the transcript. \n   - If none clearly match, return an empty array: [].\n\n4) Do not invent category names. Use exact strings from `meetingTypes`. Prefer precise matches; if synonyms appear in transcript, map them to the closest defined subcategory.\n\n5) If the transcript is fragmentary or ambiguous, still pick the most likely top-level bucket using available cues; keep `categories` minimal and accurate.\n\nOUTPUT RULES\n- Output a single JSON object only, no extra text.\n- Keys must be exactly: \"topLevelBucket\", \"categories\".\n- Use double quotes for all strings. No trailing commas."
         }
-      }
+      },
+      "id": "22d71013-e16b-4910-a225-18aa61edae9d",
+      "name": "Categorization Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2128,
+        -352
+      ]
     },
     {
-      "id": "b62039da-47e9-4603-91ab-54e5e4821bcf",
-      "name": "Circleback Meeting",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        1008,
-        -352
-      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -340,17 +331,17 @@
           ]
         },
         "options": {}
-      }
+      },
+      "id": "b62039da-47e9-4603-91ab-54e5e4821bcf",
+      "name": "Circleback Meeting",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1008,
+        -352
+      ]
     },
     {
-      "id": "03149f90-0842-4ff3-b714-cd9511ab5d85",
-      "name": "Create Meeting Note",
-      "type": "n8n-nodes-base.clickUp",
-      "typeVersion": 1,
-      "position": [
-        3968,
-        -592
-      ],
       "parameters": {
         "authentication": "oAuth2",
         "team": "9011763462",
@@ -364,6 +355,14 @@
           "startDate": "={{ $json.metadata.date ||$('Transcript').item.json.createdTime  }}"
         }
       },
+      "id": "03149f90-0842-4ff3-b714-cd9511ab5d85",
+      "name": "Create Meeting Note",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        3968,
+        -592
+      ],
       "credentials": {
         "clickUpOAuth2Api": {
           "id": "WiEsUqUCPM9Xds21",
@@ -372,6 +371,12 @@
       }
     },
     {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "get",
+        "id": "868fk8wwz",
+        "includeMarkdownDescription": true
+      },
       "id": "6398b804-1dad-4e5b-8f8c-2475f0982d74",
       "name": "Meeting Notes Prompt",
       "type": "n8n-nodes-base.clickUp",
@@ -380,31 +385,17 @@
         1680,
         -352
       ],
-      "parameters": {
-        "authentication": "oAuth2",
-        "operation": "get",
-        "id": "868fk8wwz",
-        "includeMarkdownDescription": true
-      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "executeOnce": true,
       "credentials": {
         "clickUpOAuth2Api": {
           "id": "WiEsUqUCPM9Xds21",
           "name": "ClickUp Alex Oauth"
         }
-      },
-      "retryOnFail": true,
-      "maxTries": 2,
-      "executeOnce": true
+      }
     },
     {
-      "id": "92dc8b0e-4905-424c-82bb-ac88ccb3f552",
-      "name": "Upsert Meeting Note",
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1,
-      "position": [
-        4416,
-        -448
-      ],
       "parameters": {
         "operation": "upsert",
         "dataTableId": {
@@ -717,17 +708,17 @@
           "convertFieldsToString": false
         },
         "options": {}
-      }
+      },
+      "id": "92dc8b0e-4905-424c-82bb-ac88ccb3f552",
+      "name": "Upsert Meeting Note",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        4416,
+        -448
+      ]
     },
     {
-      "id": "777e7fc0-7549-47ba-b0ba-8f8fe72f5551",
-      "name": "Cleanup By Source",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.3,
-      "position": [
-        4864,
-        -448
-      ],
       "parameters": {
         "rules": {
           "values": [
@@ -760,17 +751,17 @@
         "options": {
           "fallbackOutput": "extra"
         }
-      }
+      },
+      "id": "777e7fc0-7549-47ba-b0ba-8f8fe72f5551",
+      "name": "Cleanup By Source",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        4864,
+        -448
+      ]
     },
     {
-      "id": "abe605fc-3570-4b29-93e0-973ba7378004",
-      "name": "Call [3] Create CRM Insights",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.2,
-      "position": [
-        5536,
-        -352
-      ],
       "parameters": {
         "workflowId": {
           "__rl": true,
@@ -807,17 +798,17 @@
         "options": {
           "waitForSubWorkflow": false
         }
-      }
+      },
+      "id": "abe605fc-3570-4b29-93e0-973ba7378004",
+      "name": "Call [3] Create CRM Insights",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        5536,
+        -352
+      ]
     },
     {
-      "id": "0b8fbf32-5481-49e2-ac99-ee82b9777d63",
-      "name": "Existing Meeting Note",
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1,
-      "position": [
-        1456,
-        -352
-      ],
       "parameters": {
         "operation": "get",
         "dataTableId": {
@@ -842,17 +833,17 @@
         },
         "limit": 1
       },
+      "id": "0b8fbf32-5481-49e2-ac99-ee82b9777d63",
+      "name": "Existing Meeting Note",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        1456,
+        -352
+      ],
       "alwaysOutputData": true
     },
     {
-      "id": "69d1ad09-1b14-4f41-ab86-95dd2e9f3f84",
-      "name": "OpenAI Chat Model2",
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        3696,
-        -80
-      ],
       "parameters": {
         "model": {
           "__rl": true,
@@ -864,6 +855,14 @@
           "reasoningEffort": "low"
         }
       },
+      "id": "69d1ad09-1b14-4f41-ab86-95dd2e9f3f84",
+      "name": "OpenAI Chat Model2",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3696,
+        -80
+      ],
       "credentials": {
         "openAiApi": {
           "id": "FPFFI1NvOtGMoh30",
@@ -872,14 +871,6 @@
       }
     },
     {
-      "id": "b0fcc801-5c1a-4080-b5fd-bf68d45f3c44",
-      "name": "Meeting Overview",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 2.2,
-      "position": [
-        3616,
-        -304
-      ],
       "parameters": {
         "promptType": "define",
         "text": "=Generate an overview.\n---\n{{ $json.metadata.toJsonString() }}\n---\n{{ $json.meeting_notes_markdown}}",
@@ -887,17 +878,17 @@
         "options": {
           "systemMessage": "=Generate a plain text overview of the meeting optimized for search and discoverability, 1500 characters max. Include the meeting date, attendees and high-level overview of meeting objective and keywords.\n\nFormat for human and search engines like:\nA meeting on {date} with {attendees}. \nTopics discussed:\n- ...\n- ...\n- ...\nHighlights:\n- ...\n- ..."
         }
-      }
+      },
+      "id": "b0fcc801-5c1a-4080-b5fd-bf68d45f3c44",
+      "name": "Meeting Overview",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        3616,
+        -304
+      ]
     },
     {
-      "id": "194957b8-8070-4e7d-9d40-9e3b32550b79",
-      "name": "Update GDrive File",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        5088,
-        -640
-      ],
       "parameters": {
         "method": "PATCH",
         "url": "=https://www.googleapis.com/drive/v3/files/{{ $json.sourceId }}",
@@ -921,6 +912,14 @@
         "jsonBody": "={\n    \"name\": {{$json.name.toJsonString()}},\n    \"description\": {{$json.fileDescription.toJsonString()}},\n    \"properties\": {\n      \"meetingNoteId\": \"{{$('Upsert Meeting Note').item.json.id}}\",\n      \"clickupTaskId\": \"{{ $('Upsert Meeting Note').item.json.taskId }}\"\n    }\n  }",
         "options": {}
       },
+      "id": "194957b8-8070-4e7d-9d40-9e3b32550b79",
+      "name": "Update GDrive File",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5088,
+        -640
+      ],
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "zCC4OdEB1yyc3uZv",
@@ -929,14 +928,6 @@
       }
     },
     {
-      "id": "3fe96195-4680-422d-a882-ac035ccb53d6",
-      "name": "Edit Fields",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        3968,
-        -304
-      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -949,9 +940,22 @@
           ]
         },
         "options": {}
-      }
+      },
+      "id": "3fe96195-4680-422d-a882-ac035ccb53d6",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3968,
+        -304
+      ]
     },
     {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
       "id": "b0a3499d-b60d-4b57-9c11-eb649244a41d",
       "name": "Merge",
       "type": "n8n-nodes-base.merge",
@@ -959,22 +963,9 @@
       "position": [
         4192,
         -448
-      ],
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {}
-      }
+      ]
     },
     {
-      "id": "d63688f5-9cd0-4e6e-b272-9c34f3de02de",
-      "name": "If",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        3680,
-        -592
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -998,17 +989,17 @@
           "combinator": "and"
         },
         "options": {}
-      }
+      },
+      "id": "d63688f5-9cd0-4e6e-b272-9c34f3de02de",
+      "name": "If",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3680,
+        -592
+      ]
     },
     {
-      "id": "3703547f-aa7b-44c1-a210-7379938b7fa6",
-      "name": "Find_Contacts",
-      "type": "n8n-nodes-base.dataTableTool",
-      "typeVersion": 1,
-      "position": [
-        2832,
-        -128
-      ],
       "parameters": {
         "operation": "get",
         "dataTableId": {
@@ -1038,17 +1029,17 @@
           ]
         },
         "returnAll": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Return_All', ``, 'boolean') }}"
-      }
-    },
-    {
-      "id": "026d8130-ee3f-4cf1-a03f-c9e81207f2df",
-      "name": "Find_Clients",
+      },
+      "id": "3703547f-aa7b-44c1-a210-7379938b7fa6",
+      "name": "Find_Contacts",
       "type": "n8n-nodes-base.dataTableTool",
       "typeVersion": 1,
       "position": [
-        2960,
+        2832,
         -128
-      ],
+      ]
+    },
+    {
       "parameters": {
         "operation": "get",
         "dataTableId": {
@@ -1073,17 +1064,17 @@
           ]
         },
         "returnAll": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Return_All', ``, 'boolean') }}"
-      }
+      },
+      "id": "026d8130-ee3f-4cf1-a03f-c9e81207f2df",
+      "name": "Find_Clients",
+      "type": "n8n-nodes-base.dataTableTool",
+      "typeVersion": 1,
+      "position": [
+        2960,
+        -128
+      ]
     },
     {
-      "id": "f4a0ba4f-2eb2-4c2f-8cee-573788b2f588",
-      "name": "Update Invalid GDrive File",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        336,
-        -544
-      ],
       "parameters": {
         "method": "PATCH",
         "url": "=https://www.googleapis.com/drive/v3/files/{{ $json.id }}",
@@ -1107,6 +1098,14 @@
         "jsonBody": "={\n    \"name\": \"⚠️ {{ $json.name}}\",\n    \"description\":{{`⚠️ Invalid file type. ${$json.description||''}`.toJsonString()}}\n  }",
         "options": {}
       },
+      "id": "f4a0ba4f-2eb2-4c2f-8cee-573788b2f588",
+      "name": "Update Invalid GDrive File",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        336,
+        -544
+      ],
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "zCC4OdEB1yyc3uZv",
@@ -1115,6 +1114,9 @@
       }
     },
     {
+      "parameters": {
+        "jsCode": "// n8n Function node\n// Input: item.json.trancript\n// Output: { transcriptContents: string }\n\nfunction formatAsCircleback(arr) {\n  if (!Array.isArray(arr) || arr.length === 0) return 'No transcript available';\n  return arr.map(t => {\n    const sec = Math.max(0, Math.floor(Number(t?.timestamp || 0)));\n    const hh = String(Math.floor(sec / 3600)).padStart(2, '0');\n    const mm = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');\n    const ss = String(sec % 60).padStart(2, '0');\n    const speaker = (t?.speaker ?? 'Unknown').toString();\n    const text = (t?.text ?? '').toString();\n    return `[${hh}:${mm}:${ss} ${speaker}] ${text}`;\n  }).join('\\n');\n}\n\nfunction toTranscriptContents(anyVal) {\n  if (typeof anyVal === 'string') {\n    return anyVal || 'No transcript available';\n  }\n  if (Array.isArray(anyVal)) {\n    // Assume Circleback format\n    return formatAsCircleback(anyVal);\n  }\n  try {\n    return JSON.stringify(anyVal);\n  } catch {\n    return String(anyVal ?? 'No transcript available');\n  }\n}\n\nconst out = [];\nfor (const item of $input.all()) {\n  const t = item.json.body?.transcript || item.json.transcript || item.json.notes;\n  if (item.json.body?.transcript)\n    delete item.json.body.transcript\n  out.push({\n    json: {\n      ...item.json,\n      transcriptContents: toTranscriptContents(t),\n    }\n  });\n}\nreturn out;"
+      },
       "id": "50368f1c-293e-47db-a3d0-3cc69e373442",
       "name": "Flatten Transcript",
       "type": "n8n-nodes-base.code",
@@ -1122,20 +1124,9 @@
       "position": [
         784,
         -352
-      ],
-      "parameters": {
-        "jsCode": "// n8n Function node\n// Input: item.json.trancript\n// Output: { transcriptContents: string }\n\nfunction formatAsCircleback(arr) {\n  if (!Array.isArray(arr) || arr.length === 0) return 'No transcript available';\n  return arr.map(t => {\n    const sec = Math.max(0, Math.floor(Number(t?.timestamp || 0)));\n    const hh = String(Math.floor(sec / 3600)).padStart(2, '0');\n    const mm = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');\n    const ss = String(sec % 60).padStart(2, '0');\n    const speaker = (t?.speaker ?? 'Unknown').toString();\n    const text = (t?.text ?? '').toString();\n    return `[${hh}:${mm}:${ss} ${speaker}] ${text}`;\n  }).join('\\n');\n}\n\nfunction toTranscriptContents(anyVal) {\n  if (typeof anyVal === 'string') {\n    return anyVal || 'No transcript available';\n  }\n  if (Array.isArray(anyVal)) {\n    // Assume Circleback format\n    return formatAsCircleback(anyVal);\n  }\n  try {\n    return JSON.stringify(anyVal);\n  } catch {\n    return String(anyVal ?? 'No transcript available');\n  }\n}\n\nconst out = [];\nfor (const item of $input.all()) {\n  const t = item.json.body?.transcript || item.json.transcript || item.json.notes;\n  if (item.json.body?.transcript)\n    delete item.json.body.transcript\n  out.push({\n    json: {\n      ...item.json,\n      transcriptContents: toTranscriptContents(t),\n    }\n  });\n}\nreturn out;"
-      }
+      ]
     },
     {
-      "id": "dc97ae83-e924-4eed-9244-d073848b9712",
-      "name": "Schedule Trigger",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.2,
-      "position": [
-        -336,
-        -832
-      ],
       "parameters": {
         "rule": {
           "interval": [
@@ -1146,9 +1137,40 @@
           ]
         }
       },
-      "disabled": true
+      "id": "dc97ae83-e924-4eed-9244-d073848b9712",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -336,
+        -832
+      ]
     },
     {
+      "parameters": {
+        "resource": "fileFolder",
+        "limit": 1,
+        "filter": {
+          "driveId": {
+            "__rl": true,
+            "mode": "list",
+            "value": "My Drive"
+          },
+          "folderId": {
+            "__rl": true,
+            "value": "1jc4CRi7qGhicuG30OFQwu6Xz5shWf2Jk",
+            "mode": "list",
+            "cachedResultName": "@ Meeting Transcripts for Abel",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1jc4CRi7qGhicuG30OFQwu6Xz5shWf2Jk"
+          },
+          "whatToSearch": "files"
+        },
+        "options": {
+          "fields": [
+            "*"
+          ]
+        }
+      },
       "id": "859fc91d-789c-49d3-9c91-df5f0b8872ee",
       "name": "Search files and folders",
       "type": "n8n-nodes-base.googleDrive",
@@ -1157,30 +1179,6 @@
         -112,
         -832
       ],
-      "parameters": {
-        "resource": "fileFolder",
-        "limit": 1,
-        "filter": {
-          "folderId": {
-            "__rl": true,
-            "value": "1jc4CRi7qGhicuG30OFQwu6Xz5shWf2Jk",
-            "mode": "list",
-            "cachedResultName": "@ Meeting Transcripts for Abel",
-            "cachedResultUrl": "https://drive.google.com/drive/folders/1jc4CRi7qGhicuG30OFQwu6Xz5shWf2Jk"
-          },
-          "whatToSearch": "files",
-          "driveId": {
-            "__rl": true,
-            "mode": "list",
-            "value": "My Drive"
-          }
-        },
-        "options": {
-          "fields": [
-            "*"
-          ]
-        }
-      },
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "zCC4OdEB1yyc3uZv",
@@ -1189,14 +1187,6 @@
       }
     },
     {
-      "id": "54304e5e-65ab-4e06-b360-2c572d8521fe",
-      "name": "Download as Text",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        784,
-        -928
-      ],
       "parameters": {
         "url": "={{ $json.exportLinks['text/markdown'] }}",
         "authentication": "predefinedCredentialType",
@@ -1209,6 +1199,14 @@
           }
         }
       },
+      "id": "54304e5e-65ab-4e06-b360-2c572d8521fe",
+      "name": "Download as Text",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        784,
+        -928
+      ],
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "zCC4OdEB1yyc3uZv",
@@ -1217,14 +1215,6 @@
       }
     },
     {
-      "id": "01b08e42-a9c5-49b4-b600-c45d49271ca4",
-      "name": "Upsert Stored Source Url - Gdrive",
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1,
-      "position": [
-        5312,
-        -448
-      ],
       "parameters": {
         "operation": "upsert",
         "dataTableId": {
@@ -1446,17 +1436,17 @@
           "convertFieldsToString": false
         },
         "options": {}
-      }
+      },
+      "id": "01b08e42-a9c5-49b4-b600-c45d49271ca4",
+      "name": "Upsert Stored Source Url - Gdrive",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        5312,
+        -448
+      ]
     },
     {
-      "id": "33b6dff0-da7c-4a26-a471-56a03424ff90",
-      "name": "Create GDrive File",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        5088,
-        -448
-      ],
       "parameters": {
         "method": "POST",
         "url": "=https://www.googleapis.com/upload/drive/v3/files",
@@ -1481,6 +1471,14 @@
         "body": "=--bndrz_001\nContent-Type: application/json; charset=UTF-8\n\n{\n    \"name\": {{$json.name.toJsonString()}},\n    \"mimeType\": \"text/markdown\",\n    \"parents\": [\"1UW9DrbE_LEa4zPmNo23b9vFH3sP6JCIR\"],\n    \"description\": {{$json.fileDescription.toJsonString()}},\n    \"properties\": {\n      \"meetingNoteId\": \"{{$('Upsert Meeting Note').item.json.id}}\",\n      \"clickupTaskId\": \"{{ $('Upsert Meeting Note').item.json.taskId }}\"\n    }\n  }\n--bndrz_001\nContent-Type: text/markdown; charset=UTF-8\n\n# {{ $('Meeting Analysis').item.json.meeting_name }}\n\n{{$json.metadataList}},\n---\n\n## Transcript\n\n{{ $('Transcript').item.json.transcriptContents }}\n--bndrz_001--",
         "options": {}
       },
+      "id": "33b6dff0-da7c-4a26-a471-56a03424ff90",
+      "name": "Create GDrive File",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5088,
+        -448
+      ],
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "zCC4OdEB1yyc3uZv",
@@ -1489,14 +1487,6 @@
       }
     },
     {
-      "id": "f1603f5d-e1af-45a9-a936-5c57ee000e96",
-      "name": "Update Meeting Note",
-      "type": "n8n-nodes-base.clickUp",
-      "typeVersion": 1,
-      "position": [
-        3968,
-        -784
-      ],
       "parameters": {
         "authentication": "oAuth2",
         "operation": "update",
@@ -1508,6 +1498,14 @@
           "startDate": "={{ $json.metadata.date ||$('Transcript').item.json.createdTime  }}"
         }
       },
+      "id": "f1603f5d-e1af-45a9-a936-5c57ee000e96",
+      "name": "Update Meeting Note",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        3968,
+        -784
+      ],
       "credentials": {
         "clickUpOAuth2Api": {
           "id": "WiEsUqUCPM9Xds21",
@@ -1516,14 +1514,6 @@
       }
     },
     {
-      "id": "96497b1a-6700-46d6-8b91-5c02a8ea6471",
-      "name": "If Export as Markdown",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        336,
-        -832
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -1556,17 +1546,17 @@
           "combinator": "and"
         },
         "options": {}
-      }
+      },
+      "id": "96497b1a-6700-46d6-8b91-5c02a8ea6471",
+      "name": "If Export as Markdown",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        336,
+        -832
+      ]
     },
     {
-      "id": "119a1cdd-a6bc-417a-ada2-9f330a5f49cd",
-      "name": "Send Invalid File Type Msg",
-      "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.3,
-      "position": [
-        560,
-        -544
-      ],
       "parameters": {
         "select": "channel",
         "channelId": {
@@ -1580,23 +1570,23 @@
           "includeLinkToWorkflow": false
         }
       },
+      "id": "119a1cdd-a6bc-417a-ada2-9f330a5f49cd",
+      "name": "Send Invalid File Type Msg",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        560,
+        -544
+      ],
+      "webhookId": "38ff0336-f5f0-4b22-b2b0-10cc67099512",
       "credentials": {
         "slackApi": {
           "id": "DvovCyTPlCPUoL2k",
           "name": "Abel N8N Token"
         }
-      },
-      "webhookId": "38ff0336-f5f0-4b22-b2b0-10cc67099512"
+      }
     },
     {
-      "id": "3c23313d-3aea-4e7b-bedf-adc48d6a5a7e",
-      "name": "Set File Description",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        4640,
-        -448
-      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -1616,17 +1606,17 @@
         },
         "includeOtherFields": true,
         "options": {}
-      }
+      },
+      "id": "3c23313d-3aea-4e7b-bedf-adc48d6a5a7e",
+      "name": "Set File Description",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4640,
+        -448
+      ]
     },
     {
-      "id": "f6ce1e98-4308-4a7e-898e-0b39043aec06",
-      "name": "If Valid File",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        112,
-        -736
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -1659,9 +1649,22 @@
           "combinator": "or"
         },
         "options": {}
-      }
+      },
+      "id": "f6ce1e98-4308-4a7e-898e-0b39043aec06",
+      "name": "If Valid File",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        112,
+        -736
+      ]
     },
     {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "18300eaa-2f30-4557-91d4-2eab40d6d5a5",
+        "options": {}
+      },
       "id": "1f8dfcae-a5e6-4413-af69-79980e742eed",
       "name": "Circleback Webhook",
       "type": "n8n-nodes-base.webhook",
@@ -1670,14 +1673,12 @@
         560,
         -352
       ],
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "18300eaa-2f30-4557-91d4-2eab40d6d5a5",
-        "options": {}
-      },
       "webhookId": "18300eaa-2f30-4557-91d4-2eab40d6d5a5"
     },
     {
+      "parameters": {
+        "jsCode": "/**\n * n8n Code / Function node\n * Replaces {DECISION_LOG} in meeting_notes_markdown with a formatted Markdown table.\n */\n\nfunction escapeMD(s = \"\") {\n  // Escape pipes and convert newlines in cell values to <br>\n  return String(s)\n    .replace(/\\|/g, \"\\\\|\")\n    .replace(/\\r?\\n/g, \" <br> \")\n    .trim();\n}\n\nfunction formatDate(d) {\n  if (!d) return \"\";\n  const iso = /^\\d{4}-\\d{2}-\\d{2}$/;\n  if (iso.test(d)) return d;\n  const parsed = new Date(d);\n  if (!isNaN(parsed)) {\n    const y = parsed.getFullYear();\n    const m = String(parsed.getMonth() + 1).padStart(2, \"0\");\n    const day = String(parsed.getDate()).padStart(2, \"0\");\n    return `${y}-${m}-${day}`;\n  }\n  return escapeMD(d);\n}\n\nfunction buildDecisionTable(decisions = []) {\n  const header =\n    \"| **Decision** | **Owner** | **Date** | **Risk if Wrong** | **Follow-on Actions** |\\n\" +\n    \"|---|---|---|---|---|\";\n\n  const rows = decisions.map(d => {\n    const title   = escapeMD(d.title);\n    const owner   = escapeMD(d.owner);\n    const date    = formatDate(d.date);\n    const risk    = escapeMD(d.risk);\n    const actions = escapeMD(d.actions);\n\n    return `| ${title} | ${owner} | ${date} | ${risk} | ${actions} |`;\n  });\n\n  return [header, ...rows].join(\"\\n\");\n}\n\nreturn items.map(item => {\n  const obj = item.json ?? {};\n  const md  = obj.meeting_notes_markdown || \"\";\n  const decisions = Array.isArray(obj.decisions) ? obj.decisions : [];\n\n  const table = buildDecisionTable(decisions);\n\n  let outputMD = md;\n\n  if (md.includes(\"{DECISION_LOG}\")) {\n    outputMD = md.replace(\"{DECISION_LOG}\", table);\n  } else {\n    // fallback if merge field missing\n    const headingRegex = /(##\\s*2\\)\\s*Key Decisions[^\\n]*\\n)/i;\n    if (headingRegex.test(md)) {\n      outputMD = md.replace(headingRegex, `$1\\n${table}\\n`);\n    } else {\n      outputMD = `${md}\\n\\n${table}`;\n    }\n  }\n\n  return {\n    json: {\n      ...obj,\n      decisions: undefined,\n      meeting_notes_markdown: outputMD,\n    },\n  };\n});"
+      },
       "id": "23d161e0-58e9-4c06-ba55-e27ad40c1fcc",
       "name": "Meeting Analysis",
       "type": "n8n-nodes-base.code",
@@ -1685,12 +1686,14 @@
       "position": [
         3392,
         -352
-      ],
-      "parameters": {
-        "jsCode": "/**\n * n8n Code / Function node\n * Replaces {DECISION_LOG} in meeting_notes_markdown with a formatted Markdown table.\n */\n\nfunction escapeMD(s = \"\") {\n  // Escape pipes and convert newlines in cell values to <br>\n  return String(s)\n    .replace(/\\|/g, \"\\\\|\")\n    .replace(/\\r?\\n/g, \" <br> \")\n    .trim();\n}\n\nfunction formatDate(d) {\n  if (!d) return \"\";\n  const iso = /^\\d{4}-\\d{2}-\\d{2}$/;\n  if (iso.test(d)) return d;\n  const parsed = new Date(d);\n  if (!isNaN(parsed)) {\n    const y = parsed.getFullYear();\n    const m = String(parsed.getMonth() + 1).padStart(2, \"0\");\n    const day = String(parsed.getDate()).padStart(2, \"0\");\n    return `${y}-${m}-${day}`;\n  }\n  return escapeMD(d);\n}\n\nfunction buildDecisionTable(decisions = []) {\n  const header =\n    \"| **Decision** | **Owner** | **Date** | **Risk if Wrong** | **Follow-on Actions** |\\n\" +\n    \"|---|---|---|---|---|\";\n\n  const rows = decisions.map(d => {\n    const title   = escapeMD(d.title);\n    const owner   = escapeMD(d.owner);\n    const date    = formatDate(d.date);\n    const risk    = escapeMD(d.risk);\n    const actions = escapeMD(d.actions);\n\n    return `| ${title} | ${owner} | ${date} | ${risk} | ${actions} |`;\n  });\n\n  return [header, ...rows].join(\"\\n\");\n}\n\nreturn items.map(item => {\n  const obj = item.json ?? {};\n  const md  = obj.meeting_notes_markdown || \"\";\n  const decisions = Array.isArray(obj.decisions) ? obj.decisions : [];\n\n  const table = buildDecisionTable(decisions);\n\n  let outputMD = md;\n\n  if (md.includes(\"{DECISION_LOG}\")) {\n    outputMD = md.replace(\"{DECISION_LOG}\", table);\n  } else {\n    // fallback if merge field missing\n    const headingRegex = /(##\\s*2\\)\\s*Key Decisions[^\\n]*\\n)/i;\n    if (headingRegex.test(md)) {\n      outputMD = md.replace(headingRegex, `$1\\n${table}\\n`);\n    } else {\n      outputMD = `${md}\\n\\n${table}`;\n    }\n  }\n\n  return {\n    json: {\n      ...obj,\n      decisions: undefined,\n      meeting_notes_markdown: outputMD,\n    },\n  };\n});"
-      }
+      ]
     },
     {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.output }}",
+        "options": {}
+      },
       "id": "a0c5348f-77f2-475e-a7c7-7c7d9ae4f23f",
       "name": "Meeting Analysis_Raw",
       "type": "n8n-nodes-base.set",
@@ -1698,22 +1701,9 @@
       "position": [
         3168,
         -352
-      ],
-      "parameters": {
-        "mode": "raw",
-        "jsonOutput": "={{ $json.output }}",
-        "options": {}
-      }
+      ]
     },
     {
-      "id": "e56fc1a1-7eb6-4f19-9a19-bb653350f4f5",
-      "name": "Call 'Export Meeting Notes to Google Sheets'",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.3,
-      "position": [
-        5536,
-        -736
-      ],
       "parameters": {
         "workflowId": {
           "__rl": true,
@@ -1750,18 +1740,18 @@
           "waitForSubWorkflow": false
         }
       },
+      "id": "e56fc1a1-7eb6-4f19-9a19-bb653350f4f5",
+      "name": "Call 'Export Meeting Notes to Google Sheets'",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        5536,
+        -736
+      ],
       "retryOnFail": true,
       "onError": "continueRegularOutput"
     },
     {
-      "id": "62d8b9a8-726b-460a-8790-da7a8dc02ad1",
-      "name": "Call [2] Notify of Meeting Tasks",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.2,
-      "position": [
-        5536,
-        -544
-      ],
       "parameters": {
         "workflowId": {
           "__rl": true,
@@ -1798,17 +1788,17 @@
         "options": {
           "waitForSubWorkflow": false
         }
-      }
+      },
+      "id": "62d8b9a8-726b-460a-8790-da7a8dc02ad1",
+      "name": "Call [2] Notify of Meeting Tasks",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        5536,
+        -544
+      ]
     },
     {
-      "id": "26aa6cb6-127c-431b-8642-4d7475b1b165",
-      "name": "CUSTOM TRANSCRIPT",
-      "type": "n8n-nodes-base.executeWorkflowTrigger",
-      "typeVersion": 1.1,
-      "position": [
-        1008,
-        -160
-      ],
       "parameters": {
         "workflowInputs": {
           "values": [
@@ -1830,17 +1820,17 @@
             }
           ]
         }
-      }
+      },
+      "id": "26aa6cb6-127c-431b-8642-4d7475b1b165",
+      "name": "CUSTOM TRANSCRIPT",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        1008,
+        -160
+      ]
     },
     {
-      "id": "e1537022-6a4f-4051-af4a-4ec9d2b325d8",
-      "name": "Find_Clients1",
-      "type": "n8n-nodes-base.dataTableTool",
-      "typeVersion": 1,
-      "position": [
-        2272,
-        -128
-      ],
       "parameters": {
         "operation": "get",
         "dataTableId": {
@@ -1865,7 +1855,15 @@
           ]
         },
         "returnAll": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Return_All', ``, 'boolean') }}"
-      }
+      },
+      "id": "e1537022-6a4f-4051-af4a-4ec9d2b325d8",
+      "name": "Find_Clients1",
+      "type": "n8n-nodes-base.dataTableTool",
+      "typeVersion": 1,
+      "position": [
+        2272,
+        -128
+      ]
     }
   ],
   "connections": {
@@ -2372,20 +2370,20 @@
   },
   "staticData": {
     "node:New Transcript": {
-      "lastTimeChecked": "2025-12-16T22:05:52Z"
+      "lastTimeChecked": "2026-03-29T07:55:56Z"
     },
     "node:Schedule Trigger": {
       "recurrenceRules": [
-        16
+        4
       ]
     }
   },
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "versionId": "21724b8b-fc2e-4be5-8d62-ec9f81c623cf",
-  "activeVersionId": "21724b8b-fc2e-4be5-8d62-ec9f81c623cf",
-  "triggerCount": 1,
+  "versionId": "4c8cddd3-c374-44e9-a5f4-cfb0603a6397",
+  "activeVersionId": "4c8cddd3-c374-44e9-a5f4-cfb0603a6397",
+  "triggerCount": 3,
   "tags": [
     {
       "updatedAt": "2026-03-10T00:11:31.515Z",
