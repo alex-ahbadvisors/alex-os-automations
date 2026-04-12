@@ -1,0 +1,509 @@
+{
+  "updatedAt": "2026-04-11T01:46:38.000Z",
+  "createdAt": "2026-04-11T01:46:38.118Z",
+  "id": "6HwZ9OpvO1wEnR8z",
+  "name": "Index Dex Contacts OLD pre supabase",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "triggerAtMinute": 18
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        144,
+        -160
+      ],
+      "id": "2192cc94-d250-4414-bcd1-6498bd958bad",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "Bnq5qZXSemo1JjL8",
+          "mode": "list",
+          "cachedResultName": "Dex Contacts",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/Bnq5qZXSemo1JjL8"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "dexId",
+              "keyValue": "={{ $json.contact.id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "dexId": "={{ $json.contact.id }}",
+            "first_name": "={{ $json.contact.first_name }}",
+            "last_name": "={{ $json.contact.last_name }}",
+            "job_title": "={{ $json.contact.job_title }}",
+            "emails": "=|{{ $json.contact.emails?.pluck('email').join('|').toLowerCase()}}|",
+            "website": "={{ $json.contact.website }}",
+            "syncId": "={{ $('Loop Over Items').item.json.syncId }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "dexId",
+              "displayName": "dexId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "first_name",
+              "displayName": "first_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "last_name",
+              "displayName": "last_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "job_title",
+              "displayName": "job_title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "emails",
+              "displayName": "emails",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "website",
+              "displayName": "website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "syncId",
+              "displayName": "syncId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        1936,
+        -160
+      ],
+      "id": "d04ab99e-6c44-48ac-8acf-2d96c5df6cde",
+      "name": "Upsert row(s)"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "contacts",
+        "include": "allOtherFields",
+        "options": {
+          "destinationFieldName": "contact"
+        }
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1712,
+        -160
+      ],
+      "id": "1f7874f6-374a-4d27-b98f-232f85746e36",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the total count from the pagination object\nconst total = $input.first().json.pagination.total.count; \nconst syncId = $input.first().json.syncId\n\n// Set how many results per page (adjust as needed)\nconst limit = 100;\n\n// Build an array of calls with offset values\nconst calls = [];\nlet batch = 1\nfor (let offset = 0; offset < total; offset += limit) {\n  calls.push({ batch, offset, limit });\n  batch++\n}\n\n// Return one item containing the array of call objects\nreturn [{ json: { totalBatches: batch, syncId, call: calls } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        816,
+        -160
+      ],
+      "id": "8390b4c8-adb1-4793-9ab2-4a4b1a8f4147",
+      "name": "Batch Calls"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.getdex.com/api/rest/contacts?limit={{ $json.call.limit }}&offset={{ $json.call.offset }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "pagination": {}
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1488,
+        -160
+      ],
+      "id": "eb598b01-f8d4-4333-a453-6cd59636c0e0",
+      "name": "Dex Contacts1",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "6kUKQr6mk7NCrb1U",
+          "name": "Dex API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "call",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        -160
+      ],
+      "id": "b264e8ef-93a3-400e-9ae1-b7dba3b40c6f",
+      "name": "Split Out1"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.getdex.com/api/rest/contacts?limit=1&offset=0",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "pagination": {}
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        368,
+        -160
+      ],
+      "id": "c3a50132-2b8a-4c93-9db7-314905f6d76b",
+      "name": "Dex Total Contacts",
+      "alwaysOutputData": false,
+      "executeOnce": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "6kUKQr6mk7NCrb1U",
+          "name": "Dex API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1264,
+        -160
+      ],
+      "id": "bccc7b39-bec9-4cd4-aa1d-0967d426aec0",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "field": "id"
+            }
+          ]
+        },
+        "fieldsToSplitBy": "syncId",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [
+        2160,
+        -160
+      ],
+      "id": "d4d473c1-9769-4b09-a8a9-2208f6e48cdd",
+      "name": "Summarize"
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "path": "e71c6b68-f405-45f1-b15c-8125248a1ee7"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2384,
+        -96
+      ],
+      "id": "efb436de-3c47-4339-a43a-6dafcfc582f8",
+      "name": "Wait",
+      "webhookId": "e71c6b68-f405-45f1-b15c-8125248a1ee7"
+    },
+    {
+      "parameters": {
+        "operation": "deleteRows",
+        "dataTableId": {
+          "__rl": true,
+          "value": "Bnq5qZXSemo1JjL8",
+          "mode": "list",
+          "cachedResultName": "Dex Contacts",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/Bnq5qZXSemo1JjL8"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "syncId",
+              "condition": "neq",
+              "keyValue": "={{ $json.syncId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        1488,
+        -352
+      ],
+      "id": "4cf436ec-baf0-4ffb-ab7a-21c0f5b792ce",
+      "name": "Delete Old Contacts",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "23ef81c0-d51a-413a-adfe-c75bfb4d1a68",
+              "name": "syncId",
+              "value": "={{ DateTime.now().toISO().split('T').first() }}.{{ $execution.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        592,
+        -160
+      ],
+      "id": "6afb2467-8ff2-46b6-b51e-a2835cc6e723",
+      "name": "Sync Settings"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Dex Total Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Upsert row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert row(s)": {
+      "main": [
+        [
+          {
+            "node": "Summarize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Batch Calls": {
+      "main": [
+        [
+          {
+            "node": "Split Out1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dex Contacts1": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dex Total Contacts": {
+      "main": [
+        [
+          {
+            "node": "Sync Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Delete Old Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Dex Contacts1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync Settings": {
+      "main": [
+        [
+          {
+            "node": "Batch Calls",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "errorWorkflow": "Ka01FqAuhDXin0Kn"
+  },
+  "staticData": {
+    "node:Schedule Trigger": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": null,
+  "versionId": "03caf4bf-ad6b-4b62-995a-fe48f74ed18a",
+  "activeVersionId": null,
+  "triggerCount": 1,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    },
+    {
+      "updatedAt": "2026-01-01T21:31:31.119Z",
+      "createdAt": "2026-01-01T21:31:31.119Z",
+      "id": "erv2iAT6He287ePS",
+      "name": "Abel Meeting Assistant"
+    }
+  ]
+}
