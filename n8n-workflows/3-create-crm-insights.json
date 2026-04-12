@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-03-10T00:20:56.031Z",
+  "updatedAt": "2026-04-11T05:14:26.730Z",
   "createdAt": "2025-10-24T15:25:40.598Z",
   "id": "BtXrccLHc4cZA0vR",
   "name": "[3] Create CRM Insights",
@@ -155,7 +155,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        3808,
+        3888,
         384
       ],
       "id": "b1fa19f9-c2db-4f6b-b49a-ebefe925f22b",
@@ -173,7 +173,7 @@
         "text": "={{ $json.toJsonString() }}",
         "hasOutputParser": true,
         "options": {
-          "systemMessage": "=Developer: You are the **Contact Matching Agent (single-contact)**.\nYour input is a single contact identity object. Your job is to search the DEX database for existing matches for that contact and return a single JSON object with the **`matching_ids`** array. **Do not create or modify contacts.**\n\nReturn **only** one JSON object with the exact key `matching_ids` and nothing else.\n\n---\n\n## INPUT (single contact object)\n\nThe agent receives a contact object with the following fields: first name, last name, full name, email, and company name (all may be string or null).\n\n---\n\n## TOOL (required)\n\n* **Find_Contacts** tool — use it to search the DEX Contacts table only.\n\n  * Do **not** create or update contacts.\n  * DEX `emails` field stores pipe-delimited emails (e.g., `a@x.com|a.personal@gmail.com`). Use boundary-aware logic (see below) when matching discrete emails.\n\n---\n\n## OUTPUT — exact JSON (single object; snake_case)\n\nReturn **only**:\n\n```json\n{ \n  \"matching_ids\": [\n    { \"id\": \"<string>\", \"dex_id\": \"<string>\", \"confidence\": <1|2|3> }\n  ]\n}\n```\n\n* `matching_ids` must be an array; if no matches are found return `[]`.\n* Include **no more than 3** candidate objects.\n* `id` and `dex_id` are strings. If `dex_id` is unavailable, set `dex_id` to `\"\"`.\n* `confidence` must be 1, 2, or 3.\n* Sort the array by `confidence` (desc). For equal confidence, use the tool's returned order.\n\n---\n\n## EMAIL MATCHING (DEX pipe-delimited emails)\n\nTo match by email, treat `emails` as `|`-delimited tokens. Accept a match only if any of these are true for candidate's `emails`:\n* `emails === \"<email>\"`\n* `emails.startsWith(\"<email>|\")`\n* `emails.endsWith(\"|<email>\")`\n* `emails.includes(\"|<email>|\")`\n\nIf the Find_Contacts tool only supports substring search, post-filter results with these boundary checks.\n\n---\n\n## MATCHING & SCORING\n\n1. **Email exact** (highest priority): If input email is present, query by email and verify using boundary logic.\n2. **Email partial/domain**: If above fails and domain is present, query by `@domain` with boundary checks.\n3. **Name/company**: Query `full_name` together with company name if available.\n4. **Full name only**: Query full name using obvious nickname variants if needed.\n5. **Last name + company**: Use if first name is missing.\n6. **Fuzzy name variants**: Include hyphens, initials, diacritics.\n\n* Collect all unique candidates (do not fabricate IDs).\n* Assign confidence:\n  * **3**: Exact email match, or only strong match by name/company/domain.\n  * **2**: Domain+name, or name+company with few similar matches.\n  * **1**: Name only, fuzzy, or ambiguous cases.\n* Top 3 by confidence.\n* If none, return `matching_ids: []`.\n\n---\n\n## EXAMPLES\n\n**No matches**\n\n```json\n{ \"matching_ids\": [] }\n```\n\n**One high-confidence match**\n\n```json\n{\n  \"matching_ids\": [\n    { \"id\": \"7f9c8\", \"dex_id\": \"dex_98765\", \"confidence\": 3 }\n  ]\n}\n```\n\n**Up to three candidates**\n\n```json\n{\n  \"matching_ids\": [\n    { \"id\": \"7f9c8\", \"dex_id\": \"dex_98765\", \"confidence\": 3 },\n    { \"id\": \"9a2b1\", \"dex_id\": \"dex_11223\", \"confidence\": 2 },\n    { \"id\": \"12f3e\", \"dex_id\": \"\", \"confidence\": 1 }\n  ]\n}\n```"
+          "systemMessage": "=Developer: You are the **Contact Matching Agent (single-contact)**.\nYour input is a single contact identity object. Your job is to search the contacts database for existing matches for that contact and return a single JSON object with the **`matching_ids`** array. **Do not create or modify contacts.**\n\nReturn **only** one JSON object with the exact key `matching_ids` and nothing else.\n\n---\n\n## INPUT (single contact object)\n\nThe agent receives a contact object with the following fields: first name, last name, full name, email, and company name (all may be string or null).\n\n---\n\n## TOOL (required)\n\n* **Find_Contacts** tool — use it to search the contacts table only.\n\n  * Do **not** create or update contacts.\n  * The `emails` field stores pipe-delimited emails (e.g., `|a@x.com|a.personal@gmail.com|`). Use boundary-aware logic (see below) when matching discrete emails.\n  * The Find_Contacts tool returns rows from a DataTable cache. Each row has an internal `id` (a numeric row ID — do NOT use this) and a `dexId` field (the actual Supabase UUID — ALWAYS use this as the contact's `id` in your output). \n\n---\n\n## OUTPUT — exact JSON (single object; snake_case)\n\nReturn **only**:\n\n{ \n  \"matching_ids\": [\n    { \"id\": \"<string>\", \"confidence\": <1|2|3> }\n  ]\n}\n\n* `matching_ids` must be an array; if no matches are found return `[]`.\n* Include **no more than 3** candidate objects.\n* `id` is a string (the contact's unique identifier).\n* `confidence` must be 1, 2, or 3.\n* Sort the array by `confidence` (desc). For equal confidence, use the tool's returned order.\n\n---\n\n## EMAIL MATCHING (pipe-delimited emails)\n\nTo match by email, treat `emails` as `|`-delimited tokens. Accept a match only if any of these are true for candidate's `emails`:\n* `emails === \"<email>\"`\n* `emails.startsWith(\"<email>|\")`\n* `emails.endsWith(\"|<email>\")`\n* `emails.includes(\"|<email>|\")`\n\nIf the Find_Contacts tool only supports substring search, post-filter results with these boundary checks.\n\n---\n\n## MATCHING & SCORING\n\n1. **Email exact** (highest priority): If input email is present, query by email and verify using boundary logic.\n2. **Email partial/domain**: If above fails and domain is present, query by `@domain` with boundary checks.\n3. **Name/company**: Query `full_name` together with company name if available.\n4. **Full name only**: Query full name using obvious nickname variants if needed.\n5. **Last name + company**: Use if first name is missing.\n6. **Fuzzy name variants**: Include hyphens, initials, diacritics.\n\n* Collect all unique candidates (do not fabricate IDs).\n* Assign confidence:\n  * **3**: Exact email match, or only strong match by name/company/domain.\n  * **2**: Domain+name, or name+company with few similar matches.\n  * **1**: Name only, fuzzy, or ambiguous cases.\n* Top 3 by confidence.\n* If none, return `matching_ids: []`.\n\n---\n\n## EXAMPLES\n\n**No matches**\n\n{ \"matching_ids\": [] }\n\n**One high-confidence match**\n\n{\n  \"matching_ids\": [\n    { \"id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"confidence\": 3 }\n  ]\n}\n\n**Up to three candidates**\n\n{\n  \"matching_ids\": [\n    { \"id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"confidence\": 3 },\n    { \"id\": \"b2c3d4e5-f6a7-8901-bcde-f12345678901\", \"confidence\": 2 },\n    { \"id\": \"c3d4e5f6-a7b8-9012-cdef-123456789012\", \"confidence\": 1 }\n  ]\n}\n"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -311,25 +311,37 @@
           "assignments": [
             {
               "id": "241d3d39-6365-4691-bb50-063272971cdd",
-              "name": "timeline_items_contacts.data",
-              "value": "={{ \n\n$('Merge').item.json.contacts\n  .filter(c => c.insight_indices.includes($json.insight.index) && c.existing_contact_id)\n  .map(c => c.existing_contact_id)\n  .unique()\n  .map(contact_id => ({ contact_id })) \n\n}}",
+              "name": "contact_ids",
+              "value": "={{ $('Merge').item.json.contacts.filter(c => c.insight_indices.includes($json.insight.index) && c.existing_contact_id).map(c => c.existing_contact_id).unique() }}",
               "type": "array"
             },
             {
               "id": "ff10463f-d2ee-4d69-aa84-d1b55cd4176e",
-              "name": "meeting_type",
-              "value": "note",
+              "name": "note_text",
+              "value": "🗓️ {{ $('Get row(s)').item.json.bucket }} Meeting - {{ $('Get row(s)').item.json.name }} {{ $json.insight.note }}",
               "type": "string"
             },
             {
               "id": "7e86c65f-aee8-4224-b260-412d4167caaf",
-              "name": "note",
-              "value": "=🗓️ {{ $('Get row(s)').item.json.bucket }} Meeting - <b>\n<a href=\"https://app.clickup.com/t/{{ $('Get row(s)').item.json.taskId }}\" target=\"_blank\">{{ $('Get row(s)').item.json.name }}</a></b>\n<hr>\n<br>\n{{ $json.insight.note.replaceAll('\\n','<br>') }}",
+              "name": "note_type",
+              "value": "=meeting_insight",
               "type": "string"
             },
             {
               "id": "d638a9a7-9458-4d30-9bde-efb40fbf84a1",
-              "name": "event_time",
+              "name": "source",
+              "value": "=abel",
+              "type": "string"
+            },
+            {
+              "id": "d3cc0f7f-3b83-4a39-bd06-11a39a628772",
+              "name": "source_meeting_id",
+              "value": "={{ $('Get row(s)').item.json.taskId }}",
+              "type": "string"
+            },
+            {
+              "id": "14ef64a5-baa8-493e-af23-92bb5f85b322",
+              "name": "source_event_time",
               "value": "={{ $('Get row(s)').item.json.date }}",
               "type": "string"
             }
@@ -353,7 +365,7 @@
             {
               "id": "241d3d39-6365-4691-bb50-063272971cdd",
               "name": "existing_contact_id",
-              "value": "={{ $json.matching_ids?.[0].dex_id}}",
+              "value": "={{ $json.matching_ids?.[0].id }}",
               "type": "string"
             },
             {
@@ -414,32 +426,6 @@
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "https://api.getdex.com/api/rest/contacts",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\"contact\": {{ $json.contact_emails.data.email ?  $json.toJsonString() : [$json].map(i => ({...i, contact_emails: undefined}))[0].toJsonString() }} } ",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        4672,
-        160
-      ],
-      "id": "1d74c4a2-f71f-4d09-b599-fb08249a0ec3",
-      "name": "Create Contact",
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "6kUKQr6mk7NCrb1U",
-          "name": "Dex API Key"
-        }
-      }
-    },
-    {
-      "parameters": {
         "operation": "upsert",
         "dataTableId": {
           "__rl": true,
@@ -453,16 +439,16 @@
           "conditions": [
             {
               "keyName": "dexId",
-              "keyValue": "={{ $json.insert_contacts_one.id }}"
+              "keyValue": "={{ $json.id }}"
             }
           ]
         },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "dexId": "={{ $json.insert_contacts_one.id }}",
-            "first_name": "={{ $json.insert_contacts_one.first_name }}",
-            "last_name": "={{ $json.insert_contacts_one.last_name }}"
+            "dexId": "={{ $json.id }}",
+            "first_name": "={{ $json.first_name }}",
+            "last_name": "={{ $json.last_name }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -593,7 +579,7 @@
             {
               "id": "ebbc50ec-097b-42c8-b04c-f421bf664259",
               "name": "existing_contact_id",
-              "value": "={{ $json.insert_contacts_one.id }}",
+              "value": "={{ $json.id }}",
               "type": "string"
             }
           ]
@@ -626,34 +612,6 @@
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "https://api.getdex.com/api/rest/timeline_items",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n    \"timeline_event\": {{ $json.toJsonString() }}\n}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        6464,
-        -288
-      ],
-      "id": "a64df7de-51f3-4836-99ee-5534bac92eb1",
-      "name": "Create Note",
-      "retryOnFail": true,
-      "maxTries": 2,
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "6kUKQr6mk7NCrb1U",
-          "name": "Dex API Key"
-        }
-      }
-    },
-    {
-      "parameters": {
         "mode": "markdownToHtml",
         "markdown": "={{ $json.insight.note }}",
         "destinationKey": "insight.note",
@@ -674,7 +632,7 @@
         "resource": "comment",
         "commentOn": "task",
         "id": "={{ $('Get row(s)').item.json.taskId }}",
-        "commentText": "=Abel: Added {{ $('Create Note').all().length }} notes in Dex",
+        "commentText": "=Abel: Added {{ $('Create Note').all().length }} notes in Supabase",
         "additionalFields": {
           "notifyAll": false
         }
@@ -682,7 +640,7 @@
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
       "position": [
-        6688,
+        7136,
         -112
       ],
       "id": "3f5cc612-7800-425d-afc8-c7cdba6e3035",
@@ -851,12 +809,146 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        6688,
+        7136,
         -304
       ],
       "id": "ba0e4c37-b726-4ff8-96c6-1c5c9b4ec9eb",
       "name": "Update Meeting Note",
       "executeOnce": true
+    },
+    {
+      "parameters": {
+        "tableId": "contacts",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "first_name",
+              "fieldValue": "={{ $json.first_name }}"
+            },
+            {
+              "fieldId": "last_name",
+              "fieldValue": "={{ $json.last_name }} "
+            },
+            {
+              "fieldId": "full_name",
+              "fieldValue": "={{ ($json.first_name || '') + ' ' + ($json.last_name || '') }}"
+            },
+            {
+              "fieldId": "emails",
+              "fieldValue": "={{ $json.email ? '[\"' + $json.email.toLowerCase() + '\"]' : '[]' }}"
+            },
+            {
+              "fieldId": "source",
+              "fieldValue": "abel"
+            },
+            {
+              "fieldId": "relationship_category",
+              "fieldValue": "uncategorized"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        4672,
+        160
+      ],
+      "id": "56b842be-be45-45ce-840c-4b300b347c53",
+      "name": "Create Contact1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "s8xehWEboCBkOgBd",
+          "name": "Supabase alex-os-information"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "var noteId = $input.first().json.id;\n  var contactIds = $('Edit Fields').first().json.contact_ids || []; \n  var results = [];     \n  for (var i = 0; i < contactIds.length; i++) {                                                                                                                                         \n    if (contactIds[i] && contactIds[i] !== 'null') {                                                                                                                                    \n      results.push({ json: { note_id: noteId, contact_id: contactIds[i] } });\n    }                                                                                                                                                                                   \n  }\n                                                                                                                                                                                        \n  return results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6688,
+        -288
+      ],
+      "id": "c1361b92-fb28-4115-ac53-40e1ad9b1db1",
+      "name": "Prepare Junction Links"
+    },
+    {
+      "parameters": {
+        "tableId": "interaction_note_contacts",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "note_id",
+              "fieldValue": "={{ $json.note_id }}"
+            },
+            {
+              "fieldId": "contact_id",
+              "fieldValue": "={{ $json.contact_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        6912,
+        -288
+      ],
+      "id": "0c503041-bb64-43fa-97d1-8799f6440ed3",
+      "name": "Update interaction row contacts",
+      "credentials": {
+        "supabaseApi": {
+          "id": "s8xehWEboCBkOgBd",
+          "name": "Supabase alex-os-information"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "interaction_notes",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "note_text",
+              "fieldValue": "={{ $json.note_text }}"
+            },
+            {
+              "fieldId": "note_type",
+              "fieldValue": "={{ $json.note_type }}"
+            },
+            {
+              "fieldId": "source",
+              "fieldValue": "={{ $json.source }}"
+            },
+            {
+              "fieldId": "source_meeting_id",
+              "fieldValue": "{{ $json.source_meeting_id }}"
+            },
+            {
+              "fieldId": "source_event_time",
+              "fieldValue": "={{ $json.source_event_time }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        6464,
+        -288
+      ],
+      "id": "0aed7acc-9572-4766-911d-59141d991013",
+      "name": "Add interaction notes",
+      "credentials": {
+        "supabaseApi": {
+          "id": "s8xehWEboCBkOgBd",
+          "name": "Supabase alex-os-information"
+        }
+      }
     }
   ],
   "connections": {
@@ -1071,27 +1163,11 @@
         ]
       ]
     },
-    "Create Contact": {
-      "main": [
-        [
-          {
-            "node": "Upsert row(s)",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Edit Fields3",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Edit Fields2": {
       "main": [
         [
           {
-            "node": "Create Contact",
+            "node": "Create Contact1",
             "type": "main",
             "index": 0
           }
@@ -1129,7 +1205,7 @@
       "main": [
         [
           {
-            "node": "Create Note",
+            "node": "Add interaction notes",
             "type": "main",
             "index": 0
           }
@@ -1147,7 +1223,34 @@
         ]
       ]
     },
-    "Create Note": {
+    "Create Contact1": {
+      "main": [
+        [
+          {
+            "node": "Upsert row(s)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Edit Fields3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Junction Links": {
+      "main": [
+        [
+          {
+            "node": "Update interaction row contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update interaction row contacts": {
       "main": [
         [
           {
@@ -1157,6 +1260,17 @@
           },
           {
             "node": "Update Meeting Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add interaction notes": {
+      "main": [
+        [
+          {
+            "node": "Prepare Junction Links",
             "type": "main",
             "index": 0
           }
@@ -1175,7 +1289,7 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "versionId": "bee5f7e8-5d94-45cb-a70f-e53684f73b4f",
+  "versionId": "1767eca7-3b64-4ab2-9113-940fe08a7e6b",
   "activeVersionId": null,
   "triggerCount": 0,
   "tags": [
