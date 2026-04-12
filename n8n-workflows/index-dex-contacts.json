@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-03-13T18:27:11.000Z",
+  "updatedAt": "2026-04-11T02:25:19.228Z",
   "createdAt": "2025-10-24T12:52:26.902Z",
   "id": "cqULgAUmfXH0bW13",
   "name": "Index Dex Contacts",
@@ -52,9 +52,9 @@
             "first_name": "={{ $json.contact.first_name }}",
             "last_name": "={{ $json.contact.last_name }}",
             "job_title": "={{ $json.contact.job_title }}",
-            "emails": "=|{{ $json.contact.emails?.pluck('email').join('|').toLowerCase()}}|",
+            "emails": "=|{{ $json.contact.emails }}|",
             "website": "={{ $json.contact.website }}",
-            "syncId": "={{ $('Loop Over Items').item.json.syncId }}"
+            "syncId": "={{ $json.syncId }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -137,121 +137,11 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        1936,
+        1040,
         -160
       ],
       "id": "c652462d-9f91-4f4d-ac8f-497b9f93614a",
       "name": "Upsert row(s)"
-    },
-    {
-      "parameters": {
-        "fieldToSplitOut": "contacts",
-        "include": "allOtherFields",
-        "options": {
-          "destinationFieldName": "contact"
-        }
-      },
-      "type": "n8n-nodes-base.splitOut",
-      "typeVersion": 1,
-      "position": [
-        1712,
-        -160
-      ],
-      "id": "1852836b-3e10-49b5-9d59-4ed16a79ff43",
-      "name": "Split Out"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Get the total count from the pagination object\nconst total = $input.first().json.pagination.total.count; \nconst syncId = $input.first().json.syncId\n\n// Set how many results per page (adjust as needed)\nconst limit = 100;\n\n// Build an array of calls with offset values\nconst calls = [];\nlet batch = 1\nfor (let offset = 0; offset < total; offset += limit) {\n  calls.push({ batch, offset, limit });\n  batch++\n}\n\n// Return one item containing the array of call objects\nreturn [{ json: { totalBatches: batch, syncId, call: calls } }];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        816,
-        -160
-      ],
-      "id": "0958a95a-3dce-4a40-9624-254967f0dc56",
-      "name": "Batch Calls"
-    },
-    {
-      "parameters": {
-        "url": "=https://api.getdex.com/api/rest/contacts?limit={{ $json.call.limit }}&offset={{ $json.call.offset }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "options": {
-          "pagination": {}
-        }
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1488,
-        -160
-      ],
-      "id": "6b45359d-47da-409f-ba09-d626e37f6575",
-      "name": "Dex Contacts1",
-      "retryOnFail": true,
-      "waitBetweenTries": 5000,
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "6kUKQr6mk7NCrb1U",
-          "name": "Dex API Key"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "fieldToSplitOut": "call",
-        "include": "allOtherFields",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.splitOut",
-      "typeVersion": 1,
-      "position": [
-        1040,
-        -160
-      ],
-      "id": "1ad6132a-56db-41fa-b4da-ba73817956f4",
-      "name": "Split Out1"
-    },
-    {
-      "parameters": {
-        "url": "=https://api.getdex.com/api/rest/contacts?limit=1&offset=0",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "options": {
-          "pagination": {}
-        }
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        368,
-        -160
-      ],
-      "id": "b14ff277-734a-44e1-a70f-d2614795c000",
-      "name": "Dex Total Contacts",
-      "alwaysOutputData": false,
-      "executeOnce": true,
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "6kUKQr6mk7NCrb1U",
-          "name": "Dex API Key"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "options": {}
-      },
-      "type": "n8n-nodes-base.splitInBatches",
-      "typeVersion": 3,
-      "position": [
-        1264,
-        -160
-      ],
-      "id": "8f7fb4d5-8557-432a-8f33-c811428d543f",
-      "name": "Loop Over Items"
     },
     {
       "parameters": {
@@ -268,57 +158,11 @@
       "type": "n8n-nodes-base.summarize",
       "typeVersion": 1.1,
       "position": [
-        2160,
+        1264,
         -160
       ],
       "id": "a13d8495-3dbb-43fa-9487-bb3442fa3c46",
       "name": "Summarize"
-    },
-    {
-      "parameters": {
-        "amount": 2
-      },
-      "type": "n8n-nodes-base.wait",
-      "typeVersion": 1.1,
-      "position": [
-        2384,
-        -96
-      ],
-      "id": "70285597-3ec3-4f06-a643-cf44e28b30c8",
-      "name": "Wait",
-      "webhookId": "ba6efbc6-3286-421c-be2e-736585ccd412"
-    },
-    {
-      "parameters": {
-        "operation": "deleteRows",
-        "dataTableId": {
-          "__rl": true,
-          "value": "Bnq5qZXSemo1JjL8",
-          "mode": "list",
-          "cachedResultName": "Dex Contacts",
-          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/Bnq5qZXSemo1JjL8"
-        },
-        "matchType": "allConditions",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "syncId",
-              "condition": "neq",
-              "keyValue": "={{ $json.syncId }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1,
-      "position": [
-        1488,
-        -352
-      ],
-      "id": "c83fd7b3-1a15-41bf-8501-b1c6ea51305b",
-      "name": "Delete Old Contacts",
-      "executeOnce": true
     },
     {
       "parameters": {
@@ -338,11 +182,45 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        592,
+        368,
         -160
       ],
       "id": "36371f3d-eeb7-4e1f-a627-b4990be501ac",
       "name": "Sync Settings"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "contacts",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        592,
+        -160
+      ],
+      "id": "824e8087-2c5a-40bf-805b-969eef305dd2",
+      "name": "Get many rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "s8xehWEboCBkOgBd",
+          "name": "Supabase alex-os-information"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "  const items = $input.all();                     \n  const syncId = $execution.id;\n\n  return items.map(item => ({                                               \n    json: {                              \n      contact: {                                                        \n        id: item.json.id,                    \n        first_name: item.json.first_name || '',                         \n        last_name: item.json.last_name || '',                           \n        job_title: item.json.job_title || '',\n        emails: (item.json.emails || []).join('|').toLowerCase(),       \n        company: item.json.company || '',\n        website: item.json.website || '' \n      },                                     \n      syncId: syncId                                                    \n    }                                                                   \n  }));              "
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        816,
+        -160
+      ],
+      "id": "ce85c98d-3f5b-45fd-9ef7-a595eea4afeb",
+      "name": "Transform for DataTable"
     }
   ],
   "connections": {
@@ -350,18 +228,7 @@
       "main": [
         [
           {
-            "node": "Dex Total Contacts",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Split Out": {
-      "main": [
-        [
-          {
-            "node": "Upsert row(s)",
+            "node": "Sync Settings",
             "type": "main",
             "index": 0
           }
@@ -379,95 +246,38 @@
         ]
       ]
     },
-    "Batch Calls": {
-      "main": [
-        [
-          {
-            "node": "Split Out1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Dex Contacts1": {
-      "main": [
-        [
-          {
-            "node": "Split Out",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Dex Total Contacts": {
-      "main": [
-        [
-          {
-            "node": "Sync Settings",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Split Out1": {
-      "main": [
-        [
-          {
-            "node": "Loop Over Items",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Loop Over Items": {
-      "main": [
-        [
-          {
-            "node": "Delete Old Contacts",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Dex Contacts1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Summarize": {
       "main": [
-        [
-          {
-            "node": "Wait",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Wait": {
-      "main": [
-        [
-          {
-            "node": "Loop Over Items",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     },
     "Sync Settings": {
       "main": [
         [
           {
-            "node": "Batch Calls",
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows": {
+      "main": [
+        [
+          {
+            "node": "Transform for DataTable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform for DataTable": {
+      "main": [
+        [
+          {
+            "node": "Upsert row(s)",
             "type": "main",
             "index": 0
           }
@@ -487,8 +297,10 @@
       "recurrenceRules": []
     }
   },
-  "meta": null,
-  "versionId": "ae92470c-8c55-47e8-8cab-58877bae0eec",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "versionId": "069aa126-e059-45bd-a52d-3bf706122277",
   "activeVersionId": null,
   "triggerCount": 1,
   "tags": [
