@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-03-13T04:12:26.616Z",
+  "updatedAt": "2026-05-06T15:50:40.702Z",
   "createdAt": "2026-03-13T00:38:53.212Z",
   "id": "Ycd62s37nkRiGWp2",
   "name": "Export 3CV Emails to Google Sheets",
@@ -30,7 +30,7 @@
             {
               "id": "field-month",
               "name": "month",
-              "value": "3",
+              "value": "5",
               "type": "string"
             }
           ]
@@ -498,7 +498,7 @@
   },
   "staticData": null,
   "meta": null,
-  "versionId": "966b6528-8649-46d6-b7a0-36103d3cc049",
+  "versionId": "003fd9d3-dc22-43ca-ba69-f1e84d44bf8b",
   "activeVersionId": null,
   "triggerCount": 0,
   "tags": [
