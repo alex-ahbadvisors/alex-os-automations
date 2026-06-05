@@ -81,12 +81,12 @@
 - **Status**: active
 - **Severity**: medium
 - **Category**: api-mismatch
-- **Description**: Missive API has several underdocumented behaviors: (1) `subject` field is always null — use `latest_message_subject`, (2) `modified_after` param doesn't exist, (3) web URLs differ from API response URLs — use `web_url` field, (4) POST /v1/posts requires BOTH `notification: {title, body}` AND `text`/`markdown` — neither alone is sufficient.
-- **Detection**: Find HTTP Request nodes targeting `missiveapp.com`. Flag if: referencing `.subject` without `latest_message_subject`, using `modified_after` param, constructing URLs manually instead of using `web_url`, or POST to `/posts` missing either `notification` or `text/markdown`.
+- **Description**: Missive API has several underdocumented behaviors: (1) `subject` field is always null — use `latest_message_subject`, (2) `modified_after` param doesn't exist, (3) web URLs differ from API response URLs — use `web_url` field, (4) POST /v1/posts requires BOTH `notification: {title, body}` AND `text`/`markdown` — neither alone is sufficient. (5) **Attachment MIME is SPLIT across two fields**: `messages.attachments[]` items carry `media_type` = top type only (`"application"`, `"image"`) and `sub_type` = subtype (`"pdf"`, `"png"`). So `a.media_type === 'application/pdf'` is ALWAYS false. Match `(media_type==='application' && sub_type==='pdf')`, or rebuild `media_type + '/' + sub_type`; a `filename.endsWith('.pdf')` fallback is the robust superset. Each item also has `id, filename, url, size`.
+- **Detection**: Find HTTP Request nodes targeting `missiveapp.com`. Flag if: referencing `.subject` without `latest_message_subject`, using `modified_after` param, constructing URLs manually instead of using `web_url`, POST to `/posts` missing either `notification` or `text/markdown`, or comparing an attachment `media_type` to a full `type/subtype` string.
 - **Fix**: See `alex-os/skills/n8n-copilot/references/missive-api.md` for correct field mappings.
-- **Discovered**: 2026-03-03, 3CV Email Classifier + E2 Meeting Agenda Builder
+- **Discovered**: 2026-03-03, 3CV Email Classifier + E2 Meeting Agenda Builder; MIME split 2026-06-04 (Capture Email attachments)
 - **Times caught**: 0
-- **Times missed**: 0
+- **Times missed**: 1
 
 ---
 
@@ -183,6 +183,34 @@
 - **Detection**: Find Google Drive upload nodes. If the workflow processes a variable or large number of items (connected to a loop, SplitInBatches, or a node that could produce 50+ items), flag as rate limit risk.
 - **Fix**: (1) Set the Drive node's **Settings → On Error → Retry on Fail** (3 retries, 5000ms wait). (2) If retries still fail, add a SplitInBatches node (batch size 50) with a Wait node (5-10s) in the loop-back path.
 - **Discovered**: 2026-03-15, Download 3CV Email Attachments — 503 after ~150 of 370 attachment uploads
+- **Times caught**: 0
+- **Times missed**: 1
+
+---
+
+## P014: Binary-consuming node drops the binary for chained downstream consumers
+
+- **Status**: active
+- **Severity**: high
+- **Category**: data-threading
+- **Description**: A node that *consumes* a binary field (Extract from File; and most nodes with an input-binary-field param) does NOT pass that binary through to its output. So a second node that also needs the same binary — e.g. Google Drive **upload** — placed *after* it in series fails with **"The item has no binary field 'data'"**. Bites whenever two nodes both need the same downloaded file (upload-to-Drive AND extract-text).
+- **Detection**: Find chains where two binary-consuming nodes (extractFromFile, googleDrive upload, etc.) are in series after a single binary producer (HTTP Request `responseFormat=file`). Flag the second consumer.
+- **Fix**: Branch both consumers off the producer in **PARALLEL** (each gets its own copy of the binary), then fan-in with a **Merge (append)** + a `.all()` index-zip Code node (see P015). Never chain two binary consumers.
+- **Discovered**: 2026-06-04, Capture Email → Contacts attachments branch — `Save to Drive` chained after `Extract from File` → "no binary field 'data'"
+- **Times caught**: 0
+- **Times missed**: 1
+
+---
+
+## P015: `.item` across branches / after a transform → "No path back to referenced node"
+
+- **Status**: active
+- **Severity**: high
+- **Category**: data-threading
+- **Description**: `$('NodeA').item` only resolves along the *current* node's own ancestry (the paired-item chain). Referencing a node on a **sibling branch** via `.item` throws **"No path back to referenced node."** HTTP Request and Google Drive nodes also **break the paired-item chain**, so even a linear `.item` reaching back *through* one of them can fail the same way. (Hard-failure cousin of the soft P011 warning.)
+- **Detection**: Find expressions/Code using `$('NodeName').item` where NodeName is on a **parallel branch** (not a linear ancestor), or where an HTTP/Drive node sits between it and the referencing node. Flag.
+- **Fix**: Use a **`.all()` index-zip in a Code node** — gather `$('A').all()`, `$('B').all()` and zip by index `[i]` (no paired items needed), gated by a **Merge (append)** that waits for both branches, with `alwaysOutputData` on the branch nodes. Downstream, read `$json` (same item) or `$('ZipNode').item` (a linear ancestor — safe).
+- **Discovered**: 2026-06-04, Capture Email → Contacts attachments branch — `Set Drive Description` referenced `$('Extract from File').item` on a sibling branch
 - **Times caught**: 0
 - **Times missed**: 1
 
