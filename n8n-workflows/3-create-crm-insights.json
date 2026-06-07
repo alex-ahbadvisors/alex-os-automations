@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-11T05:14:26.730Z",
+  "updatedAt": "2026-06-01T22:09:10.506Z",
   "createdAt": "2025-10-24T15:25:40.598Z",
   "id": "BtXrccLHc4cZA0vR",
   "name": "[3] Create CRM Insights",
@@ -317,8 +317,8 @@
             },
             {
               "id": "ff10463f-d2ee-4d69-aa84-d1b55cd4176e",
-              "name": "note_text",
-              "value": "🗓️ {{ $('Get row(s)').item.json.bucket }} Meeting - {{ $('Get row(s)').item.json.name }} {{ $json.insight.note }}",
+              "name": "=note_text",
+              "value": "🗓️ {{ $('Get row(s)').item.json.bucket }} Meeting - {{ $('Get row(s)').item.json.name }} {{ $json.insight.note }}\n",
               "type": "string"
             },
             {
@@ -1289,7 +1289,7 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "versionId": "1767eca7-3b64-4ab2-9113-940fe08a7e6b",
+  "versionId": "2baa9d03-f24c-4c8b-866b-83470f5d1c84",
   "activeVersionId": null,
   "triggerCount": 0,
   "tags": [
