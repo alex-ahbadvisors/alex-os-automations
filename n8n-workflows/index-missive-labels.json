@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-03-10T08:21:26.996Z",
+  "updatedAt": "2026-06-07T00:36:03.103Z",
   "createdAt": "2026-03-03T20:32:57.115Z",
   "id": "px4KEp6PfQUBHzQ5",
   "name": "Index Missive Labels",
@@ -397,7 +397,7 @@
   },
   "settings": {
     "executionOrder": "v1",
-    "availableInMCP": false
+    "availableInMCP": true
   },
   "staticData": {
     "node:Hourly Trigger on 39 minute": {
@@ -405,8 +405,8 @@
     }
   },
   "meta": null,
-  "versionId": "181f1f01-4599-4c8e-8ff8-7670ad4a4f2b",
-  "activeVersionId": "181f1f01-4599-4c8e-8ff8-7670ad4a4f2b",
+  "versionId": "77a8c9b4-407a-4fc7-a86a-d3bb0b71b1a8",
+  "activeVersionId": "77a8c9b4-407a-4fc7-a86a-d3bb0b71b1a8",
   "triggerCount": 1,
   "tags": [
     {
