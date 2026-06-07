@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-03-22T15:28:41.561Z",
+  "updatedAt": "2026-06-07T01:26:23.028Z",
   "createdAt": "2025-09-29T18:24:20.615Z",
   "id": "CSUlliGpgb4JDqBE",
   "name": "[1] Capture Transcript",
@@ -33,7 +33,7 @@
       "typeVersion": 1,
       "position": [
         -112,
-        -640
+        -544
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -252,7 +252,7 @@
       "typeVersion": 3.4,
       "position": [
         1008,
-        -832
+        -736
       ]
     },
     {
@@ -361,7 +361,7 @@
       "typeVersion": 1,
       "position": [
         3968,
-        -592
+        -496
       ],
       "credentials": {
         "clickUpOAuth2Api": {
@@ -715,7 +715,7 @@
       "typeVersion": 1,
       "position": [
         4416,
-        -448
+        -400
       ]
     },
     {
@@ -758,7 +758,7 @@
       "typeVersion": 3.3,
       "position": [
         4864,
-        -448
+        -544
       ]
     },
     {
@@ -806,7 +806,8 @@
       "position": [
         5536,
         -352
-      ]
+      ],
+      "disabled": true
     },
     {
       "parameters": {
@@ -861,7 +862,7 @@
       "typeVersion": 1.2,
       "position": [
         3696,
-        -80
+        -32
       ],
       "credentials": {
         "openAiApi": {
@@ -885,7 +886,7 @@
       "typeVersion": 2.2,
       "position": [
         3616,
-        -304
+        -256
       ]
     },
     {
@@ -947,7 +948,7 @@
       "typeVersion": 3.4,
       "position": [
         3968,
-        -304
+        -256
       ]
     },
     {
@@ -962,7 +963,7 @@
       "typeVersion": 3.2,
       "position": [
         4192,
-        -448
+        -400
       ]
     },
     {
@@ -996,47 +997,7 @@
       "typeVersion": 2.2,
       "position": [
         3680,
-        -592
-      ]
-    },
-    {
-      "parameters": {
-        "operation": "get",
-        "dataTableId": {
-          "__rl": true,
-          "value": "Bnq5qZXSemo1JjL8",
-          "mode": "list",
-          "cachedResultName": "Dex Contacts",
-          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/Bnq5qZXSemo1JjL8"
-        },
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "first_name",
-              "condition": "ilike",
-              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions0_Value', `Case-Insensitive, partial match for first name`, 'string') }}"
-            },
-            {
-              "keyName": "last_name",
-              "condition": "ilike",
-              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions1_Value', `Case-Insensitive, partial match for last name`, 'string') }}"
-            },
-            {
-              "keyName": "emails",
-              "condition": "ilike",
-              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions2_Value', `Case-Insensitive, partial match for email`, 'string') }}"
-            }
-          ]
-        },
-        "returnAll": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Return_All', ``, 'boolean') }}"
-      },
-      "id": "3703547f-aa7b-44c1-a210-7379938b7fa6",
-      "name": "Find_Contacts",
-      "type": "n8n-nodes-base.dataTableTool",
-      "typeVersion": 1,
-      "position": [
-        2832,
-        -128
+        -560
       ]
     },
     {
@@ -1070,7 +1031,7 @@
       "type": "n8n-nodes-base.dataTableTool",
       "typeVersion": 1,
       "position": [
-        2960,
+        2832,
         -128
       ]
     },
@@ -1143,7 +1104,7 @@
       "typeVersion": 1.2,
       "position": [
         -336,
-        -832
+        -736
       ]
     },
     {
@@ -1177,7 +1138,7 @@
       "typeVersion": 3,
       "position": [
         -112,
-        -832
+        -736
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -1443,7 +1404,7 @@
       "typeVersion": 1,
       "position": [
         5312,
-        -448
+        -544
       ]
     },
     {
@@ -1504,7 +1465,7 @@
       "typeVersion": 1,
       "position": [
         3968,
-        -784
+        -688
       ],
       "credentials": {
         "clickUpOAuth2Api": {
@@ -1553,7 +1514,7 @@
       "typeVersion": 2.2,
       "position": [
         336,
-        -832
+        -736
       ]
     },
     {
@@ -1613,7 +1574,7 @@
       "typeVersion": 3.4,
       "position": [
         4640,
-        -448
+        -544
       ]
     },
     {
@@ -1656,7 +1617,7 @@
       "typeVersion": 2.2,
       "position": [
         112,
-        -736
+        -640
       ]
     },
     {
@@ -1710,7 +1671,7 @@
           "value": "nJjSCB6OcIYSHMel",
           "mode": "list",
           "cachedResultUrl": "/workflow/nJjSCB6OcIYSHMel",
-          "cachedResultName": "Export Meeting Notes to Google Sheets"
+          "cachedResultName": "[6] Export Meeting Notes to Google Sheets"
         },
         "workflowInputs": {
           "mappingMode": "defineBelow",
@@ -1864,6 +1825,92 @@
         2272,
         -128
       ]
+    },
+    {
+      "parameters": {
+        "tableId": "meetings",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "title",
+              "fieldValue": "={{ $('Meeting Analysis').item.json.meeting_name }}   "
+            },
+            {
+              "fieldId": "meeting_date",
+              "fieldValue": "={{ $('Meeting Analysis').item.json.metadata.date }}     "
+            },
+            {
+              "fieldId": "description",
+              "fieldValue": "={{ $('Meeting Analysis').item.json.meeting_notes_markdown }} "
+            },
+            {
+              "fieldId": "transcript_file",
+              "fieldValue": "={{ $('Transcript').item.json.sourceUrl }} "
+            },
+            {
+              "fieldId": "circleback_id",
+              "fieldValue": "={{ $('Transcript').item.json.sourceId }}"
+            },
+            {
+              "fieldId": "attendees",
+              "fieldValue": "={{ '{' + ($('Meeting Analysis').item.json.metadata.attendees || []).map(a => a.name).filter(Boolean).map(n => '\"' + n.replace(/\"/g,'') + '\"').join(',') + '}' }}"
+            },
+            {
+              "fieldId": "attendee_emails",
+              "fieldValue": "={{ '{' + ($('Meeting Analysis').item.json.metadata.attendees || []).map(a => a.email).filter(Boolean).join(',') + '}' }}\n "
+            },
+            {
+              "fieldId": "facts_extracted",
+              "fieldValue": "={{ false }}"
+            },
+            {
+              "fieldId": "source",
+              "fieldValue": "abel"
+            },
+            {
+              "fieldId": "transcript",
+              "fieldValue": "={{ $('Transcript').item.json.transcriptContents }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        4640,
+        -352
+      ],
+      "id": "6c13914b-6a85-4ece-b922-e55d648208e8",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "s8xehWEboCBkOgBd",
+          "name": "Supabase alex-os-information"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Look up a person in the CRM contacts by name. Returns id, full_name, and emails",
+        "url": "=https://vitdycrekiqytcihchvg.supabase.co/rest/v1/contacts?select=id,full_name,emails&full_name=ilike.*{{   $fromAI('name','Full or partial name of the person to look up','string') }}*&limit=10",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        2960,
+        -128
+      ],
+      "id": "cdc9e514-3d5c-4df8-b091-7534edf6870d",
+      "name": "Find_Contacts",
+      "credentials": {
+        "supabaseApi": {
+          "id": "s8xehWEboCBkOgBd",
+          "name": "Supabase alex-os-information"
+        }
+      }
     }
   ],
   "connections": {
@@ -2025,6 +2072,11 @@
       "main": [
         [
           {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          },
+          {
             "node": "Set File Description",
             "type": "main",
             "index": 0
@@ -2129,17 +2181,6 @@
           {
             "node": "Create Meeting Note",
             "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Find_Contacts": {
-      "ai_tool": [
-        [
-          {
-            "node": "Meeting Note Agent",
-            "type": "ai_tool",
             "index": 0
           }
         ]
@@ -2360,17 +2401,33 @@
           }
         ]
       ]
+    },
+    "Create a row": {
+      "main": [
+        []
+      ]
+    },
+    "Find_Contacts": {
+      "ai_tool": [
+        [
+          {
+            "node": "Meeting Note Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
     "executionOrder": "v1",
     "callerPolicy": "workflowsFromSameOwner",
-    "availableInMCP": false,
+    "availableInMCP": true,
     "errorWorkflow": "Ka01FqAuhDXin0Kn"
   },
   "staticData": {
     "node:New Transcript": {
-      "lastTimeChecked": "2026-03-29T07:55:56Z"
+      "lastTimeChecked": "2026-06-07T07:55:46Z"
     },
     "node:Schedule Trigger": {
       "recurrenceRules": [
@@ -2381,8 +2438,8 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "versionId": "4c8cddd3-c374-44e9-a5f4-cfb0603a6397",
-  "activeVersionId": "4c8cddd3-c374-44e9-a5f4-cfb0603a6397",
+  "versionId": "00b4fbfe-bfa6-42be-9295-ba0bb70c5dc9",
+  "activeVersionId": "00b4fbfe-bfa6-42be-9295-ba0bb70c5dc9",
   "triggerCount": 3,
   "tags": [
     {
