@@ -1,0 +1,900 @@
+{
+  "updatedAt": "2026-06-05T08:33:38.953Z",
+  "createdAt": "2026-06-02T21:54:30.997Z",
+  "id": "Yu2LOoEaI8ozTrgo",
+  "name": "Capture Email -> Contacts",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "cf11faa6-a82f-4d87-acc6-63e28d804b61",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        2416,
+        448
+      ],
+      "id": "1a9a29d7-8cce-4e57-af7b-c33b7215ea61",
+      "name": "Webhook",
+      "webhookId": "cf11faa6-a82f-4d87-acc6-63e28d804b61"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c916e629-7652-4bcb-8462-e018f18e876d",
+              "name": "messageId",
+              "value": "={{ $json.body?.latest_message?.id || $json.body?.message?.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2640,
+        448
+      ],
+      "id": "b1debc5d-afad-4744-afcb-81b35eb16a7e",
+      "name": "Get Message Id"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b82ae85e-ac6a-4447-8606-903ae9a74df9",
+              "leftValue": "={{ $json.messageId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "cf5f66eb-9032-40b0-a7da-5e8330ef8287",
+      "name": "Filter",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        2864,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://public.missiveapp.com/v1/messages/{{ $json.messageId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "id": "88ba42c9-2c30-4c8b-8a31-f134930f1fcc",
+      "name": "Missive Rest API Get Messages",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3088,
+        448
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "html": "={{ $json.messages.body }}",
+        "destinationKey": "messages.body",
+        "options": {
+          "ignore": "img",
+          "keepDataImages": false
+        }
+      },
+      "id": "17bd2a38-bb02-4ff4-bee7-81c024ab3bd5",
+      "name": "Markdown",
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        3312,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "233ae8fa-43c5-4fc4-9155-05b7c30d66f5",
+              "name": "note_type",
+              "value": "email",
+              "type": "string"
+            },
+            {
+              "id": "888f0e67-c035-43b7-bf5e-0d9b478b2536",
+              "name": "source",
+              "value": "missive",
+              "type": "string"
+            },
+            {
+              "id": "df4d6b70-e0e2-4597-9af7-1eef7abe8f8b",
+              "name": "summary",
+              "value": "={{ (($('Markdown').item.json.messages.subject) || '(no subject)') + ' — ' + (($('Markdown').item.json.messages.preview) || '') + ((($('Markdown').item.json.messages.attachments || []).length) ? ' 📎 ' + ($('Markdown').item.json.messages.attachments || []).map(a => a.filename).join(', ') : '') }}",
+              "type": "string"
+            },
+            {
+              "id": "25fd2733-dfcc-453b-b30c-12e10d0d50cd",
+              "name": "body",
+              "value": "={{ $('Markdown').item.json.messages.body }}",
+              "type": "string"
+            },
+            {
+              "id": "a6713775-c1db-4212-bfb5-5775be288113",
+              "name": "source_event_time",
+              "value": "={{ $('Markdown').item.json.messages.delivered_at ? new Date($('Markdown').item.json.messages.delivered_at * 1000).toISOString() : new Date().toISOString() }}",
+              "type": "string"
+            },
+            {
+              "id": "ec6246cd-2b59-477c-92d5-03e50ec911c7",
+              "name": "metadata",
+              "value": "={{ ({   subject: $('Markdown').item.json.messages.subject,   direction: ['alex@ahbadvisors.com','ahbrownstein@gmail.com','abrownstein@3cventures.com'].includes(($('Markdown').item.json.messages.from_field.address || '').toLowerCase()) ? 'sent' : 'received',   account: ['alex@ahbadvisors.com','ahbrownstein@gmail.com','abrownstein@3cventures.com'].includes(($('Markdown').item.json.messages.from_field.address || '').toLowerCase()) ? $('Markdown').item.json.messages.from_field.address : ($('Markdown').item.json.messages.to_fields || []).map(x => x.address).find(a => ['alex@ahbadvisors.com','ahbrownstein@gmail.com','abrownstein@3cventures.com'].includes(a.toLowerCase())),   from: $('Markdown').item.json.messages.from_field.address,   to: ($('Markdown').item.json.messages.to_fields || []).map(x => x.address),   cc: ($('Markdown').item.json.messages.cc_fields || []).map(x => x.address),   bcc: ($('Markdown').item.json.messages.bcc_fields || []).map(x => x.address),   attachments: ($('Markdown').item.json.messages.attachments || []).map(x => x.filename),   labels: (($('Webhook').item.json.body.conversation || {}).shared_labels || []).map(x => x.name),   conversation_url: ($('Markdown').item.json.messages.conversation || {}).web_url,   email_message_id: $('Markdown').item.json.messages.email_message_id }) }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d813b5e0-e69b-4edd-94a7-7d57594e04e7",
+      "name": "Stage Interaction",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3536,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "interaction_notes",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "note_type",
+              "fieldValue": "={{ $json.note_type }}"
+            },
+            {
+              "fieldId": "source",
+              "fieldValue": "={{ $json.source }}"
+            },
+            {
+              "fieldId": "summary",
+              "fieldValue": "={{ $json.summary }}"
+            },
+            {
+              "fieldId": "body",
+              "fieldValue": "={{ $json.body }}"
+            },
+            {
+              "fieldId": "source_event_time",
+              "fieldValue": "={{ $json.source_event_time }}"
+            },
+            {
+              "fieldId": "metadata",
+              "fieldValue": "={{ $json.metadata }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3760,
+        256
+      ],
+      "id": "0ca55eff-9553-4f53-86b1-8fdd515fa48c",
+      "name": "Create Interaction",
+      "credentials": {
+        "supabaseApi": {
+          "id": "s8xehWEboCBkOgBd",
+          "name": "Supabase alex-os-information"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const m = $('Markdown').first().json.messages;\nconst mine = ['alex@ahbadvisors.com','ahbrownstein@gmail.com','abrownstein@3cventures.com'];\nconst fields = [m.from_field, ...(m.to_fields || []), ...(m.cc_fields || [])].filter(Boolean);\nconst seen = new Set(); const out = [];\nfor (const f of fields) {\n  const email = (f.address || '').toLowerCase();\n  if (!email || mine.includes(email) || seen.has(email)) continue;\n  seen.add(email);\n  out.push({ json: { contact_email: email, contact_name: f.name || email.split('@')[0] }, pairedItem: 0 });\n}\nreturn out;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3984,
+        448
+      ],
+      "id": "42d51737-4029-4ac5-af21-33dc225e80f7",
+      "name": "Participants"
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://vitdycrekiqytcihchvg.supabase.co/rest/v1/contacts?select=id,emails,full_name&emails=ov.{' + $('Participants').all().map(i => '\"' + i.json.contact_email + '\"').join(',') + '}' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        4208,
+        448
+      ],
+      "id": "6cc70805-47a7-4882-b86d-bd4ccbdb0cde",
+      "name": "Match Contact",
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "s8xehWEboCBkOgBd",
+          "name": "Supabase alex-os-information"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const parts = $('Participants').all().map(i => i.json);\nconst found = $input.all().map(i => i.json).filter(c => c && c.id);\nconst idx = {};\nfor (const c of found) for (const e of (c.emails || [])) idx[String(e).toLowerCase()] = c.id;\nreturn parts.map((p, i) => ({\n  json: {\n    contact_email: p.contact_email,\n    contact_name: p.contact_name,\n    contact_id: idx[(p.contact_email || '').toLowerCase()] || null,\n  },\n  pairedItem: i,\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4432,
+        448
+      ],
+      "id": "59068c6d-6551-4f8f-a413-1b98f5961329",
+      "name": "Resolve"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5716e92c-8d6a-4cb4-8e43-fbd1a0fe41e2",
+              "leftValue": "={{ $json.contact_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4656,
+        448
+      ],
+      "id": "7247ae51-72ad-44b3-9b71-cd56d88b4849",
+      "name": "If",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "tableId": "contacts",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "emails",
+              "fieldValue": "={{ '{\"' + $json.contact_email + '\"}' }}"
+            },
+            {
+              "fieldId": "full_name",
+              "fieldValue": "={{ $json.contact_name }}"
+            },
+            {
+              "fieldId": "source",
+              "fieldValue": "missive-auto"
+            },
+            {
+              "fieldId": "review_status",
+              "fieldValue": "unscreened"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        4880,
+        560
+      ],
+      "id": "1692197c-08e8-436d-8c16-75244d147054",
+      "name": "Create Contacts",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "s8xehWEboCBkOgBd",
+          "name": "Supabase alex-os-information"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        5104,
+        448
+      ],
+      "id": "abf3d895-9283-4903-bfcb-171ae7573922",
+      "name": "Merge Participants"
+    },
+    {
+      "parameters": {
+        "jsCode": "const interactionId = $('Create Interaction').first().json.id;\nconst created = {};\ntry { for (const r of $('Create Contacts').all()) {\n  const e = (r.json.emails && r.json.emails[0]) || '';\n  if (e) created[String(e).toLowerCase()] = r.json.id;\n} } catch (e) {}\nconst rows = [];\nfor (const p of $('Resolve').all().map(i => i.json)) {\n  const cid = p.contact_id || created[(p.contact_email || '').toLowerCase()];\n  if (cid) rows.push({ json: {\n    note_id: interactionId,\n    contact_id: cid,\n    match_method: p.contact_id ? 'email' : 'name',\n  }});\n}\nreturn rows;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5328,
+        448
+      ],
+      "id": "e677847b-8c10-4ab0-81f9-7fce14639e86",
+      "name": "Build Junction Rows"
+    },
+    {
+      "parameters": {
+        "tableId": "interaction_note_contacts",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "note_id",
+              "fieldValue": "={{ $json.note_id }}"
+            },
+            {
+              "fieldId": "contact_id",
+              "fieldValue": "={{ $json.contact_id }}"
+            },
+            {
+              "fieldId": "match_method",
+              "fieldValue": "={{ $json.match_method }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        5552,
+        448
+      ],
+      "id": "ea71d8e8-8de4-4b51-a9b9-e7b1a1b8dcfb",
+      "name": "Create Junction Rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "s8xehWEboCBkOgBd",
+          "name": "Supabase alex-os-information"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const m = $('Markdown').first().json.messages;\nconst interactionId = $('Create Interaction').first().json.id;\nconst datePfx = m.delivered_at ? new Date(m.delivered_at*1000).toISOString().slice(0,10).replace(/-/g,'.') : '';\nconst subj60 = (m.subject || '(no subject)').slice(0,60);\nconst isPdf = (a) => {\n  const mt = (a.media_type || '').toLowerCase();\n  const st = (a.sub_type || '').toLowerCase();\n  const name = (a.filename || '').toLowerCase();\n  return mt === 'application/pdf' || (mt === 'application' && st === 'pdf') || name.endsWith('.pdf');\n};\nconst atts = (m.attachments || []).filter(a => isPdf(a) && (a.size == null || a.size > 20000));\nreturn atts.map(a => ({ json: {\n  interaction_id: interactionId,\n  url: a.url,\n  filename: a.filename,\n  media_type: (a.media_type || '') + (a.sub_type ? '/' + a.sub_type : ''),\n  size: a.size,\n  missive_attachment_id: a.id,\n  drive_name: '[' + datePfx + '] ' + subj60 + ' | ' + a.filename,\n}}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3984,
+        752
+      ],
+      "id": "49d99725-946a-4312-97c5-d46f403cc384",
+      "name": "Build Attachments"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        4208,
+        752
+      ],
+      "id": "84d58053-0e80-4826-92b6-24e91a0adc61",
+      "name": "Download Attachment",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Build Attachments').item.json.drive_name }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "167nZn_bn3DDeVqq8xNvioBc4JRHDKt7O",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        4432,
+        704
+      ],
+      "id": "9ed8cf69-4640-4093-91fc-0f477f8ab963",
+      "name": "Save to Drive",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zCC4OdEB1yyc3uZv",
+          "name": "AHB Advisors Google Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        4432,
+        864
+      ],
+      "id": "11e13aa8-e534-41f2-9716-bc6f4860fe17",
+      "name": "Extract from File",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        4656,
+        752
+      ],
+      "id": "96fc2cb8-da8c-4d0b-a804-c0196b5e157c",
+      "name": "Merge Attachments"
+    },
+    {
+      "parameters": {
+        "jsCode": "const builds = $('Build Attachments').all().map(i => i.json);\nconst saves = $('Save to Drive').all().map(i => i.json);\nconst extracts = $('Extract from File').all().map(i => i.json);\nconst m = $('Markdown').first().json.messages;\nconst t = m.delivered_at ? new Date(m.delivered_at * 1000).toISOString() : new Date().toISOString();\nconst fromAddr = (m.from_field || {}).address || '';\nconst subj = m.subject || '';\nconst convUrl = (m.conversation || {}).web_url || '';\nreturn builds.map((b, i) => {\n  const driveId = saves[i] ? saves[i].id : null;\n  const text = (extracts[i] && extracts[i].text) ? String(extracts[i].text) : '';\n  const driveLink = driveId ? 'https://drive.google.com/file/d/' + driveId : null;\n  const description = '📎 ' + b.filename + '\\nFrom: ' + fromAddr + ' · Subject: ' + subj + '\\nEmail: ' + convUrl + '\\n---\\n' + text.slice(0, 800);\n  return { json: {\n    interaction_id: b.interaction_id,\n    email_message_id: m.email_message_id,\n    missive_attachment_id: b.missive_attachment_id,\n    source: 'missive',\n    filename: b.filename,\n    media_type: b.media_type,\n    size: b.size,\n    drive_id: driveId,\n    drive_link: driveLink,\n    extracted_text: text,\n    source_event_time: t,\n    subject: subj,\n    from_addr: fromAddr,\n    conversation_url: convUrl,\n    description: description,\n  }};\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4880,
+        752
+      ],
+      "id": "9ba50a33-882b-4695-819c-8ce07f0e52b7",
+      "name": "Assemble Attachment Rows"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://www.googleapis.com/drive/v3/files/{{ $json.drive_id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "id,name,description,properties"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"description\": {{ $json.description.toJsonString() }},\n  \"properties\": {\n    \"interaction_id\": \"{{ $json.interaction_id }}\",\n    \"email_message_id\": \"{{ $json.email_message_id }}\",\n    \"from\": \"{{ $json.from_addr }}\",\n    \"subject\": {{ $json.subject.toJsonString() }}\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        5104,
+        752
+      ],
+      "id": "9a63606e-5fa0-4000-84e2-0770bc7532a8",
+      "name": "Set Drive Description",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zCC4OdEB1yyc3uZv",
+          "name": "AHB Advisors Google Drive"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "tableId": "attachments",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "interaction_id",
+              "fieldValue": "={{ $('Assemble Attachment Rows').item.json.interaction_id }}"
+            },
+            {
+              "fieldId": "email_message_id",
+              "fieldValue": "={{ $('Assemble Attachment Rows').item.json.email_message_id }}"
+            },
+            {
+              "fieldId": "missive_attachment_id",
+              "fieldValue": "={{ $('Assemble Attachment Rows').item.json.missive_attachment_id }}"
+            },
+            {
+              "fieldId": "source",
+              "fieldValue": "={{ $('Assemble Attachment Rows').item.json.source }}"
+            },
+            {
+              "fieldId": "filename",
+              "fieldValue": "={{ $('Assemble Attachment Rows').item.json.filename }}"
+            },
+            {
+              "fieldId": "media_type",
+              "fieldValue": "={{ $('Assemble Attachment Rows').item.json.media_type }}"
+            },
+            {
+              "fieldId": "size",
+              "fieldValue": "={{ $('Assemble Attachment Rows').item.json.size }}"
+            },
+            {
+              "fieldId": "drive_id",
+              "fieldValue": "={{ $('Assemble Attachment Rows').item.json.drive_id }}"
+            },
+            {
+              "fieldId": "drive_link",
+              "fieldValue": "={{ $('Assemble Attachment Rows').item.json.drive_link }}"
+            },
+            {
+              "fieldId": "extracted_text",
+              "fieldValue": "={{ $('Assemble Attachment Rows').item.json.extracted_text }}"
+            },
+            {
+              "fieldId": "source_event_time",
+              "fieldValue": "={{ $('Assemble Attachment Rows').item.json.source_event_time }}"
+            },
+            {
+              "fieldId": "metadata",
+              "fieldValue": "={{ ({ subject: $('Assemble Attachment Rows').item.json.subject, from: $('Assemble Attachment Rows').item.json.from_addr, conversation_url: $('Assemble Attachment Rows').item.json.conversation_url }) }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        5328,
+        752
+      ],
+      "id": "f0748998-32f9-48f7-a25a-476c17c83d1a",
+      "name": "Create Attachment Row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "s8xehWEboCBkOgBd",
+          "name": "Supabase alex-os-information"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Message Id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Message Id": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Missive Rest API Get Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Missive Rest API Get Messages": {
+      "main": [
+        [
+          {
+            "node": "Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Markdown": {
+      "main": [
+        [
+          {
+            "node": "Stage Interaction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stage Interaction": {
+      "main": [
+        [
+          {
+            "node": "Create Interaction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Interaction": {
+      "main": [
+        [
+          {
+            "node": "Participants",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Build Attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Participants": {
+      "main": [
+        [
+          {
+            "node": "Match Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Match Contact": {
+      "main": [
+        [
+          {
+            "node": "Resolve",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Merge Participants",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Contacts": {
+      "main": [
+        [
+          {
+            "node": "Merge Participants",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Participants": {
+      "main": [
+        [
+          {
+            "node": "Build Junction Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Junction Rows": {
+      "main": [
+        [
+          {
+            "node": "Create Junction Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Attachments": {
+      "main": [
+        [
+          {
+            "node": "Download Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Attachment": {
+      "main": [
+        [
+          {
+            "node": "Save to Drive",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Drive": {
+      "main": [
+        [
+          {
+            "node": "Merge Attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Merge Attachments",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Attachments": {
+      "main": [
+        [
+          {
+            "node": "Assemble Attachment Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assemble Attachment Rows": {
+      "main": [
+        [
+          {
+            "node": "Set Drive Description",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Drive Description": {
+      "main": [
+        [
+          {
+            "node": "Create Attachment Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": true
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "versionId": "08e7b18d-f454-4fbd-bcd3-38bd0a161127",
+  "activeVersionId": "08e7b18d-f454-4fbd-bcd3-38bd0a161127",
+  "triggerCount": 1,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    }
+  ]
+}
