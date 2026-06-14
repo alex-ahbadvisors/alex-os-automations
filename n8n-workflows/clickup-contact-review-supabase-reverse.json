@@ -1,0 +1,346 @@
+{
+  "updatedAt": "2026-06-07T23:57:32.049Z",
+  "createdAt": "2026-06-07T23:40:16.500Z",
+  "id": "5O85So5XAkqyInnJ",
+  "name": "ClickUp Contact Review -> Supabase (reverse)",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "team": "9011763462",
+        "events": [
+          "taskUpdated"
+        ],
+        "filters": {
+          "listId": "901113915616"
+        }
+      },
+      "type": "n8n-nodes-base.clickUpTrigger",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        640
+      ],
+      "id": "70fae295-04f8-4507-a04e-c6d1d2d53a2d",
+      "name": "ClickUp Trigger",
+      "webhookId": "clickup-contact-review-trigger",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "get",
+        "id": "={{ $json.task_id }}"
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        1504,
+        640
+      ],
+      "id": "98604508-40b8-4830-a9ef-96cf512ef211",
+      "name": "Get Task",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 3,
+        "unit": "seconds"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        1392,
+        640
+      ],
+      "id": "72d83fe5-2957-4306-a863-331b7e6a8365",
+      "name": "Wait for ClickUp",
+      "webhookId": "clickup-contact-review-wait"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Reverse half of the Supabase <-> ClickUp contact-review loop.\n// Reads the ClickUp task's decision + tier custom fields and maps them to a Supabase\n// update. Returns [] (no-op) for anything not yet decided or off the review list.\nconst REVIEW_LIST = '901113915616';\nconst FIELD_CONTACT_ID = '94a86f21-96bb-4e58-bcbe-cf3511191a8b';\nconst FIELD_TIER = 'c8545afb-8545-4c70-b767-6a8241b30e8e';\nconst FIELD_DECISION = 'cff1e6b4-f015-4353-af6f-8ba32f00d722';\nconst KEEP_ID = 'a52392eb-c34a-4c4f-bff0-9338345d6382';\nconst DELETE_ID = '64561729-6765-4f94-8a8e-94b4c5762aa3';\nconst TIER_IDS = ['63e1a91f-4d4b-4296-a1b3-d229504bbc97','5db6651f-9f16-4daa-9d1b-33226ae546ba','e3898a51-b7f7-4d48-b92e-96014092ff94','2a51dae1-349b-4ead-bc30-8e5a0354669f'];\n\n// The ClickUp node returns the task object; tolerate either $json or $json.body.\nconst t = $json && $json.custom_fields ? $json : ($json.body || $json);\nif (!t || !t.list || t.list.id !== REVIEW_LIST) return [];\n// Ignore our own 'complete' event so closing the task doesn't re-trigger a write.\nconst stType = (t.status && t.status.type) || '';\nif (stType === 'closed' || stType === 'done') return [];\n\nconst cf = {};\n(t.custom_fields || []).forEach(f => { cf[f.id] = f.value; });\nconst contactId = cf[FIELD_CONTACT_ID];\nif (!contactId) return [];\n\nfunction idx(v, ids) {\n  if (v === 0 || (v && /^\\d+$/.test(String(v)))) return Number(v);\n  const i = ids.indexOf(v);\n  return i >= 0 ? i : null;\n}\nlet decision = null;\nconst dv = cf[FIELD_DECISION];\nif (dv === KEEP_ID) decision = 'keep';\nelse if (dv === DELETE_ID) decision = 'delete';\nelse { const i = idx(dv, [KEEP_ID, DELETE_ID]); decision = i === 0 ? 'keep' : (i === 1 ? 'delete' : null); }\nif (!decision) return [];\n\nconst ti = idx(cf[FIELD_TIER], TIER_IDS);\nconst tier = (ti === 0 || ti) ? ti + 1 : null;\n// A Keep isn't actionable until a Tier is also chosen — wait for it (Delete needs no tier).\nif (decision === 'keep' && !tier) return [];\n\nreturn [{ json: { contact_id: contactId, decision, relationship_tier: tier, task_id: t.id } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1728,
+        640
+      ],
+      "id": "5716a93b-3c52-478b-a65e-cd5e0def164b",
+      "name": "Decide"
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.decision }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "keep"
+            },
+            {
+              "value2": "delete",
+              "output": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        1952,
+        640
+      ],
+      "id": "7061a4aa-adc1-45d2-8388-4988470e793f",
+      "name": "Keep or Delete"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "contacts",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.contact_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "review_status",
+              "fieldValue": "kept"
+            },
+            {
+              "fieldId": "relationship_tier",
+              "fieldValue": "={{ $json.relationship_tier }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2160,
+        528
+      ],
+      "id": "b8b455e2-ad7b-457a-b0d2-26c190d5214b",
+      "name": "Mark Kept",
+      "credentials": {
+        "supabaseApi": {
+          "id": "s8xehWEboCBkOgBd",
+          "name": "Supabase alex-os-information"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "contacts",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.contact_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "review_status",
+              "fieldValue": "deleted"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2160,
+        736
+      ],
+      "id": "902c1cbe-435f-45d8-9777-df8d9a017074",
+      "name": "Mark Deleted (soft)",
+      "credentials": {
+        "supabaseApi": {
+          "id": "s8xehWEboCBkOgBd",
+          "name": "Supabase alex-os-information"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "update",
+        "id": "={{ $('Decide').item.json.task_id }}",
+        "updateFields": {
+          "status": "complete"
+        }
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        2384,
+        528
+      ],
+      "id": "059ac593-44cb-41f6-ac76-d2c269242714",
+      "name": "Close Task (kept)",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "update",
+        "id": "={{ $('Decide').item.json.task_id }}",
+        "updateFields": {
+          "status": "complete"
+        }
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        2384,
+        736
+      ],
+      "id": "9cf9d761-6afc-475c-adfc-00d9545caaa7",
+      "name": "Close Task (deleted)",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "ClickUp Trigger": {
+      "main": [
+        [
+          {
+            "node": "Wait for ClickUp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for ClickUp": {
+      "main": [
+        [
+          {
+            "node": "Get Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Task": {
+      "main": [
+        [
+          {
+            "node": "Decide",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decide": {
+      "main": [
+        [
+          {
+            "node": "Keep or Delete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep or Delete": {
+      "main": [
+        [
+          {
+            "node": "Mark Kept",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Deleted (soft)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Kept": {
+      "main": [
+        [
+          {
+            "node": "Close Task (kept)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Deleted (soft)": {
+      "main": [
+        [
+          {
+            "node": "Close Task (deleted)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": {
+    "node:ClickUp Trigger": {
+      "webhookId": "50e77430-5912-4344-8b70-4e6077cf8d97",
+      "secret": "ALXTRBVNJVWSF9GFJXZDOH4QHFU2M3WJD1AQD7CZ74ZL8N9QB8POCJE5GMZ5ZRTM"
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "versionId": "17c08288-37bc-4b89-8712-5b6f89665a92",
+  "activeVersionId": "17c08288-37bc-4b89-8712-5b6f89665a92",
+  "triggerCount": 1,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    }
+  ]
+}
