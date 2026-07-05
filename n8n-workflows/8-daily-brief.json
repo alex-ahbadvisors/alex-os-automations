@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-03-11T17:02:43.974Z",
+  "updatedAt": "2026-07-03T14:11:19.958Z",
   "createdAt": "2026-03-06T15:50:39.580Z",
   "id": "wxxNioSdxeaUMCGe",
   "name": "[8] Daily Brief",
@@ -1195,7 +1195,9 @@
           "id": "VsAQA7Ut5keA6h7X",
           "name": "GitHub account"
         }
-      }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
     },
     {
       "parameters": {
@@ -1878,8 +1880,8 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "versionId": "f72d65c2-8d8e-4837-bf60-d1295ff19a47",
-  "activeVersionId": "f72d65c2-8d8e-4837-bf60-d1295ff19a47",
+  "versionId": "f3d2fdf4-76ed-478d-972b-74f702e3a0b2",
+  "activeVersionId": "f3d2fdf4-76ed-478d-972b-74f702e3a0b2",
   "triggerCount": 1,
   "tags": [
     {
