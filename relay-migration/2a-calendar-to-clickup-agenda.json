@@ -1,0 +1,327 @@
+{
+  "name": "[R2a] Calendar → ClickUp Agenda",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerOn": "eventCreated",
+        "calendarId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "alex@ahbadvisors.com",
+          "cachedResultName": "alex@ahbadvisors.com"
+        },
+        "options": {},
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        }
+      },
+      "id": "b1f2a3c4-1111-4a01-9001-aa0000000001",
+      "name": "Calendar Event Created",
+      "type": "n8n-nodes-base.googleCalendarTrigger",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        0
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "NWVOUqg1ysw03vVr",
+          "name": "AHB Advisors Calendar"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f0000000-0000-4000-8000-000000000001",
+              "leftValue": "={{ $json.description || '' }}",
+              "rightValue": "Only you can see this Task event",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000002",
+              "leftValue": "={{ $json.description || '' }}",
+              "rightValue": "Alexander is traveling at this time",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000003",
+              "leftValue": "={{ $json.description || '' }}",
+              "rightValue": "Reclaim has blocked this time off",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000004",
+              "leftValue": "={{ $json.description || '' }}",
+              "rightValue": "Alexander needs a break to decompress",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000005",
+              "leftValue": "={{ $json.summary || '' }}",
+              "rightValue": "Reading",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000006",
+              "leftValue": "={{ $json.summary || '' }}",
+              "rightValue": "Pilates",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000007",
+              "leftValue": "={{ $json.summary || '' }}",
+              "rightValue": "Acupuncture",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000008",
+              "leftValue": "={{ $json.summary || '' }}",
+              "rightValue": "Decompress",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000009",
+              "leftValue": "={{ $json.summary || '' }}",
+              "rightValue": "Exercise",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000010",
+              "leftValue": "={{ $json.summary || '' }}",
+              "rightValue": "Travel",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000011",
+              "leftValue": "={{ $json.summary || '' }}",
+              "rightValue": "HOLD",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000012",
+              "leftValue": "={{ $json.summary || '' }}",
+              "rightValue": "Flight",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000013",
+              "leftValue": "={{ $json.summary || '' }}",
+              "rightValue": "Focus Time",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000014",
+              "leftValue": "={{ new Date($json.start?.dateTime || $json.start?.date).getTime() }}",
+              "rightValue": "={{ $now.plus({ days: 7 }).toMillis() }}",
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b1f2a3c4-2222-4a01-9002-aa0000000002",
+      "name": "Is Real Meeting",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -400,
+        0
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "b1f2a3c4-3333-4a01-9003-aa0000000003",
+      "name": "Skip Non-Meeting",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIX for the Relay customCode bug: Relay mapped input key \"email domains\" but\n// the JS read input.emails, so domains were ALWAYS empty on the AHB path.\n// Here we read the ACTUAL Google Calendar attendees array and derive:\n//   - attendeeEmails: comma-separated guest emails\n//   - attendeeDomains: unique comma-separated email domains\n// plus the normalized start date/time + meeting link for downstream nodes.\nconst ev = $input.item.json;\nconst attendees = Array.isArray(ev.attendees) ? ev.attendees : [];\nconst emails = attendees\n  .map(a => (a && a.email ? String(a.email).trim() : ''))\n  .filter(Boolean);\nconst domains = [...new Set(\n  emails\n    .map(e => e.split('@')[1]?.toLowerCase())\n    .filter(Boolean)\n)];\n\nconst startRaw = ev.start?.dateTime || ev.start?.date || '';\nconst startDate = startRaw ? startRaw.slice(0, 10) : '';\n\n// Meeting/video link: prefer hangoutLink, then conferenceData entry points.\nlet meetingLink = ev.hangoutLink || '';\nif (!meetingLink && ev.conferenceData?.entryPoints?.length) {\n  const video = ev.conferenceData.entryPoints.find(p => p.entryPointType === 'video');\n  meetingLink = video?.uri || ev.conferenceData.entryPoints[0]?.uri || '';\n}\n\nreturn {\n  json: {\n    gcalId: ev.id || '',\n    gcalLink: ev.htmlLink || '',\n    meetingLink,\n    title: ev.summary || '(no title)',\n    startRaw,\n    startDate,\n    attendeeEmails: emails.join(', '),\n    attendeeDomains: domains.join(', ')\n  }\n};"
+      },
+      "id": "b1f2a3c4-4444-4a01-9004-aa0000000004",
+      "name": "Extract Email Domains",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        -128
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "team": "9011763462",
+        "space": "90113618058",
+        "folderless": true,
+        "list": "901107582941",
+        "name": "=[{{ $json.startDate }}] {{ $json.title }}",
+        "additionalFields": {
+          "content": "=**Meeting Agenda**\n\n- **Meeting Date & Time:** {{ $json.startRaw }}\n- **gCal ID:** {{ $json.gcalId }}\n- **gCal Link:** {{ $json.gcalLink }}\n- **Meeting Link:** {{ $json.meetingLink || 'n/a' }}\n- **Attendee Emails:** {{ $json.attendeeEmails || 'none' }}\n- **Attendee Email Domains:** {{ $json.attendeeDomains || 'none' }}\n\n---\n\n## Agenda\n- \n\n## Notes\n- \n\n## Follow-ups\n- ",
+          "markdownContent": true
+        }
+      },
+      "id": "b1f2a3c4-5555-4a01-9005-aa0000000005",
+      "name": "Create Agenda Task",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        80,
+        -128
+      ],
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "update",
+        "id": "={{ $json.id }}",
+        "updateFields": {
+          "dueDate": "={{ new Date($('Extract Email Domains').item.json.startRaw).getTime() - 24*60*60*1000 }}"
+        }
+      },
+      "id": "b1f2a3c4-6666-4a01-9006-aa0000000006",
+      "name": "Update Agenda Task",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        320,
+        -128
+      ],
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Calendar Event Created": {
+      "main": [
+        [
+          {
+            "node": "Is Real Meeting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Real Meeting": {
+      "main": [
+        [
+          {
+            "node": "Extract Email Domains",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip Non-Meeting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Email Domains": {
+      "main": [
+        [
+          {
+            "node": "Create Agenda Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Agenda Task": {
+      "main": [
+        [
+          {
+            "node": "Update Agenda Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "Ka01FqAuhDXin0Kn"
+  },
+  "active": false,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}
