@@ -1,0 +1,463 @@
+{
+  "name": "[R2b] Check Avails for Invitations [SHADOW]",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## SHADOW VARIANT — parallel-run test against Relay.app\n\nExercises the FULL classify/extract/calendar/conflict LLM logic of prod [R2b], but writes ONLY to a test Slack channel. It NEVER posts a Missive comment and NEVER mutates a real conversation (no label-remove, no team-move).\n\n**FILL-IN PLACEHOLDER (replace before activating):**\n- `SHADOW_TEST_SLACK_CHANNEL` → real Slack channel id for a test channel (both Slack nodes)\n\n**PARALLEL-RUN SETUP:** the Missive webhook TRIGGER is unchanged. To run shadow alongside Relay, add a SECOND Missive rule with the SAME label condition pointing at THIS shadow webhook URL (path b2c9e4f1-...-avails2b0001). Do not remove the Relay rule.",
+        "height": 420,
+        "width": 460
+      },
+      "id": "note0b000-0000-4000-8000-00000000000b",
+      "name": "SHADOW NOTE",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-1200, -320]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "b2c9e4f1-7a3d-4e58-9c21-avails2b0001",
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000001",
+      "name": "Missive Webhook Connection",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-960, 0],
+      "webhookId": "b2c9e4f1-7a3d-4e58-9c21-avails2b0001"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1a00000-0000-4000-8000-000000000001",
+              "name": "conversationId",
+              "value": "={{ $json.body.conversation.id }}",
+              "type": "string"
+            },
+            {
+              "id": "c1a00000-0000-4000-8000-000000000002",
+              "name": "conversationWebUrl",
+              "value": "={{ $json.body.conversation.web_url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000002",
+      "name": "Pull Conversation Id",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-736, 0]
+    },
+    {
+      "parameters": {
+        "url": "=https://public.missiveapp.com/v1/conversations/{{ $json.conversationId }}/messages?limit=10",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000003",
+      "name": "Missive Get Conversation Messages",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [-512, 0],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1a00000-0000-4000-8000-000000000010",
+              "name": "conversationId",
+              "value": "={{ $('Pull Conversation Id').item.json.conversationId }}",
+              "type": "string"
+            },
+            {
+              "id": "c1a00000-0000-4000-8000-000000000011",
+              "name": "conversationWebUrl",
+              "value": "={{ $('Pull Conversation Id').item.json.conversationWebUrl }}",
+              "type": "string"
+            },
+            {
+              "id": "c1a00000-0000-4000-8000-000000000012",
+              "name": "messagesText",
+              "value": "={{ ($json.messages || []).map(m => `From: ${m.from_field?.name || ''} <${m.from_field?.address || ''}>\\nDate: ${m.delivered_at ? new Date(m.delivered_at*1000).toISOString() : ''}\\nSubject: ${m.subject || ''}\\n\\n${m.preview || m.body || ''}`).join('\\n\\n-----\\n\\n') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000004",
+      "name": "Flatten Messages",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-288, 0]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.2",
+          "mode": "list",
+          "cachedResultName": "gpt-5.2"
+        },
+        "options": {
+          "reasoningEffort": "medium"
+        }
+      },
+      "id": "a1000000-0000-4000-8000-000000000101",
+      "name": "Classify Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [-160, 224],
+      "credentials": {
+        "openAiApi": {
+          "id": "FPFFI1NvOtGMoh30",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"Yes or No\": {\n      \"type\": \"string\",\n      \"enum\": [\"Yes\", \"No\"]\n    }\n  },\n  \"required\": [\"Yes or No\"]\n}"
+      },
+      "id": "a1000000-0000-4000-8000-000000000102",
+      "name": "Classify Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [16, 224]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Email thread:\n---\n{{ $json.messagesText }}\n---",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=One AI labeled this as an invitation email for a busy executive. Basically there is a meeting or an event that Alex was invited to and we're checking his calendar to see if he can attend. is this such an email? \n\nREPLY ONLY YES OR NO"
+        }
+      },
+      "id": "a1000000-0000-4000-8000-000000000103",
+      "name": "Classify with AI",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [-64, 0]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b2b00000-0000-4000-8000-000000000001",
+              "leftValue": "={{ $json.output['Yes or No'] }}",
+              "rightValue": "Yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000104",
+      "name": "Is Scheduling?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [288, 0]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.2",
+          "mode": "list",
+          "cachedResultName": "gpt-5.2"
+        },
+        "options": {
+          "reasoningEffort": "medium"
+        }
+      },
+      "id": "a1000000-0000-4000-8000-000000000201",
+      "name": "Extract Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [560, 336],
+      "credentials": {
+        "openAiApi": {
+          "id": "FPFFI1NvOtGMoh30",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"Date of meeting\": { \"type\": \"string\", \"description\": \"ISO date YYYY-MM-DD\" },\n    \"Time of meeting\": { \"type\": \"string\", \"description\": \"e.g. 1:00 PM\" },\n    \"Time zone\": { \"type\": \"string\" },\n    \"Duration of meeting\": { \"type\": \"string\" }\n  },\n  \"required\": []\n}"
+      },
+      "id": "a1000000-0000-4000-8000-000000000202",
+      "name": "Extract Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [736, 336]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Email thread:\n---\n{{ $('Flatten Messages').item.json.messagesText }}\n---",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=This is an email asking if alex can attend an event or a meeting. the date and time of the meeting are very specific in the email. Extract the date, time, time zone and duration of the meeting from the email. \n\nBE VERY CAREFUL TO CHOOSE REAL DATES. LOOK AT {{ $now.format('yyyy-MM-dd') }}\nto ensure the date is real (e.g., don't say Sunday January 5th when January 5th is a Monday). \n{{ $now.format('yyyy-MM-dd') }} {{ $now.toISO() }}"
+        }
+      },
+      "id": "a1000000-0000-4000-8000-000000000203",
+      "name": "Extract with AI",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [560, 64]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1a00000-0000-4000-8000-000000000021",
+              "name": "meetingDate",
+              "value": "={{ $json.output['Date of meeting'] }}",
+              "type": "string"
+            },
+            {
+              "id": "c1a00000-0000-4000-8000-000000000022",
+              "name": "meetingTime",
+              "value": "={{ $json.output['Time of meeting'] }}",
+              "type": "string"
+            },
+            {
+              "id": "c1a00000-0000-4000-8000-000000000023",
+              "name": "meetingTimeZone",
+              "value": "={{ $json.output['Time zone'] }}",
+              "type": "string"
+            },
+            {
+              "id": "c1a00000-0000-4000-8000-000000000024",
+              "name": "meetingDuration",
+              "value": "={{ $json.output['Duration of meeting'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000204",
+      "name": "Extracted Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [880, 64]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "mode": "list",
+          "value": "alex@ahbadvisors.com"
+        },
+        "returnAll": false,
+        "limit": 100,
+        "options": {
+          "timeMin": "={{ DateTime.fromISO($json.meetingDate).startOf('day').toISO() }}",
+          "timeMax": "={{ DateTime.fromISO($json.meetingDate).endOf('day').toISO() }}",
+          "singleEvents": true,
+          "orderBy": "startTime"
+        }
+      },
+      "id": "a1000000-0000-4000-8000-000000000205",
+      "name": "Find Busy Events",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1,
+      "position": [1104, 64],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "NWVOUqg1ysw03vVr",
+          "name": "AHB Advisors Calendar"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000206",
+      "name": "Aggregate Busy Events",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1328, 64],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.2",
+          "mode": "list",
+          "cachedResultName": "gpt-5.2"
+        },
+        "options": {
+          "reasoningEffort": "medium"
+        }
+      },
+      "id": "a1000000-0000-4000-8000-000000000301",
+      "name": "Conflict Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [1552, 336],
+      "credentials": {
+        "openAiApi": {
+          "id": "FPFFI1NvOtGMoh30",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Alex has been invited to a meeting:\n- Date: {{ $('Extracted Fields').item.json.meetingDate }}\n- Time: {{ $('Extracted Fields').item.json.meetingTime }}\n- Duration: {{ $('Extracted Fields').item.json.meetingDuration }}\n- Time zone: {{ $('Extracted Fields').item.json.meetingTimeZone }}\n\nI've attached Alex's busy calendar events for that day. Check if the proposed meeting time conflicts with any existing events.\n\nBusy events (JSON):\n---\n{{ JSON.stringify($json.data || []) }}\n---\n\nIf there are NO conflicts, respond exactly: \"Alex is free for this meeting.\"\n\nIf there ARE conflicts, respond: \"Alex has a conflict: [Event Title] from [Start Time] to [End Time] with [Guest names if any].\"\n\nBe concise.",
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000302",
+      "name": "Check for Conflicts",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [1552, 64]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "SHADOW_TEST_SLACK_CHANNEL",
+          "cachedResultName": "shadow-test"
+        },
+        "text": "=[SHADOW 2b] would comment on {{ $('Flatten Messages').item.json.conversationWebUrl }}:\n{{ $json.output }}",
+        "otherOptions": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000303",
+      "name": "Slack Shadow Conflict Note",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [1776, 64],
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "SHADOW_TEST_SLACK_CHANNEL",
+          "cachedResultName": "shadow-test"
+        },
+        "text": "=[SHADOW 2b] classified NOT an invite for {{ $('Flatten Messages').item.json.conversationWebUrl }} — prod would post a not-an-invite comment, remove the confirm-attendance label, and move the conversation to the team inbox. Shadow does none of that.",
+        "otherOptions": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000401",
+      "name": "Slack Shadow Not-An-Invite Note",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [560, -256],
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Missive Webhook Connection": {
+      "main": [[{ "node": "Pull Conversation Id", "type": "main", "index": 0 }]]
+    },
+    "Pull Conversation Id": {
+      "main": [[{ "node": "Missive Get Conversation Messages", "type": "main", "index": 0 }]]
+    },
+    "Missive Get Conversation Messages": {
+      "main": [[{ "node": "Flatten Messages", "type": "main", "index": 0 }]]
+    },
+    "Flatten Messages": {
+      "main": [[{ "node": "Classify with AI", "type": "main", "index": 0 }]]
+    },
+    "Classify Model": {
+      "ai_languageModel": [[{ "node": "Classify with AI", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Classify Parser": {
+      "ai_outputParser": [[{ "node": "Classify with AI", "type": "ai_outputParser", "index": 0 }]]
+    },
+    "Classify with AI": {
+      "main": [[{ "node": "Is Scheduling?", "type": "main", "index": 0 }]]
+    },
+    "Is Scheduling?": {
+      "main": [
+        [{ "node": "Extract with AI", "type": "main", "index": 0 }],
+        [{ "node": "Slack Shadow Not-An-Invite Note", "type": "main", "index": 0 }]
+      ]
+    },
+    "Extract Model": {
+      "ai_languageModel": [[{ "node": "Extract with AI", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Extract Parser": {
+      "ai_outputParser": [[{ "node": "Extract with AI", "type": "ai_outputParser", "index": 0 }]]
+    },
+    "Extract with AI": {
+      "main": [[{ "node": "Extracted Fields", "type": "main", "index": 0 }]]
+    },
+    "Extracted Fields": {
+      "main": [[{ "node": "Find Busy Events", "type": "main", "index": 0 }]]
+    },
+    "Find Busy Events": {
+      "main": [[{ "node": "Aggregate Busy Events", "type": "main", "index": 0 }]]
+    },
+    "Aggregate Busy Events": {
+      "main": [[{ "node": "Check for Conflicts", "type": "main", "index": 0 }]]
+    },
+    "Conflict Model": {
+      "ai_languageModel": [[{ "node": "Check for Conflicts", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Check for Conflicts": {
+      "main": [[{ "node": "Slack Shadow Conflict Note", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "Ka01FqAuhDXin0Kn"
+  },
+  "active": false,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

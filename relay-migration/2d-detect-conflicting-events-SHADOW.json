@@ -1,0 +1,208 @@
+{
+  "name": "[R2d] Detect Conflicting Events [SHADOW]",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## SHADOW VARIANT — parallel-run test against Relay.app\n\nIdentical to prod [R2d] EXCEPT write destinations are redirected so nothing collides with Relay's live output.\n\n**FILL-IN PLACEHOLDERS (replace before activating):**\n- `SHADOW_CONFLICTS_LIST_ID` → real ClickUp list id for a throwaway shadow list (Create Conflict Task)\n- `SHADOW_TEST_SLACK_CHANNEL` → real Slack channel id for a test channel (Notify Slack), NOT #scheduling C08HH2DTVK6\n\nTrigger is the SAME calendar (alex@ahbadvisors.com), so shadow runs LIVE alongside Relay. 0 LLM nodes.",
+        "height": 340,
+        "width": 440
+      },
+      "id": "note0d000-0000-4000-8000-00000000000d",
+      "name": "SHADOW NOTE",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-760, -420]
+    },
+    {
+      "parameters": {
+        "triggerOn": "eventCreated",
+        "calendarId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "alex@ahbadvisors.com",
+          "cachedResultName": "alex@ahbadvisors.com"
+        },
+        "options": {},
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        }
+      },
+      "id": "d2a10000-0001-4a2d-9001-aa0000000001",
+      "name": "Calendar Event Created",
+      "type": "n8n-nodes-base.googleCalendarTrigger",
+      "typeVersion": 1,
+      "position": [-720, 0],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "NWVOUqg1ysw03vVr",
+          "name": "AHB Advisors Calendar"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "mode": "list",
+          "value": "alex@ahbadvisors.com",
+          "cachedResultName": "alex@ahbadvisors.com"
+        },
+        "returnAll": false,
+        "limit": 50,
+        "options": {
+          "timeMin": "={{ $json.start.dateTime || $json.start.date }}",
+          "timeMax": "={{ $json.end.dateTime || $json.end.date }}",
+          "singleEvents": true,
+          "orderBy": "startTime"
+        }
+      },
+      "id": "d2a10000-0002-4a2d-9002-aa0000000002",
+      "name": "Find Overlapping Events",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1,
+      "position": [-480, 0],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "NWVOUqg1ysw03vVr",
+          "name": "AHB Advisors Calendar"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Deterministic overlap detection — NO LLM.\n// Reads the newly-created trigger event and the getAll window of existing events,\n// then keeps only TRUE overlaps, excluding self and Reclaim/decompress/task-detail noise.\n//\n// FIX vs Relay (flow had 0 runs, never fired):\n//   1. Self-exclusion by ID: Relay used `Event ID equal trigger.Event ID` which,\n//      combined with `Title notEqual`, could NEVER match. We exclude self via\n//      existing.id !== trigger.id (the intended notEqual).\n//   2. Reclaim/noise skip migrated from OR-of-notContains (near-always true) to AND\n//      (every clause must hold) so the filter actually removes those events.\n//   3. Relay's dead empty `#each` loop is replaced by a computed markdown string\n//      that the ClickUp node commits verbatim.\n\n// --- Trigger event (single-source; wrapped defensively) ---\nfunction safeTrigger() {\n  try { return $('Calendar Event Created').first().json || {}; }\n  catch (e) { return {}; }\n}\nconst trig = safeTrigger();\n\nconst trigStart = new Date(trig.start?.dateTime || trig.start?.date || 0).getTime();\nconst trigEnd = new Date(trig.end?.dateTime || trig.end?.date || 0).getTime();\nconst trigId = trig.id || '';\nconst trigTitle = trig.summary || '(no title)';\n\n// Human-readable start for the task name, e.g. \"Mon, Jul 20 at 2:00 PM\".\nlet trigStartFmt = '';\ntry {\n  trigStartFmt = new Date(trigStart).toLocaleString('en-US', {\n    weekday: 'short', month: 'short', day: 'numeric',\n    hour: 'numeric', minute: '2-digit', hour12: true\n  });\n} catch (e) { trigStartFmt = String(trig.start?.dateTime || trig.start?.date || ''); }\n\n// Noise filters (migrated as AND — an event survives only if NONE of these hit).\nconst RECLAIM_A = 'This AI-powered event was created by Reclaim.ai';\nconst RECLAIM_B = 'This event was created by Reclaim';\nconst TASK_DETAIL = \"Only you can see this Task's event details. It will show as busy to others and automatically reschedule if booked over.\";\n\nfunction fmt(dt) {\n  try {\n    return new Date(dt).toLocaleString('en-US', {\n      weekday: 'short', month: 'short', day: 'numeric',\n      hour: 'numeric', minute: '2-digit', hour12: true\n    });\n  } catch (e) { return String(dt || ''); }\n}\n\nconst conflicts = [];\nfor (const item of $input.all()) {\n  const ev = item.json || {};\n  const id = ev.id || '';\n  const title = ev.summary || '(no title)';\n  const desc = ev.description || '';\n  const evStart = new Date(ev.start?.dateTime || ev.start?.date || 0).getTime();\n  const evEnd = new Date(ev.end?.dateTime || ev.end?.date || 0).getTime();\n\n  // True overlap: existing.start < trigger.end AND existing.end > trigger.start.\n  if (!(evStart < trigEnd && evEnd > trigStart)) continue;\n  // Exclude self by ID (the fix for the equal->notEqual bug).\n  if (id && trigId && id === trigId) continue;\n  // Exclude Reclaim / decompress / task-detail noise (AND of notContains).\n  if (desc.includes(RECLAIM_A)) continue;\n  if (desc.includes(RECLAIM_B)) continue;\n  if (desc.includes(TASK_DETAIL)) continue;\n  if (title.toLowerCase().includes('decompress')) continue;\n\n  const creatorName = ev.creator?.displayName || ev.creator?.email || '';\n  const creatorEmail = ev.creator?.email || '';\n  conflicts.push({\n    title,\n    start: ev.start?.dateTime || ev.start?.date || '',\n    end: ev.end?.dateTime || ev.end?.date || '',\n    startFmt: fmt(ev.start?.dateTime || ev.start?.date),\n    endFmt: fmt(ev.end?.dateTime || ev.end?.date),\n    creatorName,\n    creatorEmail\n  });\n}\n\n// Build the ClickUp description string (replaces Relay's dead #each loop).\nconst lines = conflicts.map(c => {\n  const who = c.creatorName ? ` - ${c.creatorName}${c.creatorEmail ? ' (' + c.creatorEmail + ')' : ''}` : '';\n  return `- ${c.title} [${c.startFmt} - ${c.endFmt}]${who}`;\n});\nconst taskDescription =\n  `> **SHADOW TASK — parallel-run test vs Relay. Not the real conflict task.**\\n\\n` +\n  `Conflict detected for event: **${trigTitle}** at ${trigStartFmt}.\\n\\n` +\n  `**Conflicting events:**\\n` +\n  (lines.length ? lines.join('\\n') : '- (none)');\n\n// Build the Slack summary (bullet list).\nconst slackLines = conflicts.map(c => `\\u2022 ${c.title} (${c.startFmt} - ${c.endFmt})`);\nconst slackSummary =\n  `[SHADOW 2d] :calendar: Scheduling conflict detected for event: *${trigTitle}*\\n` +\n  `Time: ${trigStartFmt}\\n\\n` +\n  `Conflicts with:\\n` +\n  (slackLines.length ? slackLines.join('\\n') : '\\u2022 (none)');\n\n// dueDate = event start minus 2 days (epoch ms), for the ClickUp task.\nconst dueDateMs = trigStart ? trigStart - 2 * 24 * 60 * 60 * 1000 : '';\n\nreturn [{\n  json: {\n    conflictCount: conflicts.length,\n    conflicts,\n    triggerTitle: trigTitle,\n    triggerStartFmt: trigStartFmt,\n    taskName: `[SHADOW] Scheduling conflict for event: ${trigTitle} on ${trigStartFmt}`,\n    taskDescription,\n    slackSummary,\n    dueDateMs\n  }\n}];"
+      },
+      "id": "d2a10000-0003-4a2d-9003-aa0000000003",
+      "name": "Compute Conflicts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-240, 0],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d2a1c000-0001-4a2d-9101-cc0000000001",
+              "leftValue": "={{ $json.conflictCount }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d2a10000-0004-4a2d-9004-aa0000000004",
+      "name": "Any Conflicts?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [40, 0]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "team": "9011763462",
+        "space": "90113618058",
+        "folderless": true,
+        "list": "SHADOW_CONFLICTS_LIST_ID",
+        "name": "={{ $json.taskName }}",
+        "additionalFields": {
+          "assignees": ["kendra@ahbadvisors.com"],
+          "status": "not started",
+          "dueDate": "={{ $json.dueDateMs }}",
+          "content": "={{ $json.taskDescription }}",
+          "markdownContent": true
+        }
+      },
+      "id": "d2a10000-0005-4a2d-9005-aa0000000005",
+      "name": "Create Conflict Task",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [280, -96],
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "SHADOW_TEST_SLACK_CHANNEL",
+          "cachedResultName": "shadow-test"
+        },
+        "text": "={{ $('Compute Conflicts').item.json.slackSummary }}",
+        "otherOptions": {}
+      },
+      "id": "d2a10000-0006-4a2d-9006-aa0000000006",
+      "name": "Notify Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [520, -96],
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "d2a10000-0007-4a2d-9007-aa0000000007",
+      "name": "No Conflicts",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [280, 128]
+    }
+  ],
+  "connections": {
+    "Calendar Event Created": {
+      "main": [[{ "node": "Find Overlapping Events", "type": "main", "index": 0 }]]
+    },
+    "Find Overlapping Events": {
+      "main": [[{ "node": "Compute Conflicts", "type": "main", "index": 0 }]]
+    },
+    "Compute Conflicts": {
+      "main": [[{ "node": "Any Conflicts?", "type": "main", "index": 0 }]]
+    },
+    "Any Conflicts?": {
+      "main": [
+        [{ "node": "Create Conflict Task", "type": "main", "index": 0 }],
+        [{ "node": "No Conflicts", "type": "main", "index": 0 }]
+      ]
+    },
+    "Create Conflict Task": {
+      "main": [[{ "node": "Notify Slack", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "Ka01FqAuhDXin0Kn"
+  },
+  "active": false,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}
