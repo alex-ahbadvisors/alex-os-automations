@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## SHADOW VARIANT — parallel-run test against Relay.app\n\nIdentical to prod [R2a] EXCEPT the ClickUp writes go to a SHADOW list so nothing collides with Relay's live agenda tasks.\n\n**FILL-IN PLACEHOLDER (replace before activating):**\n- `901114173150` → a real ClickUp list id for a throwaway shadow list (both Create + Update Agenda Task nodes)\n\nTrigger is the SAME calendar (alex@ahbadvisors.com), so shadow runs LIVE alongside Relay. 0 LLM nodes.",
+        "content": "## SHADOW VARIANT — parallel-run test against Relay.app\n\nIdentical to prod [R2a] EXCEPT the ClickUp writes go to a SHADOW list so nothing collides with Relay's live agenda tasks.\n\n**FILL-IN PLACEHOLDER (replace before activating):**\n- `901114173149` → a real ClickUp list id for a throwaway shadow list (both Create + Update Agenda Task nodes)\n\nTrigger is the SAME calendar (alex@ahbadvisors.com), so shadow runs LIVE alongside Relay. 0 LLM nodes.",
         "height": 320,
         "width": 420
       },
@@ -215,7 +215,7 @@
         "team": "9011763462",
         "space": "90113618058",
         "folderless": true,
-        "list": "901114173150",
+        "list": "901114173149",
         "name": "=[SHADOW] [{{ $json.startDate }}] {{ $json.title }}",
         "additionalFields": {
           "content": "=> **SHADOW TASK — parallel-run test vs Relay. Not the real agenda task.**\n\n**Meeting Agenda**\n\n- **Meeting Date & Time:** {{ $json.startRaw }}\n- **gCal ID:** {{ $json.gcalId }}\n- **gCal Link:** {{ $json.gcalLink }}\n- **Meeting Link:** {{ $json.meetingLink || 'n/a' }}\n- **Attendee Emails:** {{ $json.attendeeEmails || 'none' }}\n- **Attendee Email Domains:** {{ $json.attendeeDomains || 'none' }}\n\n---\n\n## Agenda\n- \n\n## Notes\n- \n\n## Follow-ups\n- ",
