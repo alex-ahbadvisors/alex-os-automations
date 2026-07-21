@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## SHADOW VARIANT — parallel-run test against Relay.app\n\nIdentical to prod [R2d] EXCEPT write destinations are redirected so nothing collides with Relay's live output.\n\n**FILL-IN PLACEHOLDERS (replace before activating):**\n- `SHADOW_CONFLICTS_LIST_ID` → real ClickUp list id for a throwaway shadow list (Create Conflict Task)\n- `SHADOW_TEST_SLACK_CHANNEL` → real Slack channel id for a test channel (Notify Slack), NOT #scheduling C08HH2DTVK6\n\nTrigger is the SAME calendar (alex@ahbadvisors.com), so shadow runs LIVE alongside Relay. 0 LLM nodes.",
+        "content": "## SHADOW VARIANT — parallel-run test against Relay.app\n\nIdentical to prod [R2d] EXCEPT write destinations are redirected so nothing collides with Relay's live output.\n\n**FILL-IN PLACEHOLDERS (replace before activating):**\n- `901114173150` → real ClickUp list id for a throwaway shadow list (Create Conflict Task)\n- `C0BJKK8V0VB` → real Slack channel id for a test channel (Notify Slack), NOT #scheduling C08HH2DTVK6\n\nTrigger is the SAME calendar (alex@ahbadvisors.com), so shadow runs LIVE alongside Relay. 0 LLM nodes.",
         "height": 340,
         "width": 440
       },
@@ -121,7 +121,7 @@
         "team": "9011763462",
         "space": "90113618058",
         "folderless": true,
-        "list": "SHADOW_CONFLICTS_LIST_ID",
+        "list": "901114173150",
         "name": "={{ $json.taskName }}",
         "additionalFields": {
           "assignees": ["kendra@ahbadvisors.com"],
@@ -149,7 +149,7 @@
         "channelId": {
           "__rl": true,
           "mode": "list",
-          "value": "SHADOW_TEST_SLACK_CHANNEL",
+          "value": "C0BJKK8V0VB",
           "cachedResultName": "shadow-test"
         },
         "text": "={{ $('Compute Conflicts').item.json.slackSummary }}",

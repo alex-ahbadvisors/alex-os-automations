@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## SHADOW VARIANT — parallel-run test against Relay.app\n\nExercises the FULL classify/extract/propose/write LLM logic of prod [R2c] and produces the drafted email text IN FULL, but NEVER creates a real Missive draft (no risk of a draft reaching Kendra) and NEVER mutates a real conversation. All output goes to a test Slack channel.\n\n**FILL-IN PLACEHOLDER (replace before activating):**\n- `SHADOW_TEST_SLACK_CHANNEL` → real Slack channel id for a test channel (all three Slack nodes). NOT #scheduling C08HH2DTVK6.\n\n**PARALLEL-RUN SETUP:** the Missive webhook TRIGGER is unchanged. To run shadow alongside Relay, add a SECOND Missive rule with the SAME label condition pointing at THIS shadow webhook URL (path d3f7a9c2-...-scheduling2c01). Do not remove the Relay rule.\n\nCompare the [SHADOW 2c] draft text posted to Slack against what Relay drafted in Missive.",
+        "content": "## SHADOW VARIANT — parallel-run test against Relay.app\n\nExercises the FULL classify/extract/propose/write LLM logic of prod [R2c] and produces the drafted email text IN FULL, but NEVER creates a real Missive draft (no risk of a draft reaching Kendra) and NEVER mutates a real conversation. All output goes to a test Slack channel.\n\n**FILL-IN PLACEHOLDER (replace before activating):**\n- `C0BJKK8V0VB` → real Slack channel id for a test channel (all three Slack nodes). NOT #scheduling C08HH2DTVK6.\n\n**PARALLEL-RUN SETUP:** the Missive webhook TRIGGER is unchanged. To run shadow alongside Relay, add a SECOND Missive rule with the SAME label condition pointing at THIS shadow webhook URL (path d3f7a9c2-...-scheduling2c01). Do not remove the Relay rule.\n\nCompare the [SHADOW 2c] draft text posted to Slack against what Relay drafted in Missive.",
         "height": 460,
         "width": 480
       },
@@ -425,7 +425,7 @@
         "channelId": {
           "__rl": true,
           "mode": "list",
-          "value": "SHADOW_TEST_SLACK_CHANNEL",
+          "value": "C0BJKK8V0VB",
           "cachedResultName": "shadow-test"
         },
         "text": "=[SHADOW 2c] would draft reply to {{ $('Flatten Messages').item.json.conversationWebUrl }}:\n{{ $json.output }}",
@@ -449,7 +449,7 @@
         "channelId": {
           "__rl": true,
           "mode": "list",
-          "value": "SHADOW_TEST_SLACK_CHANNEL",
+          "value": "C0BJKK8V0VB",
           "cachedResultName": "shadow-test"
         },
         "text": "=[SHADOW 2c] prod would ping <@U09M2QMJACF> in #scheduling to review this draft against Alex's calendar before sending.\n\n{{ $('Flatten Messages').item.json.conversationWebUrl }}",
@@ -473,7 +473,7 @@
         "channelId": {
           "__rl": true,
           "mode": "list",
-          "value": "SHADOW_TEST_SLACK_CHANNEL",
+          "value": "C0BJKK8V0VB",
           "cachedResultName": "shadow-test"
         },
         "text": "=[SHADOW 2c] classified NOT a scheduling email for {{ $('Flatten Messages').item.json.conversationWebUrl }} — prod would post a not-scheduling comment, remove the scheduling label, and move the conversation to the team inbox. Shadow does none of that.",
