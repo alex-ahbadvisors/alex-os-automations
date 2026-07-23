@@ -341,94 +341,6 @@
       "parameters": {
         "model": {
           "__rl": true,
-          "value": "gpt-5.2",
-          "mode": "list",
-          "cachedResultName": "gpt-5.2"
-        },
-        "options": {
-          "reasoningEffort": "medium"
-        }
-      },
-      "id": "c2000000-0000-4000-8000-000000000301",
-      "name": "Propose Times Model",
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        1392,
-        336
-      ],
-      "credentials": {
-        "openAiApi": {
-          "id": "FPFFI1NvOtGMoh30",
-          "name": "OpenAi account 3"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "schemaType": "manual",
-        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"Available Times\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"Date\": { \"type\": \"string\", \"description\": \"e.g. Monday, July 20\" },\n          \"Start\": { \"type\": \"string\", \"description\": \"e.g. 10:30 AM ET\" },\n          \"End\": { \"type\": \"string\", \"description\": \"e.g. 11:00 AM ET\" }\n        },\n        \"required\": [\"Date\", \"Start\", \"End\"]\n      }\n    },\n    \"Summary for EA\": { \"type\": \"string\", \"description\": \"Markdown summary for the EA\" }\n  },\n  \"required\": [\"Available Times\", \"Summary for EA\"]\n}"
-      },
-      "id": "c2000000-0000-4000-8000-000000000302",
-      "name": "Propose Times Parser",
-      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
-      "typeVersion": 1.2,
-      "position": [
-        1568,
-        336
-      ]
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "=Today is {{ $now.format('yyyy-MM-dd') }} {{ $now.toISO() }}.\n\nRequested meeting duration (minutes): {{ $('Search Window Fields').item.json.durationMinutes }}\nSearch window: {{ $('Search Window Fields').item.json.searchStartDate }} to {{ $('Search Window Fields').item.json.searchEndDate }}\n\nOriginal email thread:\n---\n{{ $('Flatten Messages').item.json.messagesText }}\n---\n\nMy busy calendar events over the requested dates (JSON):\n---\n{{ JSON.stringify($json.data || []) }}\n---",
-        "hasOutputParser": true,
-        "options": {
-          "systemMessage": "=\nYou are an expert calendar audit person, and your sole task is to find the best time for meetings based on today's date, your executives preferences, the current calendar and the requested date / time in the prior email. \n\nBased on the attached calendar events showing my busy times over the dates requested, identify 3 available time slots according to the duration proposed in the original email (e.g., if they say 2 hours find a 2 hour slot etc.) during my preferred times (10AM-6PM ET). \n\nTry and have the slots be varied (e.g., at least on 2 days, don't do 2 morning of the same day, do morning afternoon of same day).\n\nIF there are not dates requested or specified in the prior steps, assume 30 minutes within the next 7-14 business days (e.g., exclude holidays and weekends)."
-        }
-      },
-      "id": "c2000000-0000-4000-8000-000000000303",
-      "name": "Propose 3 Available Times",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 2.2,
-      "position": [
-        1392,
-        64
-      ]
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "c2a00000-0000-4000-8000-000000000031",
-              "name": "proposedTimesText",
-              "value": "={{ ($json.output['Available Times'] || []).map(s => `- ${s.Date}: ${s.Start} to ${s.End}`).join('\\n') }}",
-              "type": "string"
-            },
-            {
-              "id": "c2a00000-0000-4000-8000-000000000032",
-              "name": "summaryForEA",
-              "value": "={{ $json.output['Summary for EA'] }}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "c2000000-0000-4000-8000-000000000304",
-      "name": "Proposed Times Fields",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        1712,
-        64
-      ]
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
           "value": "claude-sonnet-4-6",
           "mode": "list",
           "cachedResultName": "claude-sonnet-4-6"
@@ -598,6 +510,20 @@
           "name": "Missive"
         }
       }
+    },
+    {
+      "parameters": {
+        "jsCode": "// DETERMINISTIC slot engine \u2014 replaces the LLM \"Propose 3 Available Times\" step.\n// Builds merged busy intervals over the search window, subtracts them from the\n// Mon-Fri 10:00-18:00 ET working grid, honours a lead time + a symmetric buffer,\n// slices to the requested duration, and picks 3 VARIED slots (>=2 distinct days).\n// Output feeds the existing Sonnet writer verbatim (\"DO NOT CHANGE THESE\").\n//\n// Input: aggregated window events on $json.data (from 'Aggregate Busy Events'),\n//        durationMinutes + search window from 'Search Window Fields'.\n\nfunction safeGet(nodeName) {\n  try { return $(nodeName).item.json || {}; } catch (e) { return {}; }\n}\nconst win = safeGet('Search Window Fields');\n\n// ---- Config constants ----\nconst TZ = 'America/New_York';\nconst WORK_START_HOUR = 10;   // 10:00 ET\nconst WORK_END_HOUR = 18;     // 18:00 ET\nconst LEAD_MINUTES = 120;     // no slot starting within 2h of now\nconst BUFFER_MINUTES = 15;    // pad each busy event +/- 15 min before testing\nconst SLOT_STEP_MINUTES = 30; // grid granularity for candidate starts\n\nlet durationMinutes = parseInt(win.durationMinutes, 10);\nif (!durationMinutes || durationMinutes <= 0) durationMinutes = 30;\n\n// ---- Validate / repair search window ----\nconst now = DateTime.now().setZone(TZ);\nlet startStr = (win.searchStartDate || '').trim();\nlet endStr = (win.searchEndDate || '').trim();\n\nfunction validDate(s) { return /^\\d{4}-\\d{2}-\\d{2}$/.test(s) && DateTime.fromISO(s, { zone: TZ }).isValid; }\n\nif (!validDate(startStr)) startStr = now.toFormat('yyyy-MM-dd');\nif (!validDate(endStr)) endStr = now.plus({ days: 14 }).toFormat('yyyy-MM-dd');\n\nlet winStart = DateTime.fromISO(startStr, { zone: TZ }).startOf('day');\nlet winEnd = DateTime.fromISO(endStr, { zone: TZ }).endOf('day');\n\n// Swap if start > end.\nif (winStart > winEnd) { const t = winStart; winStart = winEnd.startOf('day'); winEnd = t.endOf('day'); }\n// Never search the past.\nif (winStart < now.startOf('day')) winStart = now.startOf('day');\n// Widen if window is too tight to plausibly yield 3 varied business-day slots.\nif (winEnd.diff(winStart, 'days').days < 4) winEnd = winStart.plus({ days: 14 }).endOf('day');\n\n// ---- Gather + filter busy events ----\nlet events = [];\ntry {\n  if (Array.isArray($json.data)) events = $json.data;\n  else events = $input.all().map(i => i.json).filter(Boolean);\n} catch (e) { events = []; }\n\nconst invitee = 'alex@ahbadvisors.com';\nconst RECLAIM_A = 'This AI-powered event was created by Reclaim.ai';\nconst RECLAIM_B = 'This event was created by Reclaim';\nconst TASK_DETAIL = \"Only you can see this Task's event details. It will show as busy to others and automatically reschedule if booked over.\";\n\nconst busy = []; // {start,end} epoch ms, buffer-padded\nfor (const ev of events) {\n  if (!ev) continue;\n  const transparency = ev.transparency || 'opaque';\n  const status = ev.status || 'confirmed';\n  const desc = ev.description || '';\n  const title = ev.summary || '';\n  if (transparency === 'transparent') continue;\n  if (status === 'cancelled') continue;\n  let declined = false;\n  for (const a of (ev.attendees || [])) {\n    const email = (a.email || '').toLowerCase();\n    if ((email === invitee || a.self === true) && a.responseStatus === 'declined') { declined = true; break; }\n  }\n  if (declined) continue;\n  if (desc.includes(RECLAIM_A)) continue;\n  if (desc.includes(RECLAIM_B)) continue;\n  if (desc.includes(TASK_DETAIL)) continue;\n  if (title.toLowerCase().includes('decompress')) continue;\n  // All-day banners do not block working-hours slots.\n  const isAllDay = !!(ev.start && ev.start.date && !ev.start.dateTime);\n  if (isAllDay) continue;\n  const sISO = (ev.start && (ev.start.dateTime || ev.start.date)) || '';\n  const eISO = (ev.end && (ev.end.dateTime || ev.end.date)) || '';\n  const s = sISO ? new Date(sISO).getTime() : NaN;\n  const e = eISO ? new Date(eISO).getTime() : NaN;\n  if (isNaN(s) || isNaN(e)) continue;\n  busy.push({ start: s - BUFFER_MINUTES * 60000, end: e + BUFFER_MINUTES * 60000 });\n}\n\n// Merge overlapping busy intervals.\nbusy.sort((a, b) => a.start - b.start);\nconst merged = [];\nfor (const b of busy) {\n  if (merged.length && b.start <= merged[merged.length - 1].end) {\n    merged[merged.length - 1].end = Math.max(merged[merged.length - 1].end, b.end);\n  } else {\n    merged.push({ start: b.start, end: b.end });\n  }\n}\nfunction isFree(slotStart, slotEnd) {\n  for (const m of merged) { if (slotStart < m.end && slotEnd > m.start) return false; }\n  return true;\n}\n\n// ---- Walk the working grid, collect candidates ----\nconst earliestStartMs = now.plus({ minutes: LEAD_MINUTES }).toMillis();\nconst slotMs = durationMinutes * 60000;\nconst stepMs = SLOT_STEP_MINUTES * 60000;\n\nconst candidates = []; // {startDT, endDT}\nlet day = winStart.startOf('day');\nconst lastDay = winEnd.startOf('day');\nwhile (day <= lastDay) {\n  const wd = day.weekday; // 1=Mon .. 7=Sun\n  if (wd >= 1 && wd <= 5) {\n    let cursor = day.set({ hour: WORK_START_HOUR, minute: 0, second: 0, millisecond: 0 });\n    const dayEnd = day.set({ hour: WORK_END_HOUR, minute: 0, second: 0, millisecond: 0 });\n    while (cursor.plus({ minutes: durationMinutes }) <= dayEnd) {\n      const sMs = cursor.toMillis();\n      const eMs = sMs + slotMs;\n      if (sMs >= earliestStartMs && isFree(sMs, eMs)) {\n        candidates.push({ startDT: cursor, endDT: cursor.plus({ minutes: durationMinutes }) });\n      }\n      cursor = cursor.plus({ minutes: SLOT_STEP_MINUTES });\n    }\n  }\n  day = day.plus({ days: 1 });\n}\n\n// ---- Pick 3 VARIED slots: prefer distinct days; avoid two same-morning ----\nfunction partOfDay(dt) { return dt.hour < 12 ? 'am' : 'pm'; }\nconst picked = [];\nconst usedDayKeys = new Set();\n// Pass 1: first free slot on each distinct day.\nfor (const c of candidates) {\n  const key = c.startDT.toFormat('yyyy-MM-dd');\n  if (!usedDayKeys.has(key)) { picked.push(c); usedDayKeys.add(key); }\n  if (picked.length >= 3) break;\n}\n// Pass 2: if <3, backfill with same-day slots in a different part of day.\nif (picked.length < 3) {\n  for (const c of candidates) {\n    if (picked.length >= 3) break;\n    if (picked.some(p => p.startDT.toMillis() === c.startDT.toMillis())) continue;\n    const sameDaySamePart = picked.some(p =>\n      p.startDT.toFormat('yyyy-MM-dd') === c.startDT.toFormat('yyyy-MM-dd') &&\n      partOfDay(p.startDT) === partOfDay(c.startDT));\n    if (!sameDaySamePart) picked.push(c);\n  }\n}\n// Pass 3: last resort \u2014 any remaining distinct candidates.\nif (picked.length < 3) {\n  for (const c of candidates) {\n    if (picked.length >= 3) break;\n    if (picked.some(p => p.startDT.toMillis() === c.startDT.toMillis())) continue;\n    picked.push(c);\n  }\n}\npicked.sort((a, b) => a.startDT.toMillis() - b.startDT.toMillis());\n\n// ---- Format output ----\nconst slots = picked.slice(0, 3).map(p => ({\n  Date: p.startDT.toFormat('cccc, LLLL d'),          // e.g. \"Monday, July 20\"\n  Start: p.startDT.toFormat('h:mm a') + ' ET',\n  End: p.endDT.toFormat('h:mm a') + ' ET',\n  startISO: p.startDT.toISO(),\n  endISO: p.endDT.toISO()\n}));\n\nconst proposedTimesText = slots.map(s => `- ${s.Date}: ${s.Start} to ${s.End}`).join('\\n');\nconst enoughSlots = slots.length >= 3;\n\nreturn [{\n  json: {\n    slots,\n    proposedTimesText,\n    slotCount: slots.length,\n    enoughSlots,\n    durationMinutes,\n    searchStartResolved: winStart.toFormat('yyyy-MM-dd'),\n    searchEndResolved: winEnd.toFormat('yyyy-MM-dd'),\n    summaryForEA: enoughSlots\n      ? `${slots.length} available ${durationMinutes}-min slots found between ${winStart.toFormat('LLL d')} and ${winEnd.toFormat('LLL d')}.`\n      : `Only ${slots.length} slot(s) found in the working-hours grid between ${winStart.toFormat('LLL d')} and ${winEnd.toFormat('LLL d')}; widen the window or review manually.`\n  }\n}];\n"
+      },
+      "id": "c2000000-0000-4000-8000-0000000003a0",
+      "name": "Slot Engine (Code)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1392,
+        64
+      ],
+      "alwaysOutputData": true
     }
   ],
   "connections": {
@@ -755,51 +681,7 @@
       "main": [
         [
           {
-            "node": "Propose 3 Available Times",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Propose Times Model": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Propose 3 Available Times",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Propose Times Parser": {
-      "ai_outputParser": [
-        [
-          {
-            "node": "Propose 3 Available Times",
-            "type": "ai_outputParser",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Propose 3 Available Times": {
-      "main": [
-        [
-          {
-            "node": "Proposed Times Fields",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Proposed Times Fields": {
-      "main": [
-        [
-          {
-            "node": "Write Email Draft",
+            "node": "Slot Engine (Code)",
             "type": "main",
             "index": 0
           }
@@ -855,6 +737,17 @@
         [
           {
             "node": "Move To Team Inbox",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slot Engine (Code)": {
+      "main": [
+        [
+          {
+            "node": "Write Email Draft",
             "type": "main",
             "index": 0
           }

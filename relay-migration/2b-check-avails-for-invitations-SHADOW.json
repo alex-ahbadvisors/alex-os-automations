@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## SHADOW VARIANT — parallel-run test against Relay.app\n\nExercises the FULL classify/extract/calendar/conflict LLM logic of prod [R2b], but writes ONLY to a test Slack channel. It NEVER posts a Missive comment and NEVER mutates a real conversation (no label-remove, no team-move).\n\n**FILL-IN PLACEHOLDER (replace before activating):**\n- `C0BJKK8V0VB` → real Slack channel id for a test channel (both Slack nodes)\n\n**PARALLEL-RUN SETUP:** the Missive webhook TRIGGER is unchanged. To run shadow alongside Relay, add a SECOND Missive rule with the SAME label condition pointing at THIS shadow webhook URL (path b2c9e4f1-...-avails2b0001). Do not remove the Relay rule.",
+        "content": "## SHADOW VARIANT \u2014 parallel-run test against Relay.app\n\nExercises the FULL classify/extract/calendar/conflict LLM logic of prod [R2b], but writes ONLY to a test Slack channel. It NEVER posts a Missive comment and NEVER mutates a real conversation (no label-remove, no team-move).\n\n**FILL-IN PLACEHOLDER (replace before activating):**\n- `C0BJKK8V0VB` \u2192 real Slack channel id for a test channel (both Slack nodes)\n\n**PARALLEL-RUN SETUP:** the Missive webhook TRIGGER is unchanged. To run shadow alongside Relay, add a SECOND Missive rule with the SAME label condition pointing at THIS shadow webhook URL (path b2c9e4f1-...-avails2b0001). Do not remove the Relay rule.",
         "height": 420,
         "width": 460
       },
@@ -11,7 +11,10 @@
       "name": "SHADOW NOTE",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [-1200, -320]
+      "position": [
+        -1200,
+        -320
+      ]
     },
     {
       "parameters": {
@@ -23,7 +26,10 @@
       "name": "Missive Webhook Connection",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
-      "position": [-960, 0],
+      "position": [
+        -960,
+        0
+      ],
       "webhookId": "b2c9e4f1-7a3d-4e58-9c21-avails2b0001"
     },
     {
@@ -50,7 +56,10 @@
       "name": "Pull Conversation Id",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [-736, 0]
+      "position": [
+        -736,
+        0
+      ]
     },
     {
       "parameters": {
@@ -63,7 +72,10 @@
       "name": "Missive Get Conversation Messages",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
-      "position": [-512, 0],
+      "position": [
+        -512,
+        0
+      ],
       "credentials": {
         "httpBearerAuth": {
           "id": "naMGpImlvunQE8Zi",
@@ -101,7 +113,10 @@
       "name": "Flatten Messages",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [-288, 0]
+      "position": [
+        -288,
+        0
+      ]
     },
     {
       "parameters": {
@@ -119,7 +134,10 @@
       "name": "Classify Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
-      "position": [-160, 224],
+      "position": [
+        -160,
+        224
+      ],
       "credentials": {
         "openAiApi": {
           "id": "FPFFI1NvOtGMoh30",
@@ -136,7 +154,10 @@
       "name": "Classify Parser",
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.2,
-      "position": [16, 224]
+      "position": [
+        16,
+        224
+      ]
     },
     {
       "parameters": {
@@ -151,7 +172,10 @@
       "name": "Classify with AI",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
-      "position": [-64, 0]
+      "position": [
+        -64,
+        0
+      ]
     },
     {
       "parameters": {
@@ -181,7 +205,10 @@
       "name": "Is Scheduling?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [288, 0]
+      "position": [
+        288,
+        0
+      ]
     },
     {
       "parameters": {
@@ -199,7 +226,10 @@
       "name": "Extract Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
-      "position": [560, 336],
+      "position": [
+        560,
+        336
+      ],
       "credentials": {
         "openAiApi": {
           "id": "FPFFI1NvOtGMoh30",
@@ -216,7 +246,10 @@
       "name": "Extract Parser",
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.2,
-      "position": [736, 336]
+      "position": [
+        736,
+        336
+      ]
     },
     {
       "parameters": {
@@ -231,7 +264,10 @@
       "name": "Extract with AI",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
-      "position": [560, 64]
+      "position": [
+        560,
+        64
+      ]
     },
     {
       "parameters": {
@@ -269,7 +305,10 @@
       "name": "Extracted Fields",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [880, 64]
+      "position": [
+        880,
+        64
+      ]
     },
     {
       "parameters": {
@@ -282,8 +321,8 @@
         "returnAll": false,
         "limit": 100,
         "options": {
-          "timeMin": "={{ DateTime.fromISO($json.meetingDate).startOf('day').toISO() }}",
-          "timeMax": "={{ DateTime.fromISO($json.meetingDate).endOf('day').toISO() }}",
+          "timeMin": "={{ $json.meetingDayStartISO }}",
+          "timeMax": "={{ $json.meetingDayEndISO }}",
           "singleEvents": true,
           "orderBy": "startTime"
         }
@@ -292,7 +331,10 @@
       "name": "Find Busy Events",
       "type": "n8n-nodes-base.googleCalendar",
       "typeVersion": 1,
-      "position": [1104, 64],
+      "position": [
+        1104,
+        64
+      ],
       "alwaysOutputData": true,
       "credentials": {
         "googleCalendarOAuth2Api": {
@@ -310,44 +352,11 @@
       "name": "Aggregate Busy Events",
       "type": "n8n-nodes-base.aggregate",
       "typeVersion": 1,
-      "position": [1328, 64],
+      "position": [
+        1328,
+        64
+      ],
       "alwaysOutputData": true
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "gpt-5.2",
-          "mode": "list",
-          "cachedResultName": "gpt-5.2"
-        },
-        "options": {
-          "reasoningEffort": "medium"
-        }
-      },
-      "id": "a1000000-0000-4000-8000-000000000301",
-      "name": "Conflict Model",
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [1552, 336],
-      "credentials": {
-        "openAiApi": {
-          "id": "FPFFI1NvOtGMoh30",
-          "name": "OpenAi account 3"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "=Alex has been invited to a meeting:\n- Date: {{ $('Extracted Fields').item.json.meetingDate }}\n- Time: {{ $('Extracted Fields').item.json.meetingTime }}\n- Duration: {{ $('Extracted Fields').item.json.meetingDuration }}\n- Time zone: {{ $('Extracted Fields').item.json.meetingTimeZone }}\n\nI've attached Alex's busy calendar events for that day. Check if the proposed meeting time conflicts with any existing events.\n\nBusy events (JSON):\n---\n{{ JSON.stringify($json.data || []) }}\n---\n\nIf there are NO conflicts, respond exactly: \"Alex is free for this meeting.\"\n\nIf there ARE conflicts, respond: \"Alex has a conflict: [Event Title] from [Start Time] to [End Time] with [Guest names if any].\"\n\nBe concise.",
-        "options": {}
-      },
-      "id": "a1000000-0000-4000-8000-000000000302",
-      "name": "Check for Conflicts",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 2.2,
-      "position": [1552, 64]
     },
     {
       "parameters": {
@@ -358,14 +367,17 @@
           "value": "C0BJKK8V0VB",
           "cachedResultName": "shadow-test"
         },
-        "text": "=[SHADOW 2b] would comment on {{ $('Flatten Messages').item.json.conversationWebUrl }}:\n{{ $json.output }}",
+        "text": "=[SHADOW 2b] would comment on {{ $('Flatten Messages').item.json.conversationWebUrl }}:\n{{ $json.resultText }}",
         "otherOptions": {}
       },
       "id": "a1000000-0000-4000-8000-000000000303",
       "name": "Slack Shadow Conflict Note",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.2,
-      "position": [1776, 64],
+      "position": [
+        1776,
+        64
+      ],
       "credentials": {
         "slackApi": {
           "id": "DvovCyTPlCPUoL2k",
@@ -382,73 +394,236 @@
           "value": "C0BJKK8V0VB",
           "cachedResultName": "shadow-test"
         },
-        "text": "=[SHADOW 2b] classified NOT an invite for {{ $('Flatten Messages').item.json.conversationWebUrl }} — prod would post a not-an-invite comment, remove the confirm-attendance label, and move the conversation to the team inbox. Shadow does none of that.",
+        "text": "=[SHADOW 2b] classified NOT an invite for {{ $('Flatten Messages').item.json.conversationWebUrl }} \u2014 prod would post a not-an-invite comment, remove the confirm-attendance label, and move the conversation to the team inbox. Shadow does none of that.",
         "otherOptions": {}
       },
       "id": "a1000000-0000-4000-8000-000000000401",
       "name": "Slack Shadow Not-An-Invite Note",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.2,
-      "position": [560, -256],
+      "position": [
+        560,
+        -256
+      ],
       "credentials": {
         "slackApi": {
           "id": "DvovCyTPlCPUoL2k",
           "name": "Abel N8N Token"
         }
       }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Resolve the LLM-extracted meeting (date + time + tz + duration text) to a\n// FIXED [start,end] instant in epoch ms. DETERMINISTIC \u2014 no LLM.\n// Replaces the old flow where an LLM judged conflicts over prose fields.\n//\n// Inputs (from 'Extracted Fields'):\n//   meetingDate (YYYY-MM-DD), meetingTime (e.g. \"1:00 PM\"),\n//   meetingTimeZone (e.g. \"America/New_York\" or \"ET\"), meetingDuration (prose).\n// Output: same fields + meetingStartMs, meetingEndMs, meetingDayStartISO,\n//   meetingDayEndISO, meetingTz, meetingResolveError (null on success).\n//\n// luxon DateTime is a Code-node global in n8n; used for tz-correct parsing.\n\nfunction safeGet(nodeName) {\n  try { return $(nodeName).item.json || {}; } catch (e) { return {}; }\n}\nconst ex = safeGet('Extracted Fields');\n\nconst rawDate = (ex.meetingDate || '').trim();\nconst rawTime = (ex.meetingTime || '').trim();\nconst rawTz = (ex.meetingTimeZone || '').trim();\nconst rawDur = (ex.meetingDuration || '').trim();\n\n// --- Timezone normalization (default America/New_York) ---\nconst TZ_MAP = {\n  'ET': 'America/New_York', 'EST': 'America/New_York', 'EDT': 'America/New_York',\n  'ETZ': 'America/New_York', 'EASTERN': 'America/New_York',\n  'CT': 'America/Chicago', 'CST': 'America/Chicago', 'CDT': 'America/Chicago',\n  'MT': 'America/Denver', 'MST': 'America/Denver', 'MDT': 'America/Denver',\n  'PT': 'America/Los_Angeles', 'PST': 'America/Los_Angeles', 'PDT': 'America/Los_Angeles',\n  'GMT': 'UTC', 'UTC': 'UTC'\n};\nlet tz = 'America/New_York';\nif (rawTz) {\n  const key = rawTz.toUpperCase().replace(/\\s+/g, '');\n  if (TZ_MAP[key]) tz = TZ_MAP[key];\n  else if (/^[A-Za-z]+\\/[A-Za-z_]+/.test(rawTz)) tz = rawTz; // already an IANA zone\n}\n\n// --- Duration text -> minutes (default 30) ---\nfunction parseDurationMinutes(text) {\n  if (!text) return 30;\n  const t = text.toLowerCase();\n  let mins = 0, matched = false;\n  const hourMatch = t.match(/(\\d+(?:\\.\\d+)?)\\s*(?:h|hr|hrs|hour|hours)/);\n  if (hourMatch) { mins += Math.round(parseFloat(hourMatch[1]) * 60); matched = true; }\n  const minMatch = t.match(/(\\d+)\\s*(?:m|min|mins|minute|minutes)/);\n  if (minMatch) { mins += parseInt(minMatch[1], 10); matched = true; }\n  if (!matched) {\n    // bare number -> assume minutes if <= 8 assume hours only when \"hour\" absent\n    const bare = t.match(/(\\d+(?:\\.\\d+)?)/);\n    if (bare) {\n      const n = parseFloat(bare[1]);\n      mins = (n > 0 && n <= 8 && /hour|hr/.test(t)) ? Math.round(n * 60) : Math.round(n);\n    }\n  }\n  if (!mins || mins <= 0) mins = 30;\n  return mins;\n}\nconst durationMinutes = parseDurationMinutes(rawDur);\n\n// --- Time text -> {hour, minute} (24h) ---\nfunction parseClock(text) {\n  if (!text) return null;\n  const t = text.trim().toLowerCase();\n  const m = t.match(/(\\d{1,2})(?::(\\d{2}))?\\s*(am|pm)?/);\n  if (!m) return null;\n  let hour = parseInt(m[1], 10);\n  const minute = m[2] ? parseInt(m[2], 10) : 0;\n  const ap = m[3];\n  if (ap === 'pm' && hour < 12) hour += 12;\n  if (ap === 'am' && hour === 12) hour = 0;\n  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;\n  return { hour, minute };\n}\n\nlet meetingStartMs = null, meetingEndMs = null, err = null;\nlet dayStartISO = '', dayEndISO = '';\n\nif (!rawDate || !/^\\d{4}-\\d{2}-\\d{2}$/.test(rawDate)) {\n  err = `Missing/invalid meeting date: \"${rawDate}\"`;\n} else {\n  const clock = parseClock(rawTime);\n  // Day bounds for the calendar filter (always computable from the date).\n  try {\n    const dayStart = DateTime.fromISO(rawDate, { zone: tz }).startOf('day');\n    const dayEnd = DateTime.fromISO(rawDate, { zone: tz }).endOf('day');\n    dayStartISO = dayStart.toISO();\n    dayEndISO = dayEnd.toISO();\n  } catch (e) { err = `Bad date parse: ${e.message}`; }\n\n  if (!err && !clock) {\n    err = `Missing/invalid meeting time: \"${rawTime}\"`;\n  } else if (!err) {\n    const start = DateTime.fromObject(\n      { year: +rawDate.slice(0, 4), month: +rawDate.slice(5, 7), day: +rawDate.slice(8, 10),\n        hour: clock.hour, minute: clock.minute },\n      { zone: tz }\n    );\n    if (!start.isValid) {\n      err = `Invalid instant: ${start.invalidReason || 'unknown'}`;\n    } else {\n      meetingStartMs = start.toMillis();\n      meetingEndMs = start.plus({ minutes: durationMinutes }).toMillis();\n    }\n  }\n}\n\nreturn [{\n  json: {\n    ...ex,\n    meetingTz: tz,\n    durationMinutes,\n    meetingStartMs,\n    meetingEndMs,\n    meetingDayStartISO: dayStartISO,\n    meetingDayEndISO: dayEndISO,\n    meetingResolveError: err\n  }\n}];\n"
+      },
+      "id": "a1000000-0000-4000-8000-0000000002a0",
+      "name": "Resolve Meeting Instant",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        64
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// DETERMINISTIC conflict check \u2014 replaces the LLM \"Check for Conflicts\" step.\n// Filters the day's events to REAL busy time, then tests overlap against the\n// resolved meeting instant on epoch ms. Templates the EXACT Relay output\n// strings (\"Alex is free...\" / \"Alex has a conflict...\") + an idempotency stamp.\n//\n// Input: aggregated day events on $json.data (from 'Aggregate Busy Events'),\n//        resolved instant fields from 'Resolve Meeting Instant'.\n\nfunction safeGet(nodeName) {\n  try { return $(nodeName).item.json || {}; } catch (e) { return {}; }\n}\nconst res = safeGet('Resolve Meeting Instant');\n\n// Aggregate node puts the array on $json.data; fall back to $input.all().\nlet events = [];\ntry {\n  if (Array.isArray($json.data)) events = $json.data;\n  else events = $input.all().map(i => i.json).filter(Boolean);\n} catch (e) { events = []; }\n\nconst meetingStart = res.meetingStartMs;\nconst meetingEnd = res.meetingEndMs;\nconst tz = res.meetingTz || 'America/New_York';\nconst invitee = 'alex@ahbadvisors.com';\n\n// Reclaim / decompress / task-detail noise (matches 2d idiom).\nconst RECLAIM_A = 'This AI-powered event was created by Reclaim.ai';\nconst RECLAIM_B = 'This event was created by Reclaim';\nconst TASK_DETAIL = \"Only you can see this Task's event details. It will show as busy to others and automatically reschedule if booked over.\";\n\nfunction fmt(dt) {\n  try {\n    return DateTime.fromISO(dt, { zone: tz }).toFormat('h:mm a');\n  } catch (e) {\n    try { return new Date(dt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }); }\n    catch (e2) { return String(dt || ''); }\n  }\n}\n\n// If we couldn't resolve the meeting to an instant, fail soft: report it,\n// don't fabricate a \"free\" answer.\nconst stampISO = DateTime.now().setZone(tz).toISO();\nconst checkedDate = res.meetingDate || '';\n\nif (res.meetingResolveError || meetingStart == null || meetingEnd == null) {\n  const msg = `Could not verify Alex's availability automatically (${res.meetingResolveError || 'unresolved meeting time'}). Please check the calendar manually.`;\n  return [{\n    json: {\n      isFree: false,\n      resolveFailed: true,\n      resultText: `${msg}\\n\\n_Checked ${checkedDate} at ${stampISO}_`,\n      conflicts: [],\n      checkedDate,\n      checkedAt: stampISO\n    }\n  }];\n}\n\nconst conflicts = [];\nfor (const ev of events) {\n  if (!ev) continue;\n  const transparency = ev.transparency || 'opaque';\n  const status = ev.status || 'confirmed';\n  const desc = ev.description || '';\n  const title = ev.summary || '(no title)';\n\n  // Exclude non-busy / cancelled.\n  if (transparency === 'transparent') continue;          // \"Free\" events\n  if (status === 'cancelled') continue;\n\n  // Exclude the invitee's own DECLINED attendance.\n  let declined = false;\n  const attendees = ev.attendees || [];\n  for (const a of attendees) {\n    const email = (a.email || '').toLowerCase();\n    if ((email === invitee || a.self === true) && a.responseStatus === 'declined') { declined = true; break; }\n  }\n  if (declined) continue;\n\n  // Exclude Reclaim / decompress / task-detail noise.\n  if (desc.includes(RECLAIM_A)) continue;\n  if (desc.includes(RECLAIM_B)) continue;\n  if (desc.includes(TASK_DETAIL)) continue;\n  if (title.toLowerCase().includes('decompress')) continue;\n\n  // All-day events: start.date (no time) -> NOT a hard block. Skip.\n  const isAllDay = !!(ev.start && ev.start.date && !ev.start.dateTime);\n  if (isAllDay) continue;\n\n  const evStartISO = (ev.start && (ev.start.dateTime || ev.start.date)) || '';\n  const evEndISO = (ev.end && (ev.end.dateTime || ev.end.date)) || '';\n  const evStart = evStartISO ? new Date(evStartISO).getTime() : NaN;\n  const evEnd = evEndISO ? new Date(evEndISO).getTime() : NaN;\n  if (isNaN(evStart) || isNaN(evEnd)) continue;\n\n  // Deterministic overlap: evStart < meetingEnd && evEnd > meetingStart.\n  if (evStart < meetingEnd && evEnd > meetingStart) {\n    const guests = attendees\n      .map(a => a.displayName || a.email || '')\n      .filter(g => g && g.toLowerCase() !== invitee)\n      .join(', ');\n    conflicts.push({\n      title,\n      startFmt: fmt(evStartISO),\n      endFmt: fmt(evEndISO),\n      guests\n    });\n  }\n}\n\nlet resultText;\nlet isFree;\nif (conflicts.length === 0) {\n  isFree = true;\n  resultText = 'Alex is free for this meeting.';\n} else {\n  isFree = false;\n  const c = conflicts[0];\n  const guestClause = c.guests ? ` with ${c.guests}` : '';\n  resultText = `Alex has a conflict: ${c.title} from ${c.startFmt} to ${c.endFmt}${guestClause}.`;\n  if (conflicts.length > 1) {\n    const extra = conflicts.slice(1)\n      .map(x => `- ${x.title} from ${x.startFmt} to ${x.endFmt}${x.guests ? ' with ' + x.guests : ''}`)\n      .join('\\n');\n    resultText += `\\n\\nAlso overlapping:\\n${extra}`;\n  }\n}\n\n// Idempotency stamp: a re-added label producing a duplicate comment is\n// human-detectable by the checked-date + timestamp line.\nresultText += `\\n\\n_Checked ${checkedDate} at ${stampISO}_`;\n\nreturn [{\n  json: {\n    isFree,\n    resolveFailed: false,\n    resultText,\n    conflicts,\n    conflictCount: conflicts.length,\n    checkedDate,\n    checkedAt: stampISO\n  }\n}];\n"
+      },
+      "id": "a1000000-0000-4000-8000-0000000003a0",
+      "name": "Check Conflict (Code)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        64
+      ],
+      "alwaysOutputData": true
     }
   ],
   "connections": {
     "Missive Webhook Connection": {
-      "main": [[{ "node": "Pull Conversation Id", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Pull Conversation Id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Pull Conversation Id": {
-      "main": [[{ "node": "Missive Get Conversation Messages", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Missive Get Conversation Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Missive Get Conversation Messages": {
-      "main": [[{ "node": "Flatten Messages", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Flatten Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Flatten Messages": {
-      "main": [[{ "node": "Classify with AI", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Classify with AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Classify Model": {
-      "ai_languageModel": [[{ "node": "Classify with AI", "type": "ai_languageModel", "index": 0 }]]
+      "ai_languageModel": [
+        [
+          {
+            "node": "Classify with AI",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Classify Parser": {
-      "ai_outputParser": [[{ "node": "Classify with AI", "type": "ai_outputParser", "index": 0 }]]
+      "ai_outputParser": [
+        [
+          {
+            "node": "Classify with AI",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Classify with AI": {
-      "main": [[{ "node": "Is Scheduling?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Is Scheduling?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Is Scheduling?": {
       "main": [
-        [{ "node": "Extract with AI", "type": "main", "index": 0 }],
-        [{ "node": "Slack Shadow Not-An-Invite Note", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Extract with AI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack Shadow Not-An-Invite Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Extract Model": {
-      "ai_languageModel": [[{ "node": "Extract with AI", "type": "ai_languageModel", "index": 0 }]]
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extract with AI",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Extract Parser": {
-      "ai_outputParser": [[{ "node": "Extract with AI", "type": "ai_outputParser", "index": 0 }]]
+      "ai_outputParser": [
+        [
+          {
+            "node": "Extract with AI",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Extract with AI": {
-      "main": [[{ "node": "Extracted Fields", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Extracted Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Extracted Fields": {
-      "main": [[{ "node": "Find Busy Events", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Resolve Meeting Instant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Find Busy Events": {
-      "main": [[{ "node": "Aggregate Busy Events", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Aggregate Busy Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Aggregate Busy Events": {
-      "main": [[{ "node": "Check for Conflicts", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Check Conflict (Code)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
-    "Conflict Model": {
-      "ai_languageModel": [[{ "node": "Check for Conflicts", "type": "ai_languageModel", "index": 0 }]]
+    "Resolve Meeting Instant": {
+      "main": [
+        [
+          {
+            "node": "Find Busy Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
-    "Check for Conflicts": {
-      "main": [[{ "node": "Slack Shadow Conflict Note", "type": "main", "index": 0 }]]
+    "Check Conflict (Code)": {
+      "main": [
+        [
+          {
+            "node": "Slack Shadow Conflict Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
