@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-07T01:26:49.160Z",
+  "updatedAt": "2026-07-23T08:19:18.922Z",
   "createdAt": "2025-12-26T15:26:31.241Z",
   "id": "BZpys9OcMz0suz0Y",
   "name": "[1] Capture Missive Emails",
@@ -435,7 +435,7 @@
         "list": "901112757653",
         "name": "={{ $json.task_title }}",
         "additionalFields": {
-          "customFieldsJson": "=[{\"id\": \n\"916c1a91-3537-462d-aa45-0d0ee8ddb608\", \"value\":\"{{ $('Email To-Do').item.json.messages_from_field_address }}\"}, \n\n{\"id\": \n\"9186c4ef-96df-407b-bafc-826462112af7\",\"value\":\"{{ $('Missive Webhook Connection').item.json.body.rule.description }}\"}, \n\n{\"id\": \n\"efbe1dba-0fdc-4945-9522-c5b2822b3d4e\", \"value\":\"{{ $('Email To-Do').item.json.messages_conversation_web_url }}\"},\n\n{\"id\":\"0d36b68b-379a-4fe4-9847-986279d0de25\", \"value\": \"{{ $('Missive Webhook Connection').item.json.body.conversation.shared_labels[2].name_with_parent_names }}\"},\n\n{\"id\":\"c52ce62f-84d6-489e-a73b-32e29d7b1662\", \"value\" : \"{{ $('Email To-Do').item.json.messages_subject }}\"},\n\n{\"id\":\"e0777a76-caab-4521-a487-426634513b9b\", \"value\" : \"{{ $('Missive Webhook Connection').item.json.body.latest_message.to_fields[0].address }}\"}\n\n]",
+          "customFieldsJson": "=[\n\n{\"id\":\"916c1a91-3537-462d-aa45-0d0ee8ddb608\",\"value\":{{ JSON.stringify($('Email To-Do').item.json.messages_from_field_address || \"\") }}},\n\n{\"id\":\"9186c4ef-96df-407b-bafc-826462112af7\",\"value\":{{ JSON.stringify($('Missive Webhook Connection').item.json.body.rule?.description || \"\") }}},\n\n{\"id\":\"efbe1dba-0fdc-4945-9522-c5b2822b3d4e\",\"value\":{{ JSON.stringify($('Email To-Do').item.json.messages_conversation_web_url || \"\") }}},\n\n{\"id\":\"0d36b68b-379a-4fe4-9847-986279d0de25\",\"value\":{{ JSON.stringify($('Missive Webhook Connection').item.json.body.conversation?.shared_labels?.[2]?.name_with_parent_names || \"\") }}},\n\n{\"id\":\"c52ce62f-84d6-489e-a73b-32e29d7b1662\",\"value\":{{ JSON.stringify($('Email To-Do').item.json.messages_subject || \"\") }}},\n\n{\"id\":\"e0777a76-caab-4521-a487-426634513b9b\",\"value\":{{ JSON.stringify($('Missive Webhook Connection').item.json.body.latest_message?.to_fields?.[0]?.address || \"\") }}}\n\n]",
           "content": "={{ $('Email Analysis_Raw').item.json.task_description }}",
           "markdownContent": true
         }
@@ -1469,8 +1469,8 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "versionId": "f6f90c01-912f-4b13-8f02-9e251d053fcb",
-  "activeVersionId": "f6f90c01-912f-4b13-8f02-9e251d053fcb",
+  "versionId": "31492268-b6ce-4b85-b849-03195dbfdcd5",
+  "activeVersionId": "31492268-b6ce-4b85-b849-03195dbfdcd5",
   "triggerCount": 1,
   "tags": [
     {
