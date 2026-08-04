@@ -1,0 +1,709 @@
+{
+  "name": "[R2c] Scheduling Draft Assistant [SHADOW]",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## SHADOW VARIANT \u2014 parallel-run test against Relay.app\n\nExercises the FULL classify/extract/propose/write LLM logic of prod [R2c] and produces the drafted email text IN FULL, but NEVER creates a real Missive draft (no risk of a draft reaching Kendra) and NEVER mutates a real conversation. All output goes to a test Slack channel.\n\n**FILL-IN PLACEHOLDER (replace before activating):**\n- `C0BJKK8V0VB` \u2192 real Slack channel id for a test channel (all three Slack nodes). NOT #scheduling C08HH2DTVK6.\n\n**PARALLEL-RUN SETUP:** the Missive webhook TRIGGER is unchanged. To run shadow alongside Relay, add a SECOND Missive rule with the SAME label condition pointing at THIS shadow webhook URL (path d3f7a9c2-...-scheduling2c01). Do not remove the Relay rule.\n\nCompare the [SHADOW 2c] draft text posted to Slack against what Relay drafted in Missive.",
+        "height": 460,
+        "width": 480
+      },
+      "id": "note0c000-0000-4000-8000-00000000000c",
+      "name": "SHADOW NOTE",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1400,
+        -360
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "d3f7a9c2-6b1e-4a80-9d54-scheduling2c01",
+        "options": {}
+      },
+      "id": "c2000000-0000-4000-8000-000000000001",
+      "name": "Missive Webhook Connection",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1120,
+        0
+      ],
+      "webhookId": "d3f7a9c2-6b1e-4a80-9d54-scheduling2c01"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c2a00000-0000-4000-8000-000000000001",
+              "name": "conversationId",
+              "value": "={{ $json.body.conversation.id }}",
+              "type": "string"
+            },
+            {
+              "id": "c2a00000-0000-4000-8000-000000000002",
+              "name": "conversationWebUrl",
+              "value": "={{ $json.body.conversation.web_url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c2000000-0000-4000-8000-000000000002",
+      "name": "Pull Conversation Id",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -896,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://public.missiveapp.com/v1/conversations/{{ $json.conversationId }}/messages?limit=10",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "id": "c2000000-0000-4000-8000-000000000003",
+      "name": "Missive Get Conversation Messages",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -672,
+        0
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c2a00000-0000-4000-8000-000000000010",
+              "name": "conversationId",
+              "value": "={{ $('Pull Conversation Id').item.json.conversationId }}",
+              "type": "string"
+            },
+            {
+              "id": "c2a00000-0000-4000-8000-000000000011",
+              "name": "conversationWebUrl",
+              "value": "={{ $('Pull Conversation Id').item.json.conversationWebUrl }}",
+              "type": "string"
+            },
+            {
+              "id": "c2a00000-0000-4000-8000-000000000012",
+              "name": "messagesText",
+              "value": "={{ ($json.messages || []).map(m => `From: ${m.from_field?.name || ''} <${m.from_field?.address || ''}>\\nTo: ${(m.to_fields || []).map(t => t.address).join(', ')}\\nDate: ${m.delivered_at ? new Date(m.delivered_at*1000).toISOString() : ''}\\nSubject: ${m.subject || ''}\\n\\n${m.preview || m.body || ''}`).join('\\n\\n-----\\n\\n') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c2000000-0000-4000-8000-000000000004",
+      "name": "Flatten Messages",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -448,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.2",
+          "mode": "list",
+          "cachedResultName": "gpt-5.2"
+        },
+        "options": {
+          "reasoningEffort": "medium"
+        }
+      },
+      "id": "c2000000-0000-4000-8000-000000000101",
+      "name": "Classify Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -320,
+        240
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "FPFFI1NvOtGMoh30",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"Reply to scheduling email\": {\n      \"type\": \"string\",\n      \"enum\": [\"yes\", \"no\"]\n    }\n  },\n  \"required\": [\"Reply to scheduling email\"]\n}"
+      },
+      "id": "c2000000-0000-4000-8000-000000000102",
+      "name": "Classify Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        -144,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Email thread:\n---\n{{ $json.messagesText }}\n---",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=One AI labeled this as a scheduling email for a busy executive. A scheduling email is one where you (Alex brownstein the executive) or his EA needs to reply and provide times. Provide only a yes or no answer, no other language. is this an email which we need to reply to schedling? \n\nREPLY ONLY YES OR NO"
+        }
+      },
+      "id": "c2000000-0000-4000-8000-000000000103",
+      "name": "Classify with AI",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -224,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c2b00000-0000-4000-8000-000000000001",
+              "leftValue": "={{ $json.output['Reply to scheduling email'] }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c2000000-0000-4000-8000-000000000104",
+      "name": "Is Scheduling?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        128,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.2",
+          "mode": "list",
+          "cachedResultName": "gpt-5.2"
+        },
+        "options": {
+          "reasoningEffort": "medium"
+        }
+      },
+      "id": "c2000000-0000-4000-8000-000000000201",
+      "name": "Extract Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        400,
+        336
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "FPFFI1NvOtGMoh30",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"Suggested meeting duration (minutes)\": { \"type\": \"integer\", \"description\": \"Meeting duration in minutes; assume 30 if not stated\" },\n    \"Time slot search start date\": { \"type\": \"string\", \"description\": \"ISO date YYYY-MM-DD for the start of the search window\" },\n    \"Time slot search end date\": { \"type\": \"string\", \"description\": \"ISO date YYYY-MM-DD for the end of the search window\" }\n  },\n  \"required\": []\n}"
+      },
+      "id": "c2000000-0000-4000-8000-000000000202",
+      "name": "Extract Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        576,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Email thread:\n---\n{{ $('Flatten Messages').item.json.messagesText }}\n---",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=This is a scheduling email. From the email text and body and email suggest meeting duration and when to look for time slots (e.g., start date and end date).\n\nIf nothing is stated assume within the next 2 weeks (e.g., 2 weeks from send date) and assume 30 minutes.\n\nIf the conversation refers to a specific event (e.g., a conference like CES) make sure it's within the context of that date. \n\nBE VERY CAREFUL TO CHOOSE REAL DATES. LOOK AT {{ $now.format('yyyy-MM-dd') }}\nto ensure the date is real (e.g., don't say Sunday January 5th when January 5th is a Monday). \n{{ $now.format('yyyy-MM-dd') }} {{ $now.toISO() }}"
+        }
+      },
+      "id": "c2000000-0000-4000-8000-000000000203",
+      "name": "Extract with AI",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        400,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c2a00000-0000-4000-8000-000000000021",
+              "name": "durationMinutes",
+              "value": "={{ $json.output['Suggested meeting duration (minutes)'] || 30 }}",
+              "type": "number"
+            },
+            {
+              "id": "c2a00000-0000-4000-8000-000000000022",
+              "name": "searchStartDate",
+              "value": "={{ $json.output['Time slot search start date'] || $now.format('yyyy-MM-dd') }}",
+              "type": "string"
+            },
+            {
+              "id": "c2a00000-0000-4000-8000-000000000023",
+              "name": "searchEndDate",
+              "value": "={{ $json.output['Time slot search end date'] || $now.plus({ days: 14 }).format('yyyy-MM-dd') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c2000000-0000-4000-8000-000000000204",
+      "name": "Search Window Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        720,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "mode": "list",
+          "value": "alex@ahbadvisors.com"
+        },
+        "returnAll": false,
+        "limit": 100,
+        "options": {
+          "timeMin": "={{ DateTime.fromISO($json.searchStartDate).startOf('day').toISO() }}",
+          "timeMax": "={{ DateTime.fromISO($json.searchEndDate).endOf('day').toISO() }}",
+          "singleEvents": true,
+          "orderBy": "startTime"
+        }
+      },
+      "id": "c2000000-0000-4000-8000-000000000205",
+      "name": "Find Busy Events",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1,
+      "position": [
+        944,
+        64
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "NWVOUqg1ysw03vVr",
+          "name": "AHB Advisors Calendar"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "id": "c2000000-0000-4000-8000-000000000206",
+      "name": "Aggregate Busy Events",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        64
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-6",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-6"
+        },
+        "options": {}
+      },
+      "id": "c2000000-0000-4000-8000-000000000401",
+      "name": "Writer Model (Anthropic)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        1936,
+        336
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "PdQDpy0E1BohbFDv",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=The exact three times to propose (DO NOT CHANGE THESE):\n{{ $json.proposedTimesText }}\n\nOriginal email thread (for recipient name, tone, and to detect if it was addressed to Alex):\n---\n{{ $('Flatten Messages').item.json.messagesText }}\n---",
+        "options": {
+          "systemMessage": "=You are an expert scheduler and an expert EA to a McKinsey trained management consultant perfect in the Barbara Minto method of top down communication and the pyramid principal.\n\nDraft a to the point email leveraging the examples below that my EA can send from my inbox (or from her own) proposing exactly the 3 times that the prior phase suggested. DO NOT CHANGE THOSE TIMES.\n\nIF the email you're responding to is to me (abrownstein@3cventures.com, ahbrownstein@gmail.com, alex@ahbadvisors.com), add in a clause that says +my EA @kendra@ahbadvisors.com or +my EA @kendra@3cventures.com) so that she can take over. \n\nSince this is a response NEVER include the subject in the body of the email. \n\nThe output should JUST be the text of an email, NEVER context like:\n\n\"Here's the draft email for your EA to send:\"\n\nThis follows the pyramid principle (lead with action), matches the tone and structure of the example emails, includes the +EA clause since the original email was to Alex, and proposes exactly the three times identified in the prior phase without modification.\n\n---\nEXAMPLE SCHEDULING REPLIES (match this tone and structure; these replace the Relay Knowledge Source of example emails):\n\nExample 1:\nJacob,\n\nWould love to find some time \u2014 here are three options that work on Alex's end:\n- **Monday, July 20 \u2014 10:30\u201311:00 AM ET**\n- **Wednesday, July 22 \u2014 1:00\u20131:30 PM ET**\n- **Friday, July 24 \u2014 2:30\u20133:00 PM ET**\nPlease let me know what works and I'll send a calendar invite.\n\n+Alex's EA, Kendra (kendra@ahbadvisors.com), who can take over from here.\n\nBest,\nKendra\n\nExample 2:\nHi Sarah,\n\nHappy to make this work. A few windows that are open for Alex:\n- **Tuesday, Sept 9 \u2014 11:00\u201311:30 AM ET**\n- **Thursday, Sept 11 \u2014 2:00\u20132:30 PM ET**\n- **Friday, Sept 12 \u2014 10:00\u201310:30 AM ET**\nLet me know which is best and I'll get an invite out.\n\nBest,\nKendra\n\nExample 3:\nMichael,\n\nThanks for the note. Here are three times that work for Alex:\n- **Wednesday, Oct 1 \u2014 3:00\u20134:00 PM ET**\n- **Thursday, Oct 2 \u2014 10:00\u201311:00 AM ET**\n- **Monday, Oct 6 \u2014 1:00\u20132:00 PM ET**\nTell me what suits you and I'll send the invite.\n\nBest,\nKendra"
+        }
+      },
+      "id": "c2000000-0000-4000-8000-000000000402",
+      "name": "Write Email Draft",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1936,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "C0BJKK8V0VB",
+          "cachedResultName": "shadow-test"
+        },
+        "text": "=[SHADOW 2c] would draft reply to {{ $('Flatten Messages').item.json.conversationWebUrl }}:\n{{ $json.output }}",
+        "otherOptions": {}
+      },
+      "id": "c2000000-0000-4000-8000-000000000403",
+      "name": "Slack Shadow Draft Note",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        2256,
+        64
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "C0BJKK8V0VB",
+          "cachedResultName": "shadow-test"
+        },
+        "text": "=[SHADOW 2c] prod would ping <@U09M2QMJACF> in #scheduling to review this draft against Alex's calendar before sending.\n\n{{ $('Flatten Messages').item.json.conversationWebUrl }}",
+        "otherOptions": {}
+      },
+      "id": "c2000000-0000-4000-8000-000000000404",
+      "name": "Slack Shadow Review Ping",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        2480,
+        64
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "C0BJKK8V0VB",
+          "cachedResultName": "shadow-test"
+        },
+        "text": "=[SHADOW 2c] classified NOT a scheduling email for {{ $('Flatten Messages').item.json.conversationWebUrl }} \u2014 prod would post a not-scheduling comment, remove the scheduling label, and move the conversation to the team inbox. Shadow does none of that.",
+        "otherOptions": {}
+      },
+      "id": "c2000000-0000-4000-8000-000000000501",
+      "name": "Slack Shadow Not-Scheduling Note",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        400,
+        -256
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// DETERMINISTIC slot engine \u2014 replaces the LLM \"Propose 3 Available Times\" step.\n// Builds merged busy intervals over the search window, subtracts them from the\n// Mon-Fri 10:00-18:00 ET working grid, honours a lead time + a symmetric buffer,\n// slices to the requested duration, and picks 3 VARIED slots (>=2 distinct days).\n// Output feeds the existing Sonnet writer verbatim (\"DO NOT CHANGE THESE\").\n//\n// Input: aggregated window events on $json.data (from 'Aggregate Busy Events'),\n//        durationMinutes + search window from 'Search Window Fields'.\n\nfunction safeGet(nodeName) {\n  try { return $(nodeName).item.json || {}; } catch (e) { return {}; }\n}\nconst win = safeGet('Search Window Fields');\n\n// ---- Config constants ----\nconst TZ = 'America/New_York';\nconst WORK_START_HOUR = 10;   // 10:00 ET\nconst WORK_END_HOUR = 18;     // 18:00 ET\nconst LEAD_MINUTES = 120;     // no slot starting within 2h of now\nconst BUFFER_MINUTES = 15;    // pad each busy event +/- 15 min before testing\nconst SLOT_STEP_MINUTES = 30; // grid granularity for candidate starts\n\nlet durationMinutes = parseInt(win.durationMinutes, 10);\nif (!durationMinutes || durationMinutes <= 0) durationMinutes = 30;\n\n// ---- Validate / repair search window ----\nconst now = DateTime.now().setZone(TZ);\nlet startStr = (win.searchStartDate || '').trim();\nlet endStr = (win.searchEndDate || '').trim();\n\nfunction validDate(s) { return /^\\d{4}-\\d{2}-\\d{2}$/.test(s) && DateTime.fromISO(s, { zone: TZ }).isValid; }\n\nif (!validDate(startStr)) startStr = now.toFormat('yyyy-MM-dd');\nif (!validDate(endStr)) endStr = now.plus({ days: 14 }).toFormat('yyyy-MM-dd');\n\nlet winStart = DateTime.fromISO(startStr, { zone: TZ }).startOf('day');\nlet winEnd = DateTime.fromISO(endStr, { zone: TZ }).endOf('day');\n\n// Swap if start > end.\nif (winStart > winEnd) { const t = winStart; winStart = winEnd.startOf('day'); winEnd = t.endOf('day'); }\n// Never search the past.\nif (winStart < now.startOf('day')) winStart = now.startOf('day');\n// Widen if window is too tight to plausibly yield 3 varied business-day slots.\nif (winEnd.diff(winStart, 'days').days < 4) winEnd = winStart.plus({ days: 14 }).endOf('day');\n\n// ---- Gather + filter busy events ----\nlet events = [];\ntry {\n  if (Array.isArray($json.data)) events = $json.data;\n  else events = $input.all().map(i => i.json).filter(Boolean);\n} catch (e) { events = []; }\n\nconst invitee = 'alex@ahbadvisors.com';\nconst RECLAIM_A = 'This AI-powered event was created by Reclaim.ai';\nconst RECLAIM_B = 'This event was created by Reclaim';\nconst TASK_DETAIL = \"Only you can see this Task's event details. It will show as busy to others and automatically reschedule if booked over.\";\n\nconst busy = []; // {start,end} epoch ms, buffer-padded\nfor (const ev of events) {\n  if (!ev) continue;\n  const transparency = ev.transparency || 'opaque';\n  const status = ev.status || 'confirmed';\n  const desc = ev.description || '';\n  const title = ev.summary || '';\n  if (transparency === 'transparent') continue;\n  if (status === 'cancelled') continue;\n  let declined = false;\n  for (const a of (ev.attendees || [])) {\n    const email = (a.email || '').toLowerCase();\n    if ((email === invitee || a.self === true) && a.responseStatus === 'declined') { declined = true; break; }\n  }\n  if (declined) continue;\n  if (desc.includes(RECLAIM_A)) continue;\n  if (desc.includes(RECLAIM_B)) continue;\n  if (desc.includes(TASK_DETAIL)) continue;\n  if (title.toLowerCase().includes('decompress')) continue;\n  // All-day banners do not block working-hours slots.\n  const isAllDay = !!(ev.start && ev.start.date && !ev.start.dateTime);\n  if (isAllDay) continue;\n  const sISO = (ev.start && (ev.start.dateTime || ev.start.date)) || '';\n  const eISO = (ev.end && (ev.end.dateTime || ev.end.date)) || '';\n  const s = sISO ? new Date(sISO).getTime() : NaN;\n  const e = eISO ? new Date(eISO).getTime() : NaN;\n  if (isNaN(s) || isNaN(e)) continue;\n  busy.push({ start: s - BUFFER_MINUTES * 60000, end: e + BUFFER_MINUTES * 60000 });\n}\n\n// Merge overlapping busy intervals.\nbusy.sort((a, b) => a.start - b.start);\nconst merged = [];\nfor (const b of busy) {\n  if (merged.length && b.start <= merged[merged.length - 1].end) {\n    merged[merged.length - 1].end = Math.max(merged[merged.length - 1].end, b.end);\n  } else {\n    merged.push({ start: b.start, end: b.end });\n  }\n}\nfunction isFree(slotStart, slotEnd) {\n  for (const m of merged) { if (slotStart < m.end && slotEnd > m.start) return false; }\n  return true;\n}\n\n// ---- Walk the working grid, collect candidates ----\nconst earliestStartMs = now.plus({ minutes: LEAD_MINUTES }).toMillis();\nconst slotMs = durationMinutes * 60000;\nconst stepMs = SLOT_STEP_MINUTES * 60000;\n\nconst candidates = []; // {startDT, endDT}\nlet day = winStart.startOf('day');\nconst lastDay = winEnd.startOf('day');\nwhile (day <= lastDay) {\n  const wd = day.weekday; // 1=Mon .. 7=Sun\n  if (wd >= 1 && wd <= 5) {\n    let cursor = day.set({ hour: WORK_START_HOUR, minute: 0, second: 0, millisecond: 0 });\n    const dayEnd = day.set({ hour: WORK_END_HOUR, minute: 0, second: 0, millisecond: 0 });\n    while (cursor.plus({ minutes: durationMinutes }) <= dayEnd) {\n      const sMs = cursor.toMillis();\n      const eMs = sMs + slotMs;\n      if (sMs >= earliestStartMs && isFree(sMs, eMs)) {\n        candidates.push({ startDT: cursor, endDT: cursor.plus({ minutes: durationMinutes }) });\n      }\n      cursor = cursor.plus({ minutes: SLOT_STEP_MINUTES });\n    }\n  }\n  day = day.plus({ days: 1 });\n}\n\n// ---- Pick 3 VARIED slots: prefer distinct days; avoid two same-morning ----\nfunction partOfDay(dt) { return dt.hour < 12 ? 'am' : 'pm'; }\nconst picked = [];\nconst usedDayKeys = new Set();\n// Pass 1: first free slot on each distinct day.\nfor (const c of candidates) {\n  const key = c.startDT.toFormat('yyyy-MM-dd');\n  if (!usedDayKeys.has(key)) { picked.push(c); usedDayKeys.add(key); }\n  if (picked.length >= 3) break;\n}\n// Pass 2: if <3, backfill with same-day slots in a different part of day.\nif (picked.length < 3) {\n  for (const c of candidates) {\n    if (picked.length >= 3) break;\n    if (picked.some(p => p.startDT.toMillis() === c.startDT.toMillis())) continue;\n    const sameDaySamePart = picked.some(p =>\n      p.startDT.toFormat('yyyy-MM-dd') === c.startDT.toFormat('yyyy-MM-dd') &&\n      partOfDay(p.startDT) === partOfDay(c.startDT));\n    if (!sameDaySamePart) picked.push(c);\n  }\n}\n// Pass 3: last resort \u2014 any remaining distinct candidates.\nif (picked.length < 3) {\n  for (const c of candidates) {\n    if (picked.length >= 3) break;\n    if (picked.some(p => p.startDT.toMillis() === c.startDT.toMillis())) continue;\n    picked.push(c);\n  }\n}\npicked.sort((a, b) => a.startDT.toMillis() - b.startDT.toMillis());\n\n// ---- Format output ----\nconst slots = picked.slice(0, 3).map(p => ({\n  Date: p.startDT.toFormat('cccc, LLLL d'),          // e.g. \"Monday, July 20\"\n  Start: p.startDT.toFormat('h:mm a') + ' ET',\n  End: p.endDT.toFormat('h:mm a') + ' ET',\n  startISO: p.startDT.toISO(),\n  endISO: p.endDT.toISO()\n}));\n\nconst proposedTimesText = slots.map(s => `- ${s.Date}: ${s.Start} to ${s.End}`).join('\\n');\nconst enoughSlots = slots.length >= 3;\n\nreturn [{\n  json: {\n    slots,\n    proposedTimesText,\n    slotCount: slots.length,\n    enoughSlots,\n    durationMinutes,\n    searchStartResolved: winStart.toFormat('yyyy-MM-dd'),\n    searchEndResolved: winEnd.toFormat('yyyy-MM-dd'),\n    summaryForEA: enoughSlots\n      ? `${slots.length} available ${durationMinutes}-min slots found between ${winStart.toFormat('LLL d')} and ${winEnd.toFormat('LLL d')}.`\n      : `Only ${slots.length} slot(s) found in the working-hours grid between ${winStart.toFormat('LLL d')} and ${winEnd.toFormat('LLL d')}; widen the window or review manually.`\n  }\n}];\n"
+      },
+      "id": "c2000000-0000-4000-8000-0000000003a0",
+      "name": "Slot Engine (Code)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1392,
+        64
+      ],
+      "alwaysOutputData": true
+    }
+  ],
+  "connections": {
+    "Missive Webhook Connection": {
+      "main": [
+        [
+          {
+            "node": "Pull Conversation Id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pull Conversation Id": {
+      "main": [
+        [
+          {
+            "node": "Missive Get Conversation Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Missive Get Conversation Messages": {
+      "main": [
+        [
+          {
+            "node": "Flatten Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flatten Messages": {
+      "main": [
+        [
+          {
+            "node": "Classify with AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Classify with AI",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Classify with AI",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify with AI": {
+      "main": [
+        [
+          {
+            "node": "Is Scheduling?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Scheduling?": {
+      "main": [
+        [
+          {
+            "node": "Extract with AI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack Shadow Not-Scheduling Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extract with AI",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Extract with AI",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract with AI": {
+      "main": [
+        [
+          {
+            "node": "Search Window Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Window Fields": {
+      "main": [
+        [
+          {
+            "node": "Find Busy Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Busy Events": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Busy Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Busy Events": {
+      "main": [
+        [
+          {
+            "node": "Slot Engine (Code)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Writer Model (Anthropic)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Write Email Draft",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Email Draft": {
+      "main": [
+        [
+          {
+            "node": "Slack Shadow Draft Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Shadow Draft Note": {
+      "main": [
+        [
+          {
+            "node": "Slack Shadow Review Ping",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slot Engine (Code)": {
+      "main": [
+        [
+          {
+            "node": "Write Email Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "Ka01FqAuhDXin0Kn"
+  },
+  "active": false,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

@@ -1,0 +1,596 @@
+{
+  "name": "[R2d] Detect Conflicting Events",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerOn": "eventCreated",
+        "calendarId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "alex@ahbadvisors.com",
+          "cachedResultName": "alex@ahbadvisors.com"
+        },
+        "options": {},
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        }
+      },
+      "id": "d2a10000-0001-4a2d-9001-aa0000000001",
+      "name": "Calendar Event Created",
+      "type": "n8n-nodes-base.googleCalendarTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1120,
+        -120
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "NWVOUqg1ysw03vVr",
+          "name": "AHB Advisors Calendar"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "triggerOn": "eventUpdated",
+        "calendarId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "alex@ahbadvisors.com",
+          "cachedResultName": "alex@ahbadvisors.com"
+        },
+        "options": {},
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        }
+      },
+      "id": "d2a10000-0001-4a2d-9001-aa0000000021",
+      "name": "Calendar Event Updated",
+      "type": "n8n-nodes-base.googleCalendarTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1120,
+        120
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "NWVOUqg1ysw03vVr",
+          "name": "AHB Advisors Calendar"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "numberInputs": 2
+      },
+      "id": "d2a10000-0001-4a2d-9001-aa0000000022",
+      "name": "Merge Triggers",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        -880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalize the merged trigger event (created OR updated) into a single record.\n// Deterministic; no LLM. Also decides whether the TRIGGER event itself should\n// even raise a conflict (status/transparency/declined/all-day gating).\n// Convergence-safe: guard the $() ref in try/catch.\nfunction firstFrom(nodeName) {\n  try { return $(nodeName).first().json; } catch (e) { return null; }\n}\n// The merged input carries the triggering event on $input; use it directly,\n// with the two trigger nodes as defensive fallbacks.\nlet trig = {};\ntry { trig = $input.item.json || {}; } catch (e) { trig = {}; }\nif (!trig || !trig.start) {\n  trig = firstFrom('Calendar Event Created') || firstFrom('Calendar Event Updated') || trig || {};\n}\n\nconst SELF_EMAIL = 'alex@ahbadvisors.com';\n\n// All-day events have start.date (no dateTime). An all-day OOO / travel block\n// should NOT raise a conflict against every meeting that day, so we SKIP\n// all-day trigger events entirely (decision: skip; commented here).\nconst isAllDayTrigger = Boolean(trig.start && trig.start.date && !trig.start.dateTime);\n\n// The invitee's own responseStatus on the trigger event: if Alex declined it,\n// it should not raise a conflict.\nlet selfDeclined = false;\ntry {\n  const atts = Array.isArray(trig.attendees) ? trig.attendees : [];\n  const me = atts.find(a => a && (a.self === true || (a.email || '').toLowerCase() === SELF_EMAIL.toLowerCase()));\n  if (me && me.responseStatus === 'declined') selfDeclined = true;\n} catch (e) { selfDeclined = false; }\n\n// Trigger-level status / transparency gating.\nconst trigCancelled = trig.status === 'cancelled';\nconst trigTransparent = trig.transparency === 'transparent';\n\n// The trigger event should be processed only if it is a real, opaque,\n// non-declined, timed (non-all-day) event.\nconst processTrigger = !isAllDayTrigger && !trigCancelled && !trigTransparent && !selfDeclined;\n\nconst startRaw = (trig.start && (trig.start.dateTime || trig.start.date)) || '';\nconst endRaw = (trig.end && (trig.end.dateTime || trig.end.date)) || '';\n\nreturn {\n  json: {\n    trigId: trig.id || '',\n    trigTitle: trig.summary || '(no title)',\n    trigStartRaw: startRaw,\n    trigEndRaw: endRaw,\n    processTrigger,\n    skipReason: isAllDayTrigger ? 'all-day' : (trigCancelled ? 'cancelled' : (trigTransparent ? 'transparent' : (selfDeclined ? 'declined' : '')))\n  }\n};"
+      },
+      "id": "d2a10000-0001-4a2d-9001-aa0000000023",
+      "name": "Normalize Trigger",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -640,
+        0
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d2a1b000-0001-4a2d-9101-bb0000000001",
+              "leftValue": "={{ $json.processTrigger }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d2a10000-0001-4a2d-9001-aa0000000024",
+      "name": "Process Trigger?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -400,
+        0
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "d2a10000-0001-4a2d-9001-aa0000000025",
+      "name": "Skip Trigger Event",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "mode": "list",
+          "value": "alex@ahbadvisors.com",
+          "cachedResultName": "alex@ahbadvisors.com"
+        },
+        "returnAll": false,
+        "limit": 50,
+        "options": {
+          "timeMin": "={{ $json.trigStartRaw }}",
+          "timeMax": "={{ $json.trigEndRaw }}",
+          "singleEvents": true,
+          "orderBy": "startTime"
+        }
+      },
+      "id": "d2a10000-0002-4a2d-9002-aa0000000002",
+      "name": "Find Overlapping Events",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        0
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "NWVOUqg1ysw03vVr",
+          "name": "AHB Advisors Calendar"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Deterministic overlap detection \u2014 NO LLM.\n// Reads the normalized trigger event and the getAll window of existing events,\n// then keeps only TRUE overlaps, excluding self, cancelled/transparent/declined\n// events, and Reclaim/decompress/task-detail noise.\n//\n// FIXES vs Relay (flow had 0 runs, never fired):\n//   1. Self-exclusion by ID: Relay used `Event ID equal trigger.Event ID` which,\n//      combined with `Title notEqual`, could NEVER match. We exclude self via\n//      existing.id !== trigger.id (the intended notEqual).\n//   2. Reclaim/noise skip migrated from OR-of-notContains (near-always true) to AND\n//      (every clause must hold) so the filter actually removes those events.\n//   3. Relay's dead empty `#each` loop is replaced by a computed markdown string\n//      that the ClickUp node commits verbatim.\n//\n// 2d UPGRADES (this pass):\n//   - eventUpdated trigger feeds the same path (reschedule awareness).\n//   - Event-status filtering: skip existing events that are cancelled,\n//     transparency==='transparent' (marked free), or where the invitee's own\n//     responseStatus==='declined'.\n//   - Embeds a stable machine key `[gcal:<trigId>]` in the task name so the\n//     dedup lookup can find an existing conflict task without a custom field.\n\n// --- Trigger event (from Normalize Trigger; wrapped defensively) ---\nfunction safeCtx() {\n  try { return $('Normalize Trigger').item.json || {}; }\n  catch (e) { return {}; }\n}\nconst ctx = safeCtx();\n\nconst SELF_EMAIL = 'alex@ahbadvisors.com';\nconst trigStart = new Date(ctx.trigStartRaw || 0).getTime();\nconst trigEnd = new Date(ctx.trigEndRaw || 0).getTime();\nconst trigId = ctx.trigId || '';\nconst trigTitle = ctx.trigTitle || '(no title)';\n\n// Human-readable start for the task name, e.g. \"Mon, Jul 20 at 2:00 PM\".\nfunction fmt(dt) {\n  try {\n    return new Date(dt).toLocaleString('en-US', {\n      weekday: 'short', month: 'short', day: 'numeric',\n      hour: 'numeric', minute: '2-digit', hour12: true\n    });\n  } catch (e) { return String(dt || ''); }\n}\nconst trigStartFmt = fmt(trigStart);\n\n// Noise filters (migrated as AND \u2014 an event survives only if NONE of these hit).\nconst RECLAIM_A = 'This AI-powered event was created by Reclaim.ai';\nconst RECLAIM_B = 'This event was created by Reclaim';\nconst TASK_DETAIL = \"Only you can see this Task's event details. It will show as busy to others and automatically reschedule if booked over.\";\n\nconst conflicts = [];\nfor (const item of $input.all()) {\n  const ev = item.json || {};\n  const id = ev.id || '';\n  const title = ev.summary || '(no title)';\n  const desc = ev.description || '';\n  const evStart = new Date((ev.start && (ev.start.dateTime || ev.start.date)) || 0).getTime();\n  const evEnd = new Date((ev.end && (ev.end.dateTime || ev.end.date)) || 0).getTime();\n\n  // True overlap: existing.start < trigger.end AND existing.end > trigger.start.\n  if (!(evStart < trigEnd && evEnd > trigStart)) continue;\n  // Exclude self by ID (the fix for the equal->notEqual bug).\n  if (id && trigId && id === trigId) continue;\n\n  // Event-status filtering (2d upgrade): a cancelled, free-marked, or\n  // Alex-declined existing event is not a real conflict.\n  if (ev.status === 'cancelled') continue;\n  if (ev.transparency === 'transparent') continue;\n  let evDeclined = false;\n  try {\n    const atts = Array.isArray(ev.attendees) ? ev.attendees : [];\n    const me = atts.find(a => a && (a.self === true || (a.email || '').toLowerCase() === SELF_EMAIL.toLowerCase()));\n    if (me && me.responseStatus === 'declined') evDeclined = true;\n  } catch (e) { evDeclined = false; }\n  if (evDeclined) continue;\n\n  // Exclude Reclaim / decompress / task-detail noise (AND of notContains).\n  if (desc.includes(RECLAIM_A)) continue;\n  if (desc.includes(RECLAIM_B)) continue;\n  if (desc.includes(TASK_DETAIL)) continue;\n  if (title.toLowerCase().includes('decompress')) continue;\n\n  const creatorName = (ev.creator && (ev.creator.displayName || ev.creator.email)) || '';\n  const creatorEmail = (ev.creator && ev.creator.email) || '';\n  conflicts.push({\n    title,\n    start: (ev.start && (ev.start.dateTime || ev.start.date)) || '',\n    end: (ev.end && (ev.end.dateTime || ev.end.date)) || '',\n    startFmt: fmt((ev.start && (ev.start.dateTime || ev.start.date)) || ''),\n    endFmt: fmt((ev.end && (ev.end.dateTime || ev.end.date)) || ''),\n    creatorName,\n    creatorEmail\n  });\n}\n\n// Stable machine key embedded in the task NAME for dedup (no custom field on the\n// Scheduling Conflicts list). Downstream lookup matches on this token.\nconst gcalKey = `[gcal:${trigId}]`;\n\n// Build the ClickUp description string (replaces Relay's dead #each loop).\nconst lines = conflicts.map(c => {\n  const who = c.creatorName ? ` - ${c.creatorName}${c.creatorEmail ? ' (' + c.creatorEmail + ')' : ''}` : '';\n  return `- ${c.title} [${c.startFmt} - ${c.endFmt}]${who}`;\n});\nconst taskDescription =\n  `Conflict detected for event: **${trigTitle}** at ${trigStartFmt}.\\n\\n` +\n  `**Conflicting events:**\\n` +\n  (lines.length ? lines.join('\\n') : '- (none)') +\n  `\\n\\n_key: ${gcalKey}_`;\n\n// Build the Slack summary (bullet list).\nconst slackLines = conflicts.map(c => `\\u2022 ${c.title} (${c.startFmt} - ${c.endFmt})`);\nconst slackSummary =\n  `:calendar: Scheduling conflict detected for event: *${trigTitle}*\\n` +\n  `Time: ${trigStartFmt}\\n\\n` +\n  `Conflicts with:\\n` +\n  (slackLines.length ? slackLines.join('\\n') : '\\u2022 (none)');\n\n// dueDate = event start minus 2 days (epoch ms), for the ClickUp task.\nconst dueDateMs = trigStart ? trigStart - 2 * 24 * 60 * 60 * 1000 : '';\n\nreturn [{\n  json: {\n    conflictCount: conflicts.length,\n    conflicts,\n    trigId,\n    gcalKey,\n    triggerTitle: trigTitle,\n    triggerStartFmt: trigStartFmt,\n    taskName: `Scheduling conflict for event: ${trigTitle} on ${trigStartFmt} ${gcalKey}`,\n    taskDescription,\n    slackSummary,\n    dueDateMs\n  }\n}];"
+      },
+      "id": "d2a10000-0003-4a2d-9003-aa0000000003",
+      "name": "Compute Conflicts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        0
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d2a1c000-0001-4a2d-9101-cc0000000001",
+              "leftValue": "={{ $json.conflictCount }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d2a10000-0004-4a2d-9004-aa0000000004",
+      "name": "Any Conflicts?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        320,
+        0
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "d2a10000-0007-4a2d-9007-aa0000000007",
+      "name": "No Conflicts",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        560,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.clickup.com/api/v2/list/901112645521/task?archived=false&include_closed=false&page=0",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "clickUpOAuth2Api",
+        "options": {}
+      },
+      "id": "d2a10000-0005-4a2d-9005-aa0000000050",
+      "name": "Lookup Existing Conflict Task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        560,
+        0
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse the ClickUp list-task lookup response and dedup on the gCal key\n// embedded in the task NAME (no custom field on the Scheduling Conflicts list).\n// Deterministic; no LLM. Convergence-safe: guard the upstream $() ref.\n// The GET returns { tasks: [...] }. We treat the FIRST OPEN task whose name\n// contains `[gcal:<trigId>]` as the existing conflict task for this event.\nlet ctx = {};\ntry { ctx = $('Compute Conflicts').item.json || {}; } catch (e) { ctx = {}; }\n\nlet resp = {};\ntry { resp = $input.item.json || {}; } catch (e) { resp = {}; }\n\nlet tasks = [];\nif (Array.isArray(resp.tasks)) tasks = resp.tasks;\nelse if (resp.body && Array.isArray(resp.body.tasks)) tasks = resp.body.tasks;\n\nconst key = ctx.gcalKey || '';\nlet existingTaskId = '';\nif (key) {\n  const match = tasks.find(t => t && typeof t.name === 'string' && t.name.includes(key));\n  if (match) existingTaskId = match.id || '';\n}\nconst found = Boolean(existingTaskId);\n\nreturn {\n  json: Object.assign({}, ctx, {\n    found,\n    existingTaskId\n  })\n};"
+      },
+      "id": "d2a10000-0005-4a2d-9005-aa0000000051",
+      "name": "Parse Lookup",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        0
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d2a1d000-0001-4a2d-9101-dd0000000001",
+              "leftValue": "={{ $json.found }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d2a10000-0005-4a2d-9005-aa0000000052",
+      "name": "Conflict Task Exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1040,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "update",
+        "id": "={{ $json.existingTaskId }}",
+        "updateFields": {
+          "name": "={{ $json.taskName }}",
+          "dueDate": "={{ $json.dueDateMs }}",
+          "content": "={{ $json.taskDescription }}",
+          "markdownContent": true
+        }
+      },
+      "id": "d2a10000-0006-4a2d-9006-aa0000000060",
+      "name": "Update Conflict Task",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        -120
+      ],
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "team": "9011763462",
+        "space": "90113618058",
+        "folderless": true,
+        "list": "901112645521",
+        "name": "={{ $json.taskName }}",
+        "additionalFields": {
+          "assignees": [
+            "kendra@ahbadvisors.com"
+          ],
+          "status": "not started",
+          "dueDate": "={{ $json.dueDateMs }}",
+          "content": "={{ $json.taskDescription }}",
+          "markdownContent": true
+        }
+      },
+      "id": "d2a10000-0005-4a2d-9005-aa0000000005",
+      "name": "Create Conflict Task",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        120
+      ],
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "C08HH2DTVK6",
+          "cachedResultName": "scheduling"
+        },
+        "text": "={{ $('Compute Conflicts').item.json.slackSummary }}",
+        "otherOptions": {}
+      },
+      "id": "d2a10000-0006-4a2d-9006-aa0000000006",
+      "name": "Notify Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        1680,
+        0
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "numberInputs": 2
+      },
+      "id": "d2a10000-0006-4a2d-9006-aa0000000061",
+      "name": "Merge Write Branches",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1440,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Calendar Event Created": {
+      "main": [
+        [
+          {
+            "node": "Merge Triggers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calendar Event Updated": {
+      "main": [
+        [
+          {
+            "node": "Merge Triggers",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Triggers": {
+      "main": [
+        [
+          {
+            "node": "Normalize Trigger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Trigger": {
+      "main": [
+        [
+          {
+            "node": "Process Trigger?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Trigger?": {
+      "main": [
+        [
+          {
+            "node": "Find Overlapping Events",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip Trigger Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Overlapping Events": {
+      "main": [
+        [
+          {
+            "node": "Compute Conflicts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Conflicts": {
+      "main": [
+        [
+          {
+            "node": "Any Conflicts?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Conflicts?": {
+      "main": [
+        [
+          {
+            "node": "Lookup Existing Conflict Task",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Conflicts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Existing Conflict Task": {
+      "main": [
+        [
+          {
+            "node": "Parse Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Lookup": {
+      "main": [
+        [
+          {
+            "node": "Conflict Task Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conflict Task Exists?": {
+      "main": [
+        [
+          {
+            "node": "Update Conflict Task",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Conflict Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Conflict Task": {
+      "main": [
+        [
+          {
+            "node": "Merge Write Branches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Conflict Task": {
+      "main": [
+        [
+          {
+            "node": "Merge Write Branches",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Write Branches": {
+      "main": [
+        [
+          {
+            "node": "Notify Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "Ka01FqAuhDXin0Kn"
+  },
+  "active": false,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

@@ -1,0 +1,718 @@
+{
+  "name": "[R6] AP Invoices (Reimbursable / Non-Reimbursable / Personal)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "a1f0c3d2-ap01-4b8e-9c6a-ap0invoices01",
+        "options": {}
+      },
+      "id": "11111111-0001-4000-8000-000000000001",
+      "name": "Missive Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -960,
+        0
+      ],
+      "webhookId": "a1f0c3d2-ap01-4b8e-9c6a-ap0invoices01"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "conversationId",
+              "value": "={{ $json.body.conversation.id }}",
+              "type": "string"
+            },
+            {
+              "id": "c2",
+              "name": "labelId",
+              "value": "={{ $json.body.rule?.id || ($json.body.conversation.shared_labels?.[0]?.id) }}",
+              "type": "string"
+            },
+            {
+              "id": "c3",
+              "name": "conversationUrl",
+              "value": "={{ $json.body.conversation.web_url || $json.body.conversation.app_url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "11111111-0002-4000-8000-000000000002",
+      "name": "Set Trigger Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -736,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "s1",
+                    "leftValue": "={{ $json.labelId }}",
+                    "rightValue": "24806bb5-f494-40b5-bf52-eef62e81d211",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "outputKey": "Reimbursable"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "s2",
+                    "leftValue": "={{ $json.labelId }}",
+                    "rightValue": "a2acce35-2b2b-4ee6-bf77-f951d1542730",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "outputKey": "NonReimbursable"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "s3",
+                    "leftValue": "={{ $json.labelId }}",
+                    "rightValue": "8745cb57-0cf7-4b5f-8acf-07df96600fd2",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "outputKey": "Personal"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "11111111-0003-4000-8000-000000000003",
+      "name": "Switch On Label",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -512,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1",
+              "name": "driveFolder",
+              "value": "1LahyFbWOkypP8MpRVoyu4tzkr3XrTxVJ",
+              "type": "string"
+            },
+            {
+              "id": "d2",
+              "name": "clickupType",
+              "value": "Business - Reimbursable",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "11111111-0004-4000-8000-000000000004",
+      "name": "Route Reimbursable",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -288,
+        -224
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1",
+              "name": "driveFolder",
+              "value": "1JAWODQ_2C9XCdV_s_AvpJMn3evpEwm-F",
+              "type": "string"
+            },
+            {
+              "id": "d2",
+              "name": "clickupType",
+              "value": "Business - Non Reimbursable",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "11111111-0005-4000-8000-000000000005",
+      "name": "Route Non-Reimbursable",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -288,
+        0
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1",
+              "name": "driveFolder",
+              "value": "1mptu9A2xxlckDp3ThINgyU6MnXDaZmsh",
+              "type": "string"
+            },
+            {
+              "id": "d2",
+              "name": "clickupType",
+              "value": "Personal",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "11111111-0006-4000-8000-000000000006",
+      "name": "Route Personal",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -288,
+        224
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "id": "11111111-0007-4000-8000-000000000007",
+      "name": "Merge Routes",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -64,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://public.missiveapp.com/v1/conversations/{{ $('Set Trigger Context').item.json.conversationId }}/messages?limit=10",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "id": "11111111-0008-4000-8000-000000000008",
+      "name": "Missive Get Messages",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        176,
+        0
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e1",
+              "name": "emailText",
+              "value": "={{ ($json.messages || []).map(m => (m.subject ? ('Subject: ' + m.subject + '\\n') : '') + (m.body || m.preview || '')).join('\\n\\n---\\n\\n') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "11111111-0009-4000-8000-000000000009",
+      "name": "Build Extraction Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        400,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.2",
+          "mode": "list",
+          "cachedResultName": "gpt-5.2"
+        },
+        "options": {
+          "reasoningEffort": "medium",
+          "timeout": 200000
+        }
+      },
+      "id": "11111111-0010-4000-8000-000000000010",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        224
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "FPFFI1NvOtGMoh30",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\"type\": \"object\", \"properties\": {\"Vendor Name\": {\"type\": \"string\"}, \"Invoice Amount\": {\"type\": \"number\"}, \"Currency\": {\"type\": \"string\", \"enum\": [\"USD\", \"EUR\", \"GBP\", \"JPY\", \"AUD\", \"CAD\", \"CHF\", \"CNY\", \"NZD\"]}, \"Due Date\": {\"type\": \"string\", \"format\": \"date\"}, \"Product/Service Detail\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}}, \"Multiple Payment Due Dates\": {\"type\": \"string\", \"enum\": [\"yes\", \"no\"]}, \"Payment Details\": {\"type\": \"string\"}, \"Additional Context\": {\"type\": \"string\"}}, \"required\": [\"Vendor Name\", \"Invoice Amount\", \"Currency\", \"Due Date\"]}"
+      },
+      "id": "11111111-0011-4000-8000-000000000011",
+      "name": "Invoice Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        760,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert forensic accountant who takes both emails and attachments to figure out the context therein. Your goal is to help create a thoughtful record and log of the detail in your executives inbox.\n\nBasics:\nExtract the vendor name, invoice amount, and due date from the email/attachment below. Respond with these as fields labeled Vendor Name (as text), Invoice Amount (as number), Currency (as currency type e.g,, USD, EUR, GBP, JPY etc.), and Due Date (as date).\n\nIf there's additional Product/Service Detail on what the invoice is for (e.g., product or services), list that out in bulleted text for better formatting.\n\nSometimes the invoice states that there are multiple payment due dates. If this is true, state yes-otherwise leave as no.\n\nIf there are payment details (e.g., credit card, wire information, ach information) extract those as text with appropriate formatting (e.g., often time there are addresses, different hard enter lines etc.)\n\nFinally if there is additional context to note (e.g., sometimes there's an attachment with a password), provide context in a text.\n\nEmail / attachment content:\n---\n{{ $json.emailText }}\n---",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "id": "11111111-0012-4000-8000-000000000012",
+      "name": "Extract Invoice",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 500
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "team": "9011763462",
+        "space": "90113618058",
+        "folderless": true,
+        "list": "901107582230",
+        "name": "=[{{ $json.output['Due Date'] }}] {{ $json.output['Vendor Name'] }} – {{ $json.output['Invoice Amount'] }}  {{ $json.output.Currency }}",
+        "additionalFields": {
+          "content": "=**Vendor Name**: {{ $json.output['Vendor Name'] }} \n**Invoice Amount**: {{ $json.output['Invoice Amount'] }} \n**Invoice Currency**: {{ $json.output.Currency }}\n\n**Due Date**:  {{ $json.output['Due Date'] }}\n**Invoice Date**:  {{ $now.format('MMMM d, yyyy') }}\n\n**Invoice/Product/Service Detail**:\n{{ ($json.output['Product/Service Detail'] || []).map(x => '- ' + x).join('\\n') }}\n\n**Missive link**: {{ $('Set Trigger Context').item.json.conversationUrl }}\n\n**Payment Details**:\n{{ $json.output['Payment Details'] || '' }}",
+          "markdownContent": true,
+          "dueDate": "={{ $json.output['Due Date'] }}"
+        }
+      },
+      "id": "11111111-0013-4000-8000-000000000013",
+      "name": "Create AP Task",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        992,
+        0
+      ],
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "update",
+        "id": "={{ $json.id }}",
+        "updateFields": {
+          "customFieldsJson": "=[{\"id\":\"FILL_IN_EXPENSE_FIELD_ID\",\"value\":{{ $('Extract Invoice').item.json.output['Invoice Amount'] }}},{\"id\":\"FILL_IN_TYPE_FIELD_ID\",\"value\":\"{{ $('Merge Routes').item.json.clickupType }}\"}]"
+        }
+      },
+      "id": "11111111-0014-4000-8000-000000000014",
+      "name": "Update AP Custom Fields",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        1216,
+        0
+      ],
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build one item per attachment across all fetched messages.\nlet msgs = [];\ntry { msgs = $('Missive Get Messages').first().json.messages || []; } catch (e) { msgs = []; }\nconst vendor = (() => { try { return $('Extract Invoice').first().json.output['Vendor Name'] || 'Vendor'; } catch (e) { return 'Vendor'; } })();\nconst today = $now.format('yyyy-MM-dd');\nconst out = [];\nfor (const m of msgs) {\n  const atts = m.attachments || [];\n  for (const a of atts) {\n    if (!a.url && !a.download_url) continue;\n    const fileName = a.filename || a.name || 'attachment';\n    out.push({ json: {\n      attachmentUrl: a.download_url || a.url,\n      driveFileName: '[' + today + '] ' + vendor + ' - ' + fileName + ' - Invoice.pdf'\n    }});\n  }\n}\nreturn out;"
+      },
+      "id": "11111111-0015-4000-8000-000000000015",
+      "name": "Split Attachments",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        0
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.attachmentUrl }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "11111111-0016-4000-8000-000000000016",
+      "name": "Download Attachment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1664,
+        0
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Split Attachments').item.json.driveFileName }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Merge Routes').item.json.driveFolder }}"
+        },
+        "options": {}
+      },
+      "id": "11111111-0017-4000-8000-000000000017",
+      "name": "Upload To Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1888,
+        0
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zCC4OdEB1yyc3uZv",
+          "name": "AHB Advisors Google Drive"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "taskAttachment",
+        "operation": "upload",
+        "task": "={{ $('Create AP Task').item.json.id }}",
+        "binaryData": true,
+        "binaryPropertyName": "data"
+      },
+      "id": "11111111-0018-4000-8000-000000000018",
+      "name": "Attach File To Task",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        2112,
+        0
+      ],
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    }
+  ],
+  "connections": {
+    "Missive Webhook": {
+      "main": [
+        [
+          {
+            "node": "Set Trigger Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Trigger Context": {
+      "main": [
+        [
+          {
+            "node": "Switch On Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch On Label": {
+      "main": [
+        [
+          {
+            "node": "Route Reimbursable",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Route Non-Reimbursable",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Route Personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Reimbursable": {
+      "main": [
+        [
+          {
+            "node": "Merge Routes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Non-Reimbursable": {
+      "main": [
+        [
+          {
+            "node": "Merge Routes",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Route Personal": {
+      "main": [
+        [
+          {
+            "node": "Merge Routes",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge Routes": {
+      "main": [
+        [
+          {
+            "node": "Missive Get Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Missive Get Messages": {
+      "main": [
+        [
+          {
+            "node": "Build Extraction Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Extraction Input": {
+      "main": [
+        [
+          {
+            "node": "Extract Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extract Invoice",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invoice Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Extract Invoice",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Invoice": {
+      "main": [
+        [
+          {
+            "node": "Create AP Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create AP Task": {
+      "main": [
+        [
+          {
+            "node": "Update AP Custom Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update AP Custom Fields": {
+      "main": [
+        [
+          {
+            "node": "Split Attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Attachments": {
+      "main": [
+        [
+          {
+            "node": "Download Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Attachment": {
+      "main": [
+        [
+          {
+            "node": "Upload To Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload To Drive": {
+      "main": [
+        [
+          {
+            "node": "Attach File To Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "Ka01FqAuhDXin0Kn"
+  },
+  "active": false,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}
