@@ -117,7 +117,7 @@
             {
               "id": "e1",
               "name": "emailText",
-              "value": "={{ ($json.messages || []).map(m => (m.subject ? ('Subject: ' + m.subject + '\\n') : '') + (m.body || m.preview || '')).join('\\n\\n---\\n\\n') }}",
+              "value": "={{ (() => { let pdf=''; try { pdf = ($('Extract Invoice PDF Text').first().json.text) || ''; } catch(e) { pdf=''; } let body=''; try { body = ($('Missive Get Messages').first().json.messages || []).map(m => (m.subject ? ('Subject: ' + m.subject + '\\n') : '') + (m.body || m.preview || '')).join('\\n\\n---\\n\\n'); } catch(e) { body=''; } const parts=[]; if (pdf && pdf.trim()) parts.push('=== INVOICE PDF (attachment) ===\\n' + pdf); if (body && body.trim()) parts.push('=== EMAIL BODY ===\\n' + body); return parts.join('\\n\\n'); })() }}",
               "type": "string"
             }
           ]
@@ -201,11 +201,12 @@
         "space": "90113618058",
         "folderless": true,
         "list": "901107582230",
-        "name": "=[{{ $json.output['Due Date'] }}] {{ $json.output['Vendor Name'] }} – {{ $json.output['Invoice Amount'] }}  {{ $json.output.Currency }}",
+        "name": "=[{{ $json.output['Due Date'] }}] {{ $json.output['Vendor Name'] }} \u2013 {{ $json.output['Invoice Amount'] }}  {{ $json.output.Currency }}",
         "additionalFields": {
           "content": "=**Vendor Name**: {{ $json.output['Vendor Name'] }} \n**Invoice Amount**: {{ $json.output['Invoice Amount'] }} \n**Invoice Currency**: {{ $json.output.Currency }}\n\n**Due Date**:  {{ $json.output['Due Date'] }}\n**Invoice Date**:  {{ $now.format('MMMM d, yyyy') }}\n\n**Invoice/Product/Service Detail**:\n{{ ($json.output['Product/Service Detail'] || []).map(x => '- ' + x).join('\\n') }}\n\n**Missive link**: {{ $('Set Trigger Context').item.json.conversationUrl }}\n\n**Payment Details**:\n{{ $json.output['Payment Details'] || '' }}",
           "markdownContent": true,
-          "dueDate": "={{ $json.output['Due Date'] }}"
+          "dueDate": "={{ $json.output['Due Date'] }}",
+          "status": "update required"
         }
       },
       "id": "11111111-0013-4000-8000-000000000013",
@@ -227,9 +228,9 @@
       "parameters": {
         "authentication": "oAuth2",
         "operation": "update",
-        "id": "={{ $json.id }}",
+        "id": "={{ $('Create AP Task').first().json.id }}",
         "updateFields": {
-          "customFieldsJson": "=[{\"id\":\"FILL_IN_EXPENSE_FIELD_ID\",\"value\":{{ $('Extract Invoice').item.json.output['Invoice Amount'] }}},{\"id\":\"FILL_IN_TYPE_FIELD_ID\",\"value\":\"{{ $('Merge Routes').item.json.clickupType }}\"}]"
+          "customFieldsJson": "=[{\"id\":\"cab63c89-4cdd-4f13-88f2-af9afceb079e\",\"value\":{{ $('Extract Invoice').first().json.output['Invoice Amount'] }}},{\"id\":\"53b099b7-ece7-47ac-8300-b4d9fd3aedaf\",\"value\":\"{{ $('Merge Routes').first().json.clickupType === 'Business - Non Reimbursable' ? '40e6e6e1-d622-4570-b4b7-707dbcd22eb3' : 'd13ef2ad-6db6-46fb-a6bf-22e794050e2b' }}\"}]"
         }
       },
       "id": "11111111-0014-4000-8000-000000000014",
@@ -376,6 +377,97 @@
           "name": "Missive"
         }
       }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pick the invoice PDF: first PDF-ish attachment across all fetched messages.\n// Always outputs exactly one item so the linear spine never breaks; if no PDF\n// is found, pdfUrl is '' and the downstream download/extract are skipped-safe\n// (they run best-effort and the extractor falls back to the email body).\nlet msgs = [];\ntry { msgs = $('Missive Get Messages').first().json.messages || []; } catch (e) { msgs = []; }\nlet pdfUrl = '';\nlet pdfName = '';\nfor (const m of msgs) {\n  const atts = (m && m.attachments) || [];\n  for (const a of atts) {\n    if (!a) continue;\n    const url = a.download_url || a.url;\n    if (!url) continue;\n    const fn = String(a.filename || a.name || '').toLowerCase();\n    const mt = String(a.media_type || a.content_type || a.mime_type || '').toLowerCase();\n    const isPdf = fn.endsWith('.pdf') || mt.includes('pdf');\n    if (isPdf) { pdfUrl = url; pdfName = a.filename || a.name || 'invoice.pdf'; break; }\n  }\n  if (pdfUrl) break;\n}\nreturn [{ json: { pdfUrl, pdfName, hasPdf: Boolean(pdfUrl) } }];"
+      },
+      "id": "ap00pdf0-0000-4000-8000-0000000pdf01",
+      "name": "Select Invoice PDF",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        176
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.pdfUrl }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "ap00pdf0-0000-4000-8000-0000000pdf02",
+      "name": "Download Invoice PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        400,
+        176
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "id": "ap00pdf0-0000-4000-8000-0000000pdf03",
+      "name": "Extract Invoice PDF Text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        640,
+        176
+      ],
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "C0AMDDL01QU",
+          "cachedResultName": "oc-athena"
+        },
+        "text": "=:receipt: *AP invoice needs review before it's actioned*\n*Vendor:* {{ $('Extract Invoice').item.json.output['Vendor Name'] }}\n*Amount:* {{ $('Extract Invoice').item.json.output['Invoice Amount'] }} {{ $('Extract Invoice').item.json.output.Currency }}\n*Due:* {{ $('Extract Invoice').item.json.output['Due Date'] }}\n*Type:* {{ $('Merge Routes').item.json.clickupType }}\n*ClickUp task:* {{ $json.url || ('https://app.clickup.com/t/' + $json.id) }}\n*Email:* {{ $('Set Trigger Context').item.json.conversationUrl }}\n_Status: *update required* (review hold) \u2014 verify vendor/amount/due before moving it forward._",
+        "otherOptions": {}
+      },
+      "id": "ap00slk0-0000-4000-8000-0000000slk01",
+      "name": "Slack Confirm AP",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        1104,
+        176
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      },
+      "onError": "continueRegularOutput"
     }
   ],
   "connections": {
@@ -405,7 +497,7 @@
       "main": [
         [
           {
-            "node": "Build Extraction Input",
+            "node": "Select Invoice PDF",
             "type": "main",
             "index": 0
           }
@@ -471,7 +563,7 @@
       "main": [
         [
           {
-            "node": "Update AP Custom Fields",
+            "node": "Slack Confirm AP",
             "type": "main",
             "index": 0
           }
@@ -527,6 +619,50 @@
         [
           {
             "node": "Apply AP Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select Invoice PDF": {
+      "main": [
+        [
+          {
+            "node": "Download Invoice PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Invoice PDF": {
+      "main": [
+        [
+          {
+            "node": "Extract Invoice PDF Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Invoice PDF Text": {
+      "main": [
+        [
+          {
+            "node": "Build Extraction Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Confirm AP": {
+      "main": [
+        [
+          {
+            "node": "Update AP Custom Fields",
             "type": "main",
             "index": 0
           }
