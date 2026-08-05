@@ -351,8 +351,8 @@
         "genericAuthType": "httpBearerAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"posts\": {\n    \"conversation\": \"{{ $('Flatten Messages').item.json.conversationId }}\",\n    \"notification\": {\n      \"title\": \"Scheduling - Availability Check\",\n      \"body\": \"Calendar conflict check complete\"\n    },\n    \"markdown\": {{ JSON.stringify($json.resultText) }}\n  }\n}",
-        "body": "={\n  \"posts\": {\n    \"conversation\": \"{{ $('Flatten Messages').item.json.conversationId }}\",\n    \"notification\": {\n      \"title\": \"Scheduling - Availability Check\",\n      \"body\": \"Calendar conflict check complete\"\n    },\n    \"markdown\": {{ JSON.stringify($json.resultText) }}\n  }\n}",
+        "jsonBody": "={\n  \"posts\": {\n    \"conversation\": \"{{ $('Flatten Messages').item.json.conversationId }}\",\n    \"organization\": \"c7be17b4-c416-4d3a-b20d-62a89a261016\",\n    \"add_assignees\": [\"2bb2e9c3-4618-4a70-8d41-b7b5b50cd489\"],\n    \"add_users\": [\"2bb2e9c3-4618-4a70-8d41-b7b5b50cd489\"],\n    \"notification\": {\n      \"title\": \"Scheduling - Availability Check\",\n      \"body\": \"Calendar conflict check complete\"\n    },\n    \"markdown\": {{ JSON.stringify($json.resultText) }}\n  }\n}",
+        "body": "={\n  \"posts\": {\n    \"conversation\": \"{{ $('Flatten Messages').item.json.conversationId }}\",\n    \"organization\": \"c7be17b4-c416-4d3a-b20d-62a89a261016\",\n    \"add_assignees\": [\"2bb2e9c3-4618-4a70-8d41-b7b5b50cd489\"],\n    \"add_users\": [\"2bb2e9c3-4618-4a70-8d41-b7b5b50cd489\"],\n    \"notification\": {\n      \"title\": \"Scheduling - Availability Check\",\n      \"body\": \"Calendar conflict check complete\"\n    },\n    \"markdown\": {{ JSON.stringify($json.resultText) }}\n  }\n}",
         "options": {}
       },
       "id": "a1000000-0000-4000-8000-000000000303",
