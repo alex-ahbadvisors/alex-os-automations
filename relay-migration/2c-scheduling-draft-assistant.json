@@ -530,6 +530,100 @@
         64
       ],
       "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "url": "=https://public.missiveapp.com/v1/conversations/{{ $json.conversationId }}/comments?limit=10",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "id": "c2000000-0000-4000-8000-0000000006a0",
+      "name": "Check Existing Draft Marker",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -336,
+        -224
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c2b00000-0000-4000-8000-0000000006a1",
+              "leftValue": "={{ (($json.comments || []).some(c => (c.body || '').includes('[auto-scheduling-draft-created]'))) ? 'dup' : 'new' }}",
+              "rightValue": "new",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c2000000-0000-4000-8000-0000000006a2",
+      "name": "Already Drafted?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -112,
+        -224
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "c2000000-0000-4000-8000-0000000006a3",
+      "name": "Skip Duplicate Draft",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        160,
+        -352
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://public.missiveapp.com/v1/posts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"posts\": {\n    \"conversation\": \"{{ $('Flatten Messages').item.json.conversationId }}\",\n    \"notification\": {\n      \"title\": \"Scheduling\",\n      \"body\": \"Draft reply created for review\"\n    },\n    \"markdown\": \"Scheduling reply drafted and Kendra pinged for review. [auto-scheduling-draft-created]\"\n  }\n}",
+        "body": "={\n  \"posts\": {\n    \"conversation\": \"{{ $('Flatten Messages').item.json.conversationId }}\",\n    \"notification\": {\n      \"title\": \"Scheduling\",\n      \"body\": \"Draft reply created for review\"\n    },\n    \"markdown\": \"Scheduling reply drafted and Kendra pinged for review. [auto-scheduling-draft-created]\"\n  }\n}",
+        "options": {}
+      },
+      "id": "c2000000-0000-4000-8000-0000000006a4",
+      "name": "Post Draft-Created Marker",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2256,
+        -160
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      }
     }
   ],
   "connections": {
@@ -570,7 +664,7 @@
       "main": [
         [
           {
-            "node": "Classify with AI",
+            "node": "Check Existing Draft Marker",
             "type": "main",
             "index": 0
           }
@@ -720,7 +814,7 @@
       "main": [
         [
           {
-            "node": "Slack Ping Kendra",
+            "node": "Post Draft-Created Marker",
             "type": "main",
             "index": 0
           }
@@ -754,6 +848,46 @@
         [
           {
             "node": "Write Email Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Existing Draft Marker": {
+      "main": [
+        [
+          {
+            "node": "Already Drafted?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Already Drafted?": {
+      "main": [
+        [
+          {
+            "node": "Classify with AI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip Duplicate Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Draft-Created Marker": {
+      "main": [
+        [
+          {
+            "node": "Slack Ping Kendra",
             "type": "main",
             "index": 0
           }

@@ -476,6 +476,73 @@
         64
       ],
       "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "url": "=https://public.missiveapp.com/v1/conversations/{{ $json.conversationId }}/comments?limit=10",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-0000000006a0",
+      "name": "Check Avails Marker",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -176,
+        -224
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b2b00000-0000-4000-8000-0000000006a1",
+              "leftValue": "={{ (($json.comments || []).some(c => (c.body || '').includes('_Checked '))) ? 'dup' : 'new' }}",
+              "rightValue": "new",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-0000000006a2",
+      "name": "Avails Already Checked?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        48,
+        -224
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "a1000000-0000-4000-8000-0000000006a3",
+      "name": "Skip Duplicate Avails",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        272,
+        -352
+      ]
     }
   ],
   "connections": {
@@ -516,7 +583,7 @@
       "main": [
         [
           {
-            "node": "Classify with AI",
+            "node": "Check Avails Marker",
             "type": "main",
             "index": 0
           }
@@ -678,6 +745,35 @@
         [
           {
             "node": "Post Conflict Comment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Avails Marker": {
+      "main": [
+        [
+          {
+            "node": "Avails Already Checked?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avails Already Checked?": {
+      "main": [
+        [
+          {
+            "node": "Classify with AI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip Duplicate Avails",
             "type": "main",
             "index": 0
           }
