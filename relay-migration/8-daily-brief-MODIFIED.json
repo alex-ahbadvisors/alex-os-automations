@@ -1258,7 +1258,7 @@
           "value": "ahb-wiki",
           "mode": "name"
         },
-        "filePath": "=briefs/{{ $now.format('yyyy-MM-dd') }}-daily-brief.md",
+        "filePath": "=briefs/{{ $now.format('yyyy-MM-dd') }}/cos-brief.md",
         "fileContent": "={{ $('Build Metadata').first().json.briefMarkdown }}",
         "commitMessage": "=brief: {{ $now.format('yyyy-MM-dd') }} (n8n)",
         "additionalParameters": {}
