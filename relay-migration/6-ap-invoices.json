@@ -68,6 +68,12 @@
               "name": "driveFolder",
               "type": "string",
               "value": "={{ (($json.messages || []).some(m => (m.to_fields || []).some(t => (t.address||'').toLowerCase().includes('alex@ahbadvisors.com')))) ? '1JAWODQ_2C9XCdV_s_AvpJMn3evpEwm-F' : '1mptu9A2xxlckDp3ThINgyU6MnXDaZmsh' }}"
+            },
+            {
+              "id": "mr3",
+              "name": "apLabelId",
+              "type": "string",
+              "value": "={{ (($json.messages || []).some(m => (m.to_fields || []).some(t => (t.address||'').toLowerCase().includes('alex@ahbadvisors.com')))) ? 'a2acce35-2b2b-4ee6-bf77-f951d1542730' : '8745cb57-0cf7-4b5f-8acf-07df96600fd2' }}"
             }
           ]
         },
@@ -345,6 +351,31 @@
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://public.missiveapp.com/v1/posts",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"posts\": {\n    \"conversation\": \"{{ $('Set Trigger Context').item.json.conversationId }}\",\n    \"organization\": \"c7be17b4-c416-4d3a-b20d-62a89a261016\",\n    \"add_shared_labels\": [\"{{ $('Merge Routes').item.json.apLabelId }}\"],\n    \"notification\": { \"title\": \"AP Invoice\", \"body\": \"Classified + ClickUp task created\" },\n    \"markdown\": \"AP invoice \\u2014 classified as **{{ $('Merge Routes').item.json.clickupType }}**; ClickUp task created.\"\n  }\n}",
+        "options": {},
+        "body": "={\n  \"posts\": {\n    \"conversation\": \"{{ $('Set Trigger Context').item.json.conversationId }}\",\n    \"organization\": \"c7be17b4-c416-4d3a-b20d-62a89a261016\",\n    \"add_shared_labels\": [\"{{ $('Merge Routes').item.json.apLabelId }}\"],\n    \"notification\": { \"title\": \"AP Invoice\", \"body\": \"Classified + ClickUp task created\" },\n    \"markdown\": \"AP invoice \\u2014 classified as **{{ $('Merge Routes').item.json.clickupType }}**; ClickUp task created.\"\n  }\n}"
+      },
+      "id": "ap00lbl0-0000-4000-8000-00000000ap01",
+      "name": "Apply AP Label",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2332,
+        0
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      }
     }
   ],
   "connections": {
@@ -485,6 +516,17 @@
         [
           {
             "node": "Attach File To Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach File To Task": {
+      "main": [
+        [
+          {
+            "node": "Apply AP Label",
             "type": "main",
             "index": 0
           }
