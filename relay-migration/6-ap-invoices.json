@@ -54,185 +54,29 @@
     },
     {
       "parameters": {
-        "rules": {
-          "values": [
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "s1",
-                    "leftValue": "={{ $json.labelId }}",
-                    "rightValue": "24806bb5-f494-40b5-bf52-eef62e81d211",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "outputKey": "Reimbursable"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "s2",
-                    "leftValue": "={{ $json.labelId }}",
-                    "rightValue": "a2acce35-2b2b-4ee6-bf77-f951d1542730",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "outputKey": "NonReimbursable"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "s3",
-                    "leftValue": "={{ $json.labelId }}",
-                    "rightValue": "8745cb57-0cf7-4b5f-8acf-07df96600fd2",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "outputKey": "Personal"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "11111111-0003-4000-8000-000000000003",
-      "name": "Switch On Label",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.2,
-      "position": [
-        -512,
-        0
-      ]
-    },
-    {
-      "parameters": {
+        "includeOtherFields": true,
         "assignments": {
           "assignments": [
             {
-              "id": "d1",
-              "name": "driveFolder",
-              "value": "1LahyFbWOkypP8MpRVoyu4tzkr3XrTxVJ",
-              "type": "string"
+              "id": "mr1",
+              "name": "clickupType",
+              "type": "string",
+              "value": "={{ (($json.messages || []).some(m => (m.to_fields || []).some(t => (t.address||'').toLowerCase().includes('alex@ahbadvisors.com')))) ? 'Business - Non Reimbursable' : 'Personal' }}"
             },
             {
-              "id": "d2",
-              "name": "clickupType",
-              "value": "Business - Reimbursable",
-              "type": "string"
+              "id": "mr2",
+              "name": "driveFolder",
+              "type": "string",
+              "value": "={{ (($json.messages || []).some(m => (m.to_fields || []).some(t => (t.address||'').toLowerCase().includes('alex@ahbadvisors.com')))) ? '1JAWODQ_2C9XCdV_s_AvpJMn3evpEwm-F' : '1mptu9A2xxlckDp3ThINgyU6MnXDaZmsh' }}"
             }
           ]
         },
         "options": {}
-      },
-      "id": "11111111-0004-4000-8000-000000000004",
-      "name": "Route Reimbursable",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        -288,
-        -224
-      ],
-      "alwaysOutputData": true
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "d1",
-              "name": "driveFolder",
-              "value": "1JAWODQ_2C9XCdV_s_AvpJMn3evpEwm-F",
-              "type": "string"
-            },
-            {
-              "id": "d2",
-              "name": "clickupType",
-              "value": "Business - Non Reimbursable",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "11111111-0005-4000-8000-000000000005",
-      "name": "Route Non-Reimbursable",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        -288,
-        0
-      ],
-      "alwaysOutputData": true
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "d1",
-              "name": "driveFolder",
-              "value": "1mptu9A2xxlckDp3ThINgyU6MnXDaZmsh",
-              "type": "string"
-            },
-            {
-              "id": "d2",
-              "name": "clickupType",
-              "value": "Personal",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "11111111-0006-4000-8000-000000000006",
-      "name": "Route Personal",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        -288,
-        224
-      ],
-      "alwaysOutputData": true
-    },
-    {
-      "parameters": {
-        "numberInputs": 3
       },
       "id": "11111111-0007-4000-8000-000000000007",
       "name": "Merge Routes",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
       "position": [
         -64,
         0
@@ -519,67 +363,9 @@
       "main": [
         [
           {
-            "node": "Switch On Label",
+            "node": "Missive Get Messages",
             "type": "main",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "Switch On Label": {
-      "main": [
-        [
-          {
-            "node": "Route Reimbursable",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Route Non-Reimbursable",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Route Personal",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Route Reimbursable": {
-      "main": [
-        [
-          {
-            "node": "Merge Routes",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Route Non-Reimbursable": {
-      "main": [
-        [
-          {
-            "node": "Merge Routes",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "Route Personal": {
-      "main": [
-        [
-          {
-            "node": "Merge Routes",
-            "type": "main",
-            "index": 2
           }
         ]
       ]
@@ -588,7 +374,7 @@
       "main": [
         [
           {
-            "node": "Missive Get Messages",
+            "node": "Build Extraction Input",
             "type": "main",
             "index": 0
           }
@@ -599,7 +385,7 @@
       "main": [
         [
           {
-            "node": "Build Extraction Input",
+            "node": "Merge Routes",
             "type": "main",
             "index": 0
           }
