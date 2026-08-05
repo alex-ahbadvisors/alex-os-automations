@@ -342,7 +342,7 @@
         "name": "={{ $json.taskName }}",
         "additionalFields": {
           "assignees": [
-            "kendra@ahbadvisors.com"
+            248566802
           ],
           "status": "not started",
           "dueDate": "={{ $json.dueDateMs }}",
