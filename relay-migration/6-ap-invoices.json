@@ -54,185 +54,35 @@
     },
     {
       "parameters": {
-        "rules": {
-          "values": [
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "s1",
-                    "leftValue": "={{ $json.labelId }}",
-                    "rightValue": "24806bb5-f494-40b5-bf52-eef62e81d211",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "outputKey": "Reimbursable"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "s2",
-                    "leftValue": "={{ $json.labelId }}",
-                    "rightValue": "a2acce35-2b2b-4ee6-bf77-f951d1542730",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "outputKey": "NonReimbursable"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "s3",
-                    "leftValue": "={{ $json.labelId }}",
-                    "rightValue": "8745cb57-0cf7-4b5f-8acf-07df96600fd2",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "outputKey": "Personal"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "11111111-0003-4000-8000-000000000003",
-      "name": "Switch On Label",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.2,
-      "position": [
-        -512,
-        0
-      ]
-    },
-    {
-      "parameters": {
+        "includeOtherFields": true,
         "assignments": {
           "assignments": [
             {
-              "id": "d1",
-              "name": "driveFolder",
-              "value": "1LahyFbWOkypP8MpRVoyu4tzkr3XrTxVJ",
-              "type": "string"
+              "id": "mr1",
+              "name": "clickupType",
+              "type": "string",
+              "value": "={{ (($json.messages || []).some(m => (m.to_fields || []).some(t => (t.address||'').toLowerCase().includes('alex@ahbadvisors.com')))) ? 'Business - Non Reimbursable' : 'Personal' }}"
             },
             {
-              "id": "d2",
-              "name": "clickupType",
-              "value": "Business - Reimbursable",
-              "type": "string"
+              "id": "mr2",
+              "name": "driveFolder",
+              "type": "string",
+              "value": "={{ (($json.messages || []).some(m => (m.to_fields || []).some(t => (t.address||'').toLowerCase().includes('alex@ahbadvisors.com')))) ? '1JAWODQ_2C9XCdV_s_AvpJMn3evpEwm-F' : '1mptu9A2xxlckDp3ThINgyU6MnXDaZmsh' }}"
+            },
+            {
+              "id": "mr3",
+              "name": "apLabelId",
+              "type": "string",
+              "value": "={{ (($json.messages || []).some(m => (m.to_fields || []).some(t => (t.address||'').toLowerCase().includes('alex@ahbadvisors.com')))) ? 'a2acce35-2b2b-4ee6-bf77-f951d1542730' : '8745cb57-0cf7-4b5f-8acf-07df96600fd2' }}"
             }
           ]
         },
         "options": {}
-      },
-      "id": "11111111-0004-4000-8000-000000000004",
-      "name": "Route Reimbursable",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        -288,
-        -224
-      ],
-      "alwaysOutputData": true
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "d1",
-              "name": "driveFolder",
-              "value": "1JAWODQ_2C9XCdV_s_AvpJMn3evpEwm-F",
-              "type": "string"
-            },
-            {
-              "id": "d2",
-              "name": "clickupType",
-              "value": "Business - Non Reimbursable",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "11111111-0005-4000-8000-000000000005",
-      "name": "Route Non-Reimbursable",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        -288,
-        0
-      ],
-      "alwaysOutputData": true
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "d1",
-              "name": "driveFolder",
-              "value": "1mptu9A2xxlckDp3ThINgyU6MnXDaZmsh",
-              "type": "string"
-            },
-            {
-              "id": "d2",
-              "name": "clickupType",
-              "value": "Personal",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "11111111-0006-4000-8000-000000000006",
-      "name": "Route Personal",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        -288,
-        224
-      ],
-      "alwaysOutputData": true
-    },
-    {
-      "parameters": {
-        "numberInputs": 3
       },
       "id": "11111111-0007-4000-8000-000000000007",
       "name": "Merge Routes",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
       "position": [
         -64,
         0
@@ -267,7 +117,7 @@
             {
               "id": "e1",
               "name": "emailText",
-              "value": "={{ ($json.messages || []).map(m => (m.subject ? ('Subject: ' + m.subject + '\\n') : '') + (m.body || m.preview || '')).join('\\n\\n---\\n\\n') }}",
+              "value": "={{ (() => { let pdf=''; try { pdf = ($('Extract Invoice PDF Text').first().json.text) || ''; } catch(e) { pdf=''; } let body=''; try { body = ($('Missive Get Messages').first().json.messages || []).map(m => (m.subject ? ('Subject: ' + m.subject + '\\n') : '') + (m.body || m.preview || '')).join('\\n\\n---\\n\\n'); } catch(e) { body=''; } const parts=[]; if (pdf && pdf.trim()) parts.push('=== INVOICE PDF (attachment) ===\\n' + pdf); if (body && body.trim()) parts.push('=== EMAIL BODY ===\\n' + body); return parts.join('\\n\\n'); })() }}",
               "type": "string"
             }
           ]
@@ -287,9 +137,9 @@
       "parameters": {
         "model": {
           "__rl": true,
-          "value": "gpt-5.2",
+          "value": "claude-haiku-4-5",
           "mode": "list",
-          "cachedResultName": "gpt-5.2"
+          "cachedResultName": "claude-haiku-4-5"
         },
         "options": {
           "reasoningEffort": "medium",
@@ -298,16 +148,16 @@
       },
       "id": "11111111-0010-4000-8000-000000000010",
       "name": "OpenAI Chat Model",
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
       "position": [
         560,
         224
       ],
       "credentials": {
-        "openAiApi": {
-          "id": "FPFFI1NvOtGMoh30",
-          "name": "OpenAi account 3"
+        "anthropicApi": {
+          "id": "PdQDpy0E1BohbFDv",
+          "name": "Anthropic account"
         }
       }
     },
@@ -351,11 +201,12 @@
         "space": "90113618058",
         "folderless": true,
         "list": "901107582230",
-        "name": "=[{{ $json.output['Due Date'] }}] {{ $json.output['Vendor Name'] }} – {{ $json.output['Invoice Amount'] }}  {{ $json.output.Currency }}",
+        "name": "=[{{ $json.output['Due Date'] }}] {{ $json.output['Vendor Name'] }} \u2013 {{ $json.output['Invoice Amount'] }}  {{ $json.output.Currency }}",
         "additionalFields": {
           "content": "=**Vendor Name**: {{ $json.output['Vendor Name'] }} \n**Invoice Amount**: {{ $json.output['Invoice Amount'] }} \n**Invoice Currency**: {{ $json.output.Currency }}\n\n**Due Date**:  {{ $json.output['Due Date'] }}\n**Invoice Date**:  {{ $now.format('MMMM d, yyyy') }}\n\n**Invoice/Product/Service Detail**:\n{{ ($json.output['Product/Service Detail'] || []).map(x => '- ' + x).join('\\n') }}\n\n**Missive link**: {{ $('Set Trigger Context').item.json.conversationUrl }}\n\n**Payment Details**:\n{{ $json.output['Payment Details'] || '' }}",
           "markdownContent": true,
-          "dueDate": "={{ $json.output['Due Date'] }}"
+          "dueDate": "={{ $json.output['Due Date'] }}",
+          "status": "update required"
         }
       },
       "id": "11111111-0013-4000-8000-000000000013",
@@ -377,9 +228,9 @@
       "parameters": {
         "authentication": "oAuth2",
         "operation": "update",
-        "id": "={{ $json.id }}",
+        "id": "={{ $('Create AP Task').first().json.id }}",
         "updateFields": {
-          "customFieldsJson": "=[{\"id\":\"FILL_IN_EXPENSE_FIELD_ID\",\"value\":{{ $('Extract Invoice').item.json.output['Invoice Amount'] }}},{\"id\":\"FILL_IN_TYPE_FIELD_ID\",\"value\":\"{{ $('Merge Routes').item.json.clickupType }}\"}]"
+          "customFieldsJson": "=[{\"id\":\"cab63c89-4cdd-4f13-88f2-af9afceb079e\",\"value\":{{ $('Extract Invoice').first().json.output['Invoice Amount'] }}},{\"id\":\"53b099b7-ece7-47ac-8300-b4d9fd3aedaf\",\"value\":\"{{ $('Merge Routes').first().json.clickupType === 'Business - Non Reimbursable' ? '40e6e6e1-d622-4570-b4b7-707dbcd22eb3' : 'd13ef2ad-6db6-46fb-a6bf-22e794050e2b' }}\"}]"
         }
       },
       "id": "11111111-0014-4000-8000-000000000014",
@@ -501,6 +352,122 @@
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://public.missiveapp.com/v1/posts",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"posts\": {\n    \"conversation\": \"{{ $('Set Trigger Context').item.json.conversationId }}\",\n    \"organization\": \"c7be17b4-c416-4d3a-b20d-62a89a261016\",\n    \"add_shared_labels\": [\"{{ $('Merge Routes').item.json.apLabelId }}\"],\n    \"notification\": { \"title\": \"AP Invoice\", \"body\": \"Classified + ClickUp task created\" },\n    \"markdown\": \"AP invoice \\u2014 classified as **{{ $('Merge Routes').item.json.clickupType }}**; ClickUp task created.\"\n  }\n}",
+        "options": {},
+        "body": "={\n  \"posts\": {\n    \"conversation\": \"{{ $('Set Trigger Context').item.json.conversationId }}\",\n    \"organization\": \"c7be17b4-c416-4d3a-b20d-62a89a261016\",\n    \"add_shared_labels\": [\"{{ $('Merge Routes').item.json.apLabelId }}\"],\n    \"notification\": { \"title\": \"AP Invoice\", \"body\": \"Classified + ClickUp task created\" },\n    \"markdown\": \"AP invoice \\u2014 classified as **{{ $('Merge Routes').item.json.clickupType }}**; ClickUp task created.\"\n  }\n}"
+      },
+      "id": "ap00lbl0-0000-4000-8000-00000000ap01",
+      "name": "Apply AP Label",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2332,
+        0
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pick the invoice PDF: first PDF-ish attachment across all fetched messages.\n// Always outputs exactly one item so the linear spine never breaks; if no PDF\n// is found, pdfUrl is '' and the downstream download/extract are skipped-safe\n// (they run best-effort and the extractor falls back to the email body).\nlet msgs = [];\ntry { msgs = $('Missive Get Messages').first().json.messages || []; } catch (e) { msgs = []; }\nlet pdfUrl = '';\nlet pdfName = '';\nfor (const m of msgs) {\n  const atts = (m && m.attachments) || [];\n  for (const a of atts) {\n    if (!a) continue;\n    const url = a.download_url || a.url;\n    if (!url) continue;\n    const fn = String(a.filename || a.name || '').toLowerCase();\n    const mt = String(a.media_type || a.content_type || a.mime_type || '').toLowerCase();\n    const isPdf = fn.endsWith('.pdf') || mt.includes('pdf');\n    if (isPdf) { pdfUrl = url; pdfName = a.filename || a.name || 'invoice.pdf'; break; }\n  }\n  if (pdfUrl) break;\n}\nreturn [{ json: { pdfUrl, pdfName, hasPdf: Boolean(pdfUrl) } }];"
+      },
+      "id": "ap00pdf0-0000-4000-8000-0000000pdf01",
+      "name": "Select Invoice PDF",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        176
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.pdfUrl }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "ap00pdf0-0000-4000-8000-0000000pdf02",
+      "name": "Download Invoice PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        400,
+        176
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "id": "ap00pdf0-0000-4000-8000-0000000pdf03",
+      "name": "Extract Invoice PDF Text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        640,
+        176
+      ],
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "C0AMDDL01QU",
+          "cachedResultName": "oc-athena"
+        },
+        "text": "=:receipt: *AP invoice needs review before it's actioned*\n*Vendor:* {{ $('Extract Invoice').item.json.output['Vendor Name'] }}\n*Amount:* {{ $('Extract Invoice').item.json.output['Invoice Amount'] }} {{ $('Extract Invoice').item.json.output.Currency }}\n*Due:* {{ $('Extract Invoice').item.json.output['Due Date'] }}\n*Type:* {{ $('Merge Routes').item.json.clickupType }}\n*ClickUp task:* {{ $json.url || ('https://app.clickup.com/t/' + $json.id) }}\n*Email:* {{ $('Set Trigger Context').item.json.conversationUrl }}\n_Status: *update required* (review hold) \u2014 verify vendor/amount/due before moving it forward._",
+        "otherOptions": {}
+      },
+      "id": "ap00slk0-0000-4000-8000-0000000slk01",
+      "name": "Slack Confirm AP",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        1104,
+        176
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      },
+      "onError": "continueRegularOutput"
     }
   ],
   "connections": {
@@ -519,67 +486,9 @@
       "main": [
         [
           {
-            "node": "Switch On Label",
+            "node": "Missive Get Messages",
             "type": "main",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "Switch On Label": {
-      "main": [
-        [
-          {
-            "node": "Route Reimbursable",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Route Non-Reimbursable",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Route Personal",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Route Reimbursable": {
-      "main": [
-        [
-          {
-            "node": "Merge Routes",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Route Non-Reimbursable": {
-      "main": [
-        [
-          {
-            "node": "Merge Routes",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "Route Personal": {
-      "main": [
-        [
-          {
-            "node": "Merge Routes",
-            "type": "main",
-            "index": 2
           }
         ]
       ]
@@ -588,7 +497,7 @@
       "main": [
         [
           {
-            "node": "Missive Get Messages",
+            "node": "Select Invoice PDF",
             "type": "main",
             "index": 0
           }
@@ -599,7 +508,7 @@
       "main": [
         [
           {
-            "node": "Build Extraction Input",
+            "node": "Merge Routes",
             "type": "main",
             "index": 0
           }
@@ -654,7 +563,7 @@
       "main": [
         [
           {
-            "node": "Update AP Custom Fields",
+            "node": "Slack Confirm AP",
             "type": "main",
             "index": 0
           }
@@ -699,6 +608,61 @@
         [
           {
             "node": "Attach File To Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach File To Task": {
+      "main": [
+        [
+          {
+            "node": "Apply AP Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select Invoice PDF": {
+      "main": [
+        [
+          {
+            "node": "Download Invoice PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Invoice PDF": {
+      "main": [
+        [
+          {
+            "node": "Extract Invoice PDF Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Invoice PDF Text": {
+      "main": [
+        [
+          {
+            "node": "Build Extraction Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Confirm AP": {
+      "main": [
+        [
+          {
+            "node": "Update AP Custom Fields",
             "type": "main",
             "index": 0
           }

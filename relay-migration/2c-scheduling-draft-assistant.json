@@ -89,6 +89,12 @@
               "name": "messagesText",
               "value": "={{ ($json.messages || []).map(m => `From: ${m.from_field?.name || ''} <${m.from_field?.address || ''}>\\nTo: ${(m.to_fields || []).map(t => t.address).join(', ')}\\nDate: ${m.delivered_at ? new Date(m.delivered_at*1000).toISOString() : ''}\\nSubject: ${m.subject || ''}\\n\\n${m.preview || m.body || ''}`).join('\\n\\n-----\\n\\n') }}",
               "type": "string"
+            },
+            {
+              "id": "c2a00000-0000-4000-8000-00000000001a",
+              "name": "senderEmail",
+              "value": "={{ (($json.messages || []).filter(m => !['alex@ahbadvisors.com','ahbrownstein@gmail.com','abrownstein@3cventures.com'].includes((m.from_field?.address||'').toLowerCase())).slice(-1)[0]?.from_field?.address) || (($json.messages||[]).slice(-1)[0]?.from_field?.address) || '' }}",
+              "type": "string"
             }
           ]
         },
@@ -107,9 +113,9 @@
       "parameters": {
         "model": {
           "__rl": true,
-          "value": "gpt-5.2",
+          "value": "claude-haiku-4-5",
           "mode": "list",
-          "cachedResultName": "gpt-5.2"
+          "cachedResultName": "claude-haiku-4-5"
         },
         "options": {
           "reasoningEffort": "medium"
@@ -117,16 +123,16 @@
       },
       "id": "c2000000-0000-4000-8000-000000000101",
       "name": "Classify Model",
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
       "position": [
         -320,
         240
       ],
       "credentials": {
-        "openAiApi": {
-          "id": "FPFFI1NvOtGMoh30",
-          "name": "OpenAi account 3"
+        "anthropicApi": {
+          "id": "PdQDpy0E1BohbFDv",
+          "name": "Anthropic account"
         }
       }
     },
@@ -199,9 +205,9 @@
       "parameters": {
         "model": {
           "__rl": true,
-          "value": "gpt-5.2",
+          "value": "claude-haiku-4-5",
           "mode": "list",
-          "cachedResultName": "gpt-5.2"
+          "cachedResultName": "claude-haiku-4-5"
         },
         "options": {
           "reasoningEffort": "medium"
@@ -209,16 +215,16 @@
       },
       "id": "c2000000-0000-4000-8000-000000000201",
       "name": "Extract Model",
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
       "position": [
         400,
         336
       ],
       "credentials": {
-        "openAiApi": {
-          "id": "FPFFI1NvOtGMoh30",
-          "name": "OpenAi account 3"
+        "anthropicApi": {
+          "id": "PdQDpy0E1BohbFDv",
+          "name": "Anthropic account"
         }
       }
     },
@@ -367,7 +373,7 @@
         "promptType": "define",
         "text": "=The exact three times to propose (DO NOT CHANGE THESE):\n{{ $json.proposedTimesText }}\n\nOriginal email thread (for recipient name, tone, and to detect if it was addressed to Alex):\n---\n{{ $('Flatten Messages').item.json.messagesText }}\n---",
         "options": {
-          "systemMessage": "=You are an expert scheduler and an expert EA to a McKinsey trained management consultant perfect in the Barbara Minto method of top down communication and the pyramid principal.\n\nDraft a to the point email leveraging the examples below that my EA can send from my inbox (or from her own) proposing exactly the 3 times that the prior phase suggested. DO NOT CHANGE THOSE TIMES.\n\nIF the email you're responding to is to me (abrownstein@3cventures.com, ahbrownstein@gmail.com, alex@ahbadvisors.com), add in a clause that says +my EA @kendra@ahbadvisors.com or +my EA @kendra@3cventures.com) so that she can take over. \n\nSince this is a response NEVER include the subject in the body of the email. \n\nThe output should JUST be the text of an email, NEVER context like:\n\n\"Here's the draft email for your EA to send:\"\n\nThis follows the pyramid principle (lead with action), matches the tone and structure of the example emails, includes the +EA clause since the original email was to Alex, and proposes exactly the three times identified in the prior phase without modification.\n\n---\nEXAMPLE SCHEDULING REPLIES (match this tone and structure; these replace the Relay Knowledge Source of example emails):\n\nExample 1:\nJacob,\n\nWould love to find some time \u2014 here are three options that work on Alex's end:\n- **Monday, July 20 \u2014 10:30\u201311:00 AM ET**\n- **Wednesday, July 22 \u2014 1:00\u20131:30 PM ET**\n- **Friday, July 24 \u2014 2:30\u20133:00 PM ET**\nPlease let me know what works and I'll send a calendar invite.\n\n+Alex's EA, Kendra (kendra@ahbadvisors.com), who can take over from here.\n\nBest,\nKendra\n\nExample 2:\nHi Sarah,\n\nHappy to make this work. A few windows that are open for Alex:\n- **Tuesday, Sept 9 \u2014 11:00\u201311:30 AM ET**\n- **Thursday, Sept 11 \u2014 2:00\u20132:30 PM ET**\n- **Friday, Sept 12 \u2014 10:00\u201310:30 AM ET**\nLet me know which is best and I'll get an invite out.\n\nBest,\nKendra\n\nExample 3:\nMichael,\n\nThanks for the note. Here are three times that work for Alex:\n- **Wednesday, Oct 1 \u2014 3:00\u20134:00 PM ET**\n- **Thursday, Oct 2 \u2014 10:00\u201311:00 AM ET**\n- **Monday, Oct 6 \u2014 1:00\u20132:00 PM ET**\nTell me what suits you and I'll send the invite.\n\nBest,\nKendra"
+          "systemMessage": "=You draft scheduling replies in ALEX BROWNSTEIN'S voice (a McKinsey-trained management consultant). Alex sends the reply from his own inbox and introduces his EA, Kendra, to coordinate from there.\n\nWrite a tight, warm-professional reply (Minto/pyramid: lead with the answer) proposing EXACTLY the three times from the prior phase. DO NOT CHANGE THE TIMES.\n\nRULES:\n- First person AS ALEX. Sign off exactly: Best,<br>Alex  — NEVER sign as Kendra.\n- Address the recipient by their FIRST NAME (the person who sent the scheduling request in the thread, not Alex).\n- Introduce Kendra as the handoff and note she is copied, e.g. \"I'm copying my EA, Kendra (kendra@ahbadvisors.com), who will lock in the invite once you pick a time.\" Kendra is CC'd on the email.\n- Propose exactly the 3 given times as a bulleted list.\n- NEVER include a subject line in the body (this is a reply).\n- Output ONLY the email body — no preamble like \"Here's the draft\".\n\nOUTPUT FORMAT — VALID HTML BODY ONLY (this goes straight into an email):\n- <p> for paragraphs, <br> for single line breaks.\n- The three times in a <ul>, each as <li><strong>...</strong></li>.\n- End with: <p>Best,<br>Alex</p>\n- No <html>/<head>/<body> wrapper, no markdown, no code fences, no asterisks.\n\nEXAMPLE (match this structure and tone exactly):\n<p>Hi Jacob,</p>\n<p>Happy to find time — here are three windows that work on my end:</p>\n<ul>\n<li><strong>Monday, July 20 — 10:30–11:00 AM ET</strong></li>\n<li><strong>Wednesday, July 22 — 1:00–1:30 PM ET</strong></li>\n<li><strong>Friday, July 24 — 2:30–3:00 PM ET</strong></li>\n</ul>\n<p>Let me know which works best. I'm copying my EA, Kendra (kendra@ahbadvisors.com), who will get the invite on the calendar from there.</p>\n<p>Best,<br>Alex</p>"
         }
       },
       "id": "c2000000-0000-4000-8000-000000000402",
@@ -387,7 +393,7 @@
         "genericAuthType": "httpBearerAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"drafts\": {\n    \"conversation\": \"{{ $('Flatten Messages').item.json.conversationId }}\",\n    \"body\": {{ JSON.stringify($json.output) }},\n    \"from_field\": { \"address\": \"alex@ahbadvisors.com\" },\n    \"send\": false\n  }\n}",
+        "jsonBody": "={\n  \"drafts\": {\n    \"conversation\": \"{{ $('Flatten Messages').item.json.conversationId }}\",\n    \"body\": {{ JSON.stringify($json.output) }},\n    \"from_field\": { \"address\": \"alex@ahbadvisors.com\" },\n    \"to_fields\": [{ \"address\": \"{{ $('Flatten Messages').item.json.senderEmail }}\" }],\n    \"cc_fields\": [{ \"address\": \"kendra@ahbadvisors.com\" }],\n    \"send\": false\n  }\n}",
         "options": {}
       },
       "id": "c2000000-0000-4000-8000-000000000403",
@@ -513,7 +519,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// DETERMINISTIC slot engine \u2014 replaces the LLM \"Propose 3 Available Times\" step.\n// Builds merged busy intervals over the search window, subtracts them from the\n// Mon-Fri 10:00-18:00 ET working grid, honours a lead time + a symmetric buffer,\n// slices to the requested duration, and picks 3 VARIED slots (>=2 distinct days).\n// Output feeds the existing Sonnet writer verbatim (\"DO NOT CHANGE THESE\").\n//\n// Input: aggregated window events on $json.data (from 'Aggregate Busy Events'),\n//        durationMinutes + search window from 'Search Window Fields'.\n\nfunction safeGet(nodeName) {\n  try { return $(nodeName).item.json || {}; } catch (e) { return {}; }\n}\nconst win = safeGet('Search Window Fields');\n\n// ---- Config constants ----\nconst TZ = 'America/New_York';\nconst WORK_START_HOUR = 10;   // 10:00 ET\nconst WORK_END_HOUR = 18;     // 18:00 ET\nconst LEAD_MINUTES = 120;     // no slot starting within 2h of now\nconst BUFFER_MINUTES = 15;    // pad each busy event +/- 15 min before testing\nconst SLOT_STEP_MINUTES = 30; // grid granularity for candidate starts\n\nlet durationMinutes = parseInt(win.durationMinutes, 10);\nif (!durationMinutes || durationMinutes <= 0) durationMinutes = 30;\n\n// ---- Validate / repair search window ----\nconst now = DateTime.now().setZone(TZ);\nlet startStr = (win.searchStartDate || '').trim();\nlet endStr = (win.searchEndDate || '').trim();\n\nfunction validDate(s) { return /^\\d{4}-\\d{2}-\\d{2}$/.test(s) && DateTime.fromISO(s, { zone: TZ }).isValid; }\n\nif (!validDate(startStr)) startStr = now.toFormat('yyyy-MM-dd');\nif (!validDate(endStr)) endStr = now.plus({ days: 14 }).toFormat('yyyy-MM-dd');\n\nlet winStart = DateTime.fromISO(startStr, { zone: TZ }).startOf('day');\nlet winEnd = DateTime.fromISO(endStr, { zone: TZ }).endOf('day');\n\n// Swap if start > end.\nif (winStart > winEnd) { const t = winStart; winStart = winEnd.startOf('day'); winEnd = t.endOf('day'); }\n// Never search the past.\nif (winStart < now.startOf('day')) winStart = now.startOf('day');\n// Widen if window is too tight to plausibly yield 3 varied business-day slots.\nif (winEnd.diff(winStart, 'days').days < 4) winEnd = winStart.plus({ days: 14 }).endOf('day');\n\n// ---- Gather + filter busy events ----\nlet events = [];\ntry {\n  if (Array.isArray($json.data)) events = $json.data;\n  else events = $input.all().map(i => i.json).filter(Boolean);\n} catch (e) { events = []; }\n\nconst invitee = 'alex@ahbadvisors.com';\nconst RECLAIM_A = 'This AI-powered event was created by Reclaim.ai';\nconst RECLAIM_B = 'This event was created by Reclaim';\nconst TASK_DETAIL = \"Only you can see this Task's event details. It will show as busy to others and automatically reschedule if booked over.\";\n\nconst busy = []; // {start,end} epoch ms, buffer-padded\nfor (const ev of events) {\n  if (!ev) continue;\n  const transparency = ev.transparency || 'opaque';\n  const status = ev.status || 'confirmed';\n  const desc = ev.description || '';\n  const title = ev.summary || '';\n  if (transparency === 'transparent') continue;\n  if (status === 'cancelled') continue;\n  let declined = false;\n  for (const a of (ev.attendees || [])) {\n    const email = (a.email || '').toLowerCase();\n    if ((email === invitee || a.self === true) && a.responseStatus === 'declined') { declined = true; break; }\n  }\n  if (declined) continue;\n  if (desc.includes(RECLAIM_A)) continue;\n  if (desc.includes(RECLAIM_B)) continue;\n  if (desc.includes(TASK_DETAIL)) continue;\n  if (title.toLowerCase().includes('decompress')) continue;\n  // All-day banners do not block working-hours slots.\n  const isAllDay = !!(ev.start && ev.start.date && !ev.start.dateTime);\n  if (isAllDay) continue;\n  const sISO = (ev.start && (ev.start.dateTime || ev.start.date)) || '';\n  const eISO = (ev.end && (ev.end.dateTime || ev.end.date)) || '';\n  const s = sISO ? new Date(sISO).getTime() : NaN;\n  const e = eISO ? new Date(eISO).getTime() : NaN;\n  if (isNaN(s) || isNaN(e)) continue;\n  busy.push({ start: s - BUFFER_MINUTES * 60000, end: e + BUFFER_MINUTES * 60000 });\n}\n\n// Merge overlapping busy intervals.\nbusy.sort((a, b) => a.start - b.start);\nconst merged = [];\nfor (const b of busy) {\n  if (merged.length && b.start <= merged[merged.length - 1].end) {\n    merged[merged.length - 1].end = Math.max(merged[merged.length - 1].end, b.end);\n  } else {\n    merged.push({ start: b.start, end: b.end });\n  }\n}\nfunction isFree(slotStart, slotEnd) {\n  for (const m of merged) { if (slotStart < m.end && slotEnd > m.start) return false; }\n  return true;\n}\n\n// ---- Walk the working grid, collect candidates ----\nconst earliestStartMs = now.plus({ minutes: LEAD_MINUTES }).toMillis();\nconst slotMs = durationMinutes * 60000;\nconst stepMs = SLOT_STEP_MINUTES * 60000;\n\nconst candidates = []; // {startDT, endDT}\nlet day = winStart.startOf('day');\nconst lastDay = winEnd.startOf('day');\nwhile (day <= lastDay) {\n  const wd = day.weekday; // 1=Mon .. 7=Sun\n  if (wd >= 1 && wd <= 5) {\n    let cursor = day.set({ hour: WORK_START_HOUR, minute: 0, second: 0, millisecond: 0 });\n    const dayEnd = day.set({ hour: WORK_END_HOUR, minute: 0, second: 0, millisecond: 0 });\n    while (cursor.plus({ minutes: durationMinutes }) <= dayEnd) {\n      const sMs = cursor.toMillis();\n      const eMs = sMs + slotMs;\n      if (sMs >= earliestStartMs && isFree(sMs, eMs)) {\n        candidates.push({ startDT: cursor, endDT: cursor.plus({ minutes: durationMinutes }) });\n      }\n      cursor = cursor.plus({ minutes: SLOT_STEP_MINUTES });\n    }\n  }\n  day = day.plus({ days: 1 });\n}\n\n// ---- Pick 3 VARIED slots: prefer distinct days; avoid two same-morning ----\nfunction partOfDay(dt) { return dt.hour < 12 ? 'am' : 'pm'; }\nconst picked = [];\nconst usedDayKeys = new Set();\n// Pass 1: first free slot on each distinct day.\nfor (const c of candidates) {\n  const key = c.startDT.toFormat('yyyy-MM-dd');\n  if (!usedDayKeys.has(key)) { picked.push(c); usedDayKeys.add(key); }\n  if (picked.length >= 3) break;\n}\n// Pass 2: if <3, backfill with same-day slots in a different part of day.\nif (picked.length < 3) {\n  for (const c of candidates) {\n    if (picked.length >= 3) break;\n    if (picked.some(p => p.startDT.toMillis() === c.startDT.toMillis())) continue;\n    const sameDaySamePart = picked.some(p =>\n      p.startDT.toFormat('yyyy-MM-dd') === c.startDT.toFormat('yyyy-MM-dd') &&\n      partOfDay(p.startDT) === partOfDay(c.startDT));\n    if (!sameDaySamePart) picked.push(c);\n  }\n}\n// Pass 3: last resort \u2014 any remaining distinct candidates.\nif (picked.length < 3) {\n  for (const c of candidates) {\n    if (picked.length >= 3) break;\n    if (picked.some(p => p.startDT.toMillis() === c.startDT.toMillis())) continue;\n    picked.push(c);\n  }\n}\npicked.sort((a, b) => a.startDT.toMillis() - b.startDT.toMillis());\n\n// ---- Format output ----\nconst slots = picked.slice(0, 3).map(p => ({\n  Date: p.startDT.toFormat('cccc, LLLL d'),          // e.g. \"Monday, July 20\"\n  Start: p.startDT.toFormat('h:mm a') + ' ET',\n  End: p.endDT.toFormat('h:mm a') + ' ET',\n  startISO: p.startDT.toISO(),\n  endISO: p.endDT.toISO()\n}));\n\nconst proposedTimesText = slots.map(s => `- ${s.Date}: ${s.Start} to ${s.End}`).join('\\n');\nconst enoughSlots = slots.length >= 3;\n\nreturn [{\n  json: {\n    slots,\n    proposedTimesText,\n    slotCount: slots.length,\n    enoughSlots,\n    durationMinutes,\n    searchStartResolved: winStart.toFormat('yyyy-MM-dd'),\n    searchEndResolved: winEnd.toFormat('yyyy-MM-dd'),\n    summaryForEA: enoughSlots\n      ? `${slots.length} available ${durationMinutes}-min slots found between ${winStart.toFormat('LLL d')} and ${winEnd.toFormat('LLL d')}.`\n      : `Only ${slots.length} slot(s) found in the working-hours grid between ${winStart.toFormat('LLL d')} and ${winEnd.toFormat('LLL d')}; widen the window or review manually.`\n  }\n}];\n"
+        "jsCode": "// DETERMINISTIC slot engine — replaces the LLM \"Propose 3 Available Times\" step.\n// Builds merged busy intervals over the search window, subtracts them from the\n// Mon-Fri 10:00-18:00 ET working grid, honours a lead time + a symmetric buffer,\n// slices to the requested duration, and picks 3 VARIED slots (>=2 distinct days).\n// Output feeds the existing Sonnet writer verbatim (\"DO NOT CHANGE THESE\").\n//\n// Input: aggregated window events on $json.data (from 'Aggregate Busy Events'),\n//        durationMinutes + search window from 'Search Window Fields'.\n\nfunction safeGet(nodeName) {\n  try { return $(nodeName).item.json || {}; } catch (e) { return {}; }\n}\nconst win = safeGet('Search Window Fields');\n\n// ---- Config constants ----\nconst TZ = 'America/New_York';\nconst WORK_START_HOUR = 10;   // 10:00 ET\nconst WORK_END_HOUR = 18;     // 18:00 ET\nconst LEAD_MINUTES = 120;     // no slot starting within 2h of now\nconst BUFFER_MINUTES = 15;    // pad each busy event +/- 15 min before testing\nconst SLOT_STEP_MINUTES = 30; // grid granularity for candidate starts\n\nlet durationMinutes = parseInt(win.durationMinutes, 10);\nif (!durationMinutes || durationMinutes <= 0) durationMinutes = 30;\n\n// ---- Validate / repair search window ----\nconst now = DateTime.now().setZone(TZ);\nlet startStr = (win.searchStartDate || '').trim();\nlet endStr = (win.searchEndDate || '').trim();\n\nfunction validDate(s) { return /^\\d{4}-\\d{2}-\\d{2}$/.test(s) && DateTime.fromISO(s, { zone: TZ }).isValid; }\n\nif (!validDate(startStr)) startStr = now.toFormat('yyyy-MM-dd');\nif (!validDate(endStr)) endStr = now.plus({ days: 14 }).toFormat('yyyy-MM-dd');\n\nlet winStart = DateTime.fromISO(startStr, { zone: TZ }).startOf('day');\nlet winEnd = DateTime.fromISO(endStr, { zone: TZ }).endOf('day');\n\n// Swap if start > end.\nif (winStart > winEnd) { const t = winStart; winStart = winEnd.startOf('day'); winEnd = t.endOf('day'); }\n// Never search the past.\nif (winStart < now.startOf('day')) winStart = now.startOf('day');\n// Widen if window is too tight to plausibly yield 3 varied business-day slots.\nif (winEnd.diff(winStart, 'days').days < 4) winEnd = winStart.plus({ days: 14 }).endOf('day');\n\n// ---- Gather + filter busy events ----\nlet events = [];\ntry {\n  if (Array.isArray($json.data)) events = $json.data;\n  else events = $input.all().map(i => i.json).filter(Boolean);\n} catch (e) { events = []; }\n\nconst invitee = 'alex@ahbadvisors.com';\nconst RECLAIM_A = 'This AI-powered event was created by Reclaim.ai';\nconst RECLAIM_B = 'This event was created by Reclaim';\nconst TASK_DETAIL = \"Only you can see this Task's event details. It will show as busy to others and automatically reschedule if booked over.\";\n\nconst busy = []; // {start,end} epoch ms, buffer-padded\nfor (const ev of events) {\n  if (!ev) continue;\n  const transparency = ev.transparency || 'opaque';\n  const status = ev.status || 'confirmed';\n  const desc = ev.description || '';\n  const title = ev.summary || '';\n  if (transparency === 'transparent') continue;\n  if (status === 'cancelled') continue;\n  let declined = false;\n  for (const a of (ev.attendees || [])) {\n    const email = (a.email || '').toLowerCase();\n    if ((email === invitee || a.self === true) && a.responseStatus === 'declined') { declined = true; break; }\n  }\n  if (declined) continue;\n  if (desc.includes(RECLAIM_A)) continue;\n  if (desc.includes(RECLAIM_B)) continue;\n  if (desc.includes(TASK_DETAIL)) continue;\n  if (title.toLowerCase().includes('decompress')) continue;\n  // All-day banners do not block working-hours slots.\n  const isAllDay = !!(ev.start && ev.start.date && !ev.start.dateTime);\n  if (isAllDay) continue;\n  const sISO = (ev.start && (ev.start.dateTime || ev.start.date)) || '';\n  const eISO = (ev.end && (ev.end.dateTime || ev.end.date)) || '';\n  const s = sISO ? new Date(sISO).getTime() : NaN;\n  const e = eISO ? new Date(eISO).getTime() : NaN;\n  if (isNaN(s) || isNaN(e)) continue;\n  busy.push({ start: s - BUFFER_MINUTES * 60000, end: e + BUFFER_MINUTES * 60000 });\n}\n\n// Merge overlapping busy intervals.\nbusy.sort((a, b) => a.start - b.start);\nconst merged = [];\nfor (const b of busy) {\n  if (merged.length && b.start <= merged[merged.length - 1].end) {\n    merged[merged.length - 1].end = Math.max(merged[merged.length - 1].end, b.end);\n  } else {\n    merged.push({ start: b.start, end: b.end });\n  }\n}\nfunction isFree(slotStart, slotEnd) {\n  for (const m of merged) { if (slotStart < m.end && slotEnd > m.start) return false; }\n  return true;\n}\n\n// ---- Walk the working grid, collect candidates ----\nconst earliestStartMs = now.plus({ minutes: LEAD_MINUTES }).toMillis();\nconst slotMs = durationMinutes * 60000;\nconst stepMs = SLOT_STEP_MINUTES * 60000;\n\nconst candidates = []; // {startDT, endDT}\nlet day = winStart.startOf('day');\nconst lastDay = winEnd.startOf('day');\nwhile (day <= lastDay) {\n  const wd = day.weekday; // 1=Mon .. 7=Sun\n  if (wd >= 1 && wd <= 5) {\n    let cursor = day.set({ hour: WORK_START_HOUR, minute: 0, second: 0, millisecond: 0 });\n    const dayEnd = day.set({ hour: WORK_END_HOUR, minute: 0, second: 0, millisecond: 0 });\n    while (cursor.plus({ minutes: durationMinutes }) <= dayEnd) {\n      const sMs = cursor.toMillis();\n      const eMs = sMs + slotMs;\n      if (sMs >= earliestStartMs && isFree(sMs, eMs)) {\n        candidates.push({ startDT: cursor, endDT: cursor.plus({ minutes: durationMinutes }) });\n      }\n      cursor = cursor.plus({ minutes: SLOT_STEP_MINUTES });\n    }\n  }\n  day = day.plus({ days: 1 });\n}\n\n// ---- Pick 3 VARIED slots: prefer distinct days; avoid two same-morning ----\nfunction partOfDay(dt) { return dt.hour < 12 ? 'am' : 'pm'; }\nconst picked = [];\nconst usedDayKeys = new Set();\n// Pass 1: first free slot on each distinct day.\nfor (const c of candidates) {\n  const key = c.startDT.toFormat('yyyy-MM-dd');\n  if (!usedDayKeys.has(key)) { picked.push(c); usedDayKeys.add(key); }\n  if (picked.length >= 3) break;\n}\n// Pass 2: if <3, backfill with same-day slots in a different part of day.\nif (picked.length < 3) {\n  for (const c of candidates) {\n    if (picked.length >= 3) break;\n    if (picked.some(p => p.startDT.toMillis() === c.startDT.toMillis())) continue;\n    const sameDaySamePart = picked.some(p =>\n      p.startDT.toFormat('yyyy-MM-dd') === c.startDT.toFormat('yyyy-MM-dd') &&\n      partOfDay(p.startDT) === partOfDay(c.startDT));\n    if (!sameDaySamePart) picked.push(c);\n  }\n}\n// Pass 3: last resort — any remaining distinct candidates.\nif (picked.length < 3) {\n  for (const c of candidates) {\n    if (picked.length >= 3) break;\n    if (picked.some(p => p.startDT.toMillis() === c.startDT.toMillis())) continue;\n    picked.push(c);\n  }\n}\npicked.sort((a, b) => a.startDT.toMillis() - b.startDT.toMillis());\n\n// ---- Format output ----\nconst slots = picked.slice(0, 3).map(p => ({\n  Date: p.startDT.toFormat('cccc, LLLL d'),          // e.g. \"Monday, July 20\"\n  Start: p.startDT.toFormat('h:mm a') + ' ET',\n  End: p.endDT.toFormat('h:mm a') + ' ET',\n  startISO: p.startDT.toISO(),\n  endISO: p.endDT.toISO()\n}));\n\nconst proposedTimesText = slots.map(s => `- ${s.Date}: ${s.Start} to ${s.End}`).join('\\n');\nconst enoughSlots = slots.length >= 3;\n\nreturn [{\n  json: {\n    slots,\n    proposedTimesText,\n    slotCount: slots.length,\n    enoughSlots,\n    durationMinutes,\n    searchStartResolved: winStart.toFormat('yyyy-MM-dd'),\n    searchEndResolved: winEnd.toFormat('yyyy-MM-dd'),\n    summaryForEA: enoughSlots\n      ? `${slots.length} available ${durationMinutes}-min slots found between ${winStart.toFormat('LLL d')} and ${winEnd.toFormat('LLL d')}.`\n      : `Only ${slots.length} slot(s) found in the working-hours grid between ${winStart.toFormat('LLL d')} and ${winEnd.toFormat('LLL d')}; widen the window or review manually.`\n  }\n}];\n"
       },
       "id": "c2000000-0000-4000-8000-0000000003a0",
       "name": "Slot Engine (Code)",
@@ -524,6 +530,100 @@
         64
       ],
       "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "url": "=https://public.missiveapp.com/v1/conversations/{{ $json.conversationId }}/comments?limit=10",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "id": "c2000000-0000-4000-8000-0000000006a0",
+      "name": "Check Existing Draft Marker",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -336,
+        -224
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c2b00000-0000-4000-8000-0000000006a1",
+              "leftValue": "={{ (($json.comments || []).some(c => (c.body || '').includes('[auto-scheduling-draft-created]'))) ? 'dup' : 'new' }}",
+              "rightValue": "new",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c2000000-0000-4000-8000-0000000006a2",
+      "name": "Already Drafted?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -112,
+        -224
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "c2000000-0000-4000-8000-0000000006a3",
+      "name": "Skip Duplicate Draft",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        160,
+        -352
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://public.missiveapp.com/v1/posts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"posts\": {\n    \"conversation\": \"{{ $('Flatten Messages').item.json.conversationId }}\",\n    \"notification\": {\n      \"title\": \"Scheduling\",\n      \"body\": \"Draft reply created for review\"\n    },\n    \"markdown\": \"Scheduling reply drafted and Kendra pinged for review. [auto-scheduling-draft-created]\"\n  }\n}",
+        "body": "={\n  \"posts\": {\n    \"conversation\": \"{{ $('Flatten Messages').item.json.conversationId }}\",\n    \"notification\": {\n      \"title\": \"Scheduling\",\n      \"body\": \"Draft reply created for review\"\n    },\n    \"markdown\": \"Scheduling reply drafted and Kendra pinged for review. [auto-scheduling-draft-created]\"\n  }\n}",
+        "options": {}
+      },
+      "id": "c2000000-0000-4000-8000-0000000006a4",
+      "name": "Post Draft-Created Marker",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2256,
+        -160
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      }
     }
   ],
   "connections": {
@@ -564,7 +664,7 @@
       "main": [
         [
           {
-            "node": "Classify with AI",
+            "node": "Check Existing Draft Marker",
             "type": "main",
             "index": 0
           }
@@ -714,7 +814,7 @@
       "main": [
         [
           {
-            "node": "Slack Ping Kendra",
+            "node": "Post Draft-Created Marker",
             "type": "main",
             "index": 0
           }
@@ -748,6 +848,46 @@
         [
           {
             "node": "Write Email Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Existing Draft Marker": {
+      "main": [
+        [
+          {
+            "node": "Already Drafted?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Already Drafted?": {
+      "main": [
+        [
+          {
+            "node": "Classify with AI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip Duplicate Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Draft-Created Marker": {
+      "main": [
+        [
+          {
+            "node": "Slack Ping Kendra",
             "type": "main",
             "index": 0
           }
