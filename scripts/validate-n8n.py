@@ -572,6 +572,115 @@ def check_code_nodes_for_dollar_refs(workflow, nodes, forward, reverse):
     return info
 
 
+def check_p016_server_local_date_math(workflow, nodes, forward, reverse):
+    """P016: calendar arithmetic in the SERVER's timezone, not the workflow's.
+
+    `new Date()` in a Code node is the n8n HOST's clock. n8n Cloud runs UTC, so
+    `new Date(); d.setHours(0,0,0,0)` is midnight UTC — 8:00 PM ET the previous
+    day. Any day-boundary bucketing built that way is wrong for four hours out
+    of every 24, and the output is rendered in ET elsewhere so nothing looks
+    obviously broken.
+
+    Found live in [8] Daily Brief twice: the capacity window offered "free
+    blocks" at 4:00 AM (2026-08-06), and `Categorize My Tasks` filed a task due
+    9 PM ET last night as "due today" (2026-08-09). Also flags
+    toLocale*String with no `timeZone` option, which prints the host's day —
+    the same node showed an evening-ET due date as the NEXT day.
+
+    Fix: use Luxon (`DateTime` is available in every Code node) with an
+    explicit zone — DateTime.now().setZone('America/New_York').startOf('day').
+    """
+    issues = []
+    for node in nodes:
+        if node.get("type", "") not in ("n8n-nodes-base.code", "n8n-nodes-base.function"):
+            continue
+        params = node.get("parameters", {}) or {}
+        code = params.get("jsCode", "") or params.get("functionCode", "")
+        if not code:
+            continue
+        name = node.get("name", "")
+        # Strip comments first, so a comment ABOUT this bug doesn't trip the check.
+        stripped = re.sub(r"//[^\n]*", "", code)
+        stripped = re.sub(r"/\*[\s\S]*?\*/", "", stripped)
+
+        if re.search(r"\.set(Hours|Minutes|Date|FullYear)\s*\(", stripped):
+            issues.append({
+                "pattern": "P016",
+                "severity": "HIGH",
+                "node": name,
+                "message": (
+                    "Node '%s' does date arithmetic with setHours/setDate on a JS Date. "
+                    "That is the n8n SERVER's timezone (UTC on Cloud), not the workflow's — "
+                    "day boundaries land 4-5 hours off while the output still renders in ET."
+                    % name),
+                "fix": ("Use Luxon with an explicit zone: "
+                        "DateTime.now().setZone('America/New_York').startOf('day').toMillis()"),
+            })
+
+        for m in re.finditer(r"toLocale(?:Date|Time)?String\s*\(([^)]*)\)", stripped):
+            if "timeZone" not in m.group(1):
+                issues.append({
+                    "pattern": "P016",
+                    "severity": "MEDIUM",
+                    "node": name,
+                    "message": (
+                        "Node '%s' formats a date with toLocale*String and no timeZone "
+                        "option — it renders in the server's zone, so an evening-ET "
+                        "timestamp prints as the NEXT day." % name),
+                    "fix": ("Pass timeZone: 'America/New_York', or use "
+                            "DateTime.fromMillis(ms).setZone(zone).toFormat(fmt)"),
+                })
+                break
+    return issues
+
+
+def check_p017_sheets_write_without_mapping(workflow, nodes, forward, reverse):
+    """P017: a Google Sheets node that looks like a write but is wired as a read.
+
+    In the Sheets v4 node the default `operation` is READ. A node named
+    'Append Row' with no `operation` and no `columns` mapping therefore writes
+    nothing — silently, forever, with a green execution and no error.
+
+    Found live in [8] Daily Brief: 'GSheet: Append Row' had been performing a
+    read every weekday for ~125 runs. The tracker sheet held its header row and
+    zero data rows; nothing ever surfaced.
+
+    Every genuinely-writing Sheets node in this repo uses
+    operation: 'appendOrUpdate' WITH a columns mapping — that is the shape to
+    match.
+    """
+    issues = []
+    WRITE_WORDS = ("append", "write", "log", "upsert", "record", "add", "insert", "track")
+    for node in nodes:
+        if "googleSheets" not in node.get("type", ""):
+            continue
+        params = node.get("parameters", {}) or {}
+        op = params.get("operation")
+        name = node.get("name", "")
+        if op in (None, "read") and any(w in name.lower() for w in WRITE_WORDS):
+            issues.append({
+                "pattern": "P017",
+                "severity": "HIGH",
+                "node": name,
+                "message": (
+                    "Node '%s' is named like a write but operation is %s — it writes "
+                    "nothing and still reports success."
+                    % (name, "absent (v4 defaults to READ)" if op is None else repr(op))),
+                "fix": ("Set operation: 'appendOrUpdate' and configure the columns mapping, "
+                        "or rename the node so it reflects that it reads."),
+            })
+        elif op in ("append", "appendOrUpdate", "update") and not params.get("columns"):
+            issues.append({
+                "pattern": "P017",
+                "severity": "HIGH",
+                "node": name,
+                "message": ("Node '%s' has operation '%s' but no columns mapping — nothing "
+                            "reaches the sheet." % (name, op)),
+                "fix": "Configure the columns mapping (or enable autoMapInputData).",
+            })
+    return issues
+
+
 def run_all_checks(workflow):
     nodes = workflow.get("nodes", [])
     forward, reverse = get_connections(workflow)
@@ -588,6 +697,8 @@ def run_all_checks(workflow):
     all_issues += check_p011_cross_reference_after_transform(workflow, nodes, forward, reverse)
     all_issues += check_p012_gmail_field_type_safety(workflow, nodes, forward, reverse)
     all_issues += check_p013_drive_bulk_upload_rate_limit(workflow, nodes, forward, reverse)
+    all_issues += check_p016_server_local_date_math(workflow, nodes, forward, reverse)
+    all_issues += check_p017_sheets_write_without_mapping(workflow, nodes, forward, reverse)
     all_issues += check_code_nodes_for_dollar_refs(workflow, nodes, forward, reverse)
 
     return all_issues, nodes
@@ -602,7 +713,7 @@ def print_report(filepath, issues, nodes):
     print(f"  n8n Pre-Import Validation Report")
     print(f"  Workflow: {workflow_name}")
     print(f"  Nodes: {node_count} total, {len(code_nodes)} Code nodes")
-    print(f"  Patterns checked: 13 (P001-P013 + general)")
+    print(f"  Patterns checked: 15 (P001-P013, P016-P017 + general)")
     print(f"{'='*60}\n")
 
     if not issues:
