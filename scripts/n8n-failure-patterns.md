@@ -225,3 +225,32 @@ When a new failure is discovered during import testing:
 3. Set "Times caught" and "Times missed" to 0
 4. Update `validate-n8n.py` if the detection logic can be automated
 5. Log the discovery in `import-log.md`
+
+---
+
+## P016: Date arithmetic in the server's timezone, not the workflow's
+
+- **Status**: active
+- **Severity**: high
+- **Category**: correctness / silent
+- **Description**: `new Date()` inside a Code node is the n8n **host's** clock. n8n Cloud runs UTC, so `new Date(); d.setHours(0,0,0,0)` is midnight UTC — 8:00 PM ET the previous day. Any day-boundary bucketing built that way is wrong for four hours of every 24, and because the output is usually rendered in ET elsewhere, nothing looks broken. Same failure applies to `toLocaleDateString`/`toLocaleTimeString` with no `timeZone` option: an evening-ET timestamp prints as the NEXT day.
+- **Detection**: Code nodes containing `.setHours(` / `.setDate(`, or `toLocale*String` without a `timeZone` option. Automated as check P016 in `validate-n8n.py`.
+- **Fix**: Use Luxon — `DateTime` is available in every Code node — with an explicit zone: `DateTime.now().setZone('America/New_York').startOf('day').toMillis()`, and `DateTime.fromMillis(ms).setZone(zone).toFormat(fmt)` for display. Verify by running the node under both `TZ=UTC` and `TZ=America/New_York`; the output must be identical.
+- **Discovered**: 2026-08-06 and 2026-08-09, [8] Daily Brief. The capacity block offered "largest free block 4:00 AM – 2:00 PM"; a week-long calendar event produced "2 meetings (178 hours)"; and `Categorize My Tasks` filed a task due 9 PM ET last night as **due today** while showing tonight's 9 PM task as **upcoming** dated tomorrow. Also live in `7a-build-meeting-agendas` (agenda pass built on the wrong day).
+- **Times caught**: 0
+- **Times missed**: 3
+
+---
+
+## P017: Google Sheets node that looks like a write but is wired as a read
+
+- **Status**: active
+- **Severity**: high
+- **Category**: silent no-op
+- **Description**: In the Sheets v4 node the default `operation` is **read**. A node named "Append Row" with no `operation` set and no `columns` mapping performs a read, writes nothing, and reports success. There is no error, no empty-result warning, and the execution is green.
+- **Detection**: Google Sheets nodes whose name implies a write (append/write/log/upsert/record/add/insert/track) but whose `operation` is absent or `read`; or an append/update operation with no `columns` mapping. Automated as check P017 in `validate-n8n.py`.
+- **Fix**: Set `operation: appendOrUpdate` **and** configure the columns mapping — that is the shape every working Sheets writer in this repo uses. If the node really is a read, rename it so the name stops lying.
+- **Discovered**: 2026-08-09, [8] Daily Brief. `GSheet: Append Row` had been performing a read every weekday for roughly 125 runs; the "! Daily COS Brief Tracker" sheet held its header row and zero data rows. Replaced with a Supabase upsert into `cos_brief_metrics`.
+- **Times caught**: 0
+- **Times missed**: 1
+

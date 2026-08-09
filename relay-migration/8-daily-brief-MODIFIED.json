@@ -174,7 +174,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const allTasks = $input.first().json.tasks || [];\n// Exclude meeting agenda tasks — already shown in calendar section\nconst AGENDA_LIST_ID = '901107582941';\nconst tasks = allTasks.filter(t => t.list?.id !== AGENDA_LIST_ID);\nconst now = Date.now();\nconst todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);\nconst todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999);\nconst todayEndMs = todayEnd.getTime();\nconst threeDaysMs = todayEndMs + 3 * 86400000;\n\nconst categorized = {\n  overdue: [],\n  dueToday: [],\n  upcoming: [],\n  noDueDate: []\n};\n\nfor (const t of tasks) {\n  const due = t.due_date ? parseInt(t.due_date) : null;\n  const daysOverdue = due ? Math.floor((now - due) / 86400000) : 0;\n\n  const task = {\n    taskId: t.id,\n    name: t.name,\n    status: t.status?.status || 'unknown',\n    dueDate: t.due_date,\n    dueDateFormatted: due ? new Date(due).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No date',\n    daysOverdue: daysOverdue > 0 ? daysOverdue : 0,\n    priority: t.priority?.priority || 'normal',\n    list: t.list?.name || 'Unknown',\n    url: t.url,\n    tags: (t.tags || []).map(tag => tag.name)\n  };\n\n  if (!due) {\n    categorized.noDueDate.push(task);\n  } else if (due < todayStart.getTime()) {\n    categorized.overdue.push(task);\n  } else if (due <= todayEndMs) {\n    categorized.dueToday.push(task);\n  } else if (due <= threeDaysMs) {\n    categorized.upcoming.push(task);\n  }\n  // Tasks due >3 days out are excluded from the brief\n}\n\nreturn [{ json: { myTasks: categorized } }];"
+        "jsCode": "const allTasks = $input.first().json.tasks || [];\n// Exclude meeting agenda tasks — already shown in calendar section\nconst AGENDA_LIST_ID = '901107582941';\nconst tasks = allTasks.filter(t => t.list?.id !== AGENDA_LIST_ID);\n\n// === TIMEZONE (fixed 2026-08-09 — same class as the capacity bug) ===\n// This used `new Date(); setHours(0,0,0,0)`, which is midnight in the n8n\n// SERVER's zone. n8n Cloud runs UTC, so \"today\" was really 8 PM ET yesterday\n// to 7:59 PM ET today: a task due 9 PM ET tonight was bucketed `upcoming`, and\n// one due 9 PM ET last night showed as `dueToday` rather than `overdue`. These\n// buckets are the overdue counts the brief leads with, so the boundary has to\n// be Alex's midnight, not the server's. All arithmetic below is ET via Luxon.\nconst ZONE = 'America/New_York';\nconst nowET = DateTime.now().setZone(ZONE);\nconst todayStartMs = nowET.startOf('day').toMillis();\nconst todayEndMs = nowET.endOf('day').toMillis();\nconst threeDaysMs = nowET.plus({ days: 3 }).endOf('day').toMillis();\n\nconst categorized = {\n  overdue: [],\n  dueToday: [],\n  upcoming: [],\n  noDueDate: []\n};\n\nfor (const t of tasks) {\n  const due = t.due_date ? parseInt(t.due_date) : null;\n\n  // Calendar days late in ET, not elapsed-hours/24. A task due 11 PM last\n  // night is 1 day overdue this morning, not 0.\n  let daysOverdue = 0;\n  if (due) {\n    const dueDayET = DateTime.fromMillis(due).setZone(ZONE).startOf('day');\n    daysOverdue = Math.max(0, Math.round(nowET.startOf('day').diff(dueDayET, 'days').days));\n  }\n\n  const task = {\n    taskId: t.id,\n    name: t.name,\n    status: t.status?.status || 'unknown',\n    dueDate: t.due_date,\n    // Rendered in ET — without the zone this printed the NEXT day for any\n    // evening-ET due date.\n    dueDateFormatted: due ? DateTime.fromMillis(due).setZone(ZONE).toFormat('LLL d') : 'No date',\n    daysOverdue: daysOverdue,\n    priority: t.priority?.priority || 'normal',\n    list: t.list?.name || 'Unknown',\n    url: t.url,\n    tags: (t.tags || []).map(tag => tag.name)\n  };\n\n  if (!due) {\n    categorized.noDueDate.push(task);\n  } else if (due < todayStartMs) {\n    categorized.overdue.push(task);\n  } else if (due <= todayEndMs) {\n    categorized.dueToday.push(task);\n  } else if (due <= threeDaysMs) {\n    categorized.upcoming.push(task);\n  }\n  // Tasks due >3 days out are excluded from the brief\n}\n\nreturn [{ json: { myTasks: categorized } }];"
       },
       "id": "240a4197-d182-4653-bed1-b16250bee86a",
       "name": "Categorize My Tasks",
@@ -402,7 +402,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const tasks = $input.first().json.tasks || [];\nconst excludeIds = ['120026283', '248566802', '87390158'];\n\nconst othersTasks = tasks.filter(t => {\n  const assignees = (t.assignees || []).map(a => String(a.id));\n  return !assignees.some(id => excludeIds.includes(id));\n});\n\nreturn [{\n  json: {\n    othersTasks: othersTasks.map(t => ({\n      taskId: t.id,\n      name: t.name,\n      assignees: (t.assignees || []).map(a => a.username || a.email || 'User ' + a.id),\n      dueDate: t.due_date,\n      dueDateFormatted: t.due_date ? new Date(parseInt(t.due_date)).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No date',\n      list: t.list?.name || 'Unknown',\n      url: t.url\n    }))\n  }\n}];"
+        "jsCode": "const tasks = $input.first().json.tasks || [];\nconst excludeIds = ['120026283', '248566802', '87390158'];\n\nconst othersTasks = tasks.filter(t => {\n  const assignees = (t.assignees || []).map(a => String(a.id));\n  return !assignees.some(id => excludeIds.includes(id));\n});\n\nreturn [{\n  json: {\n    othersTasks: othersTasks.map(t => ({\n      taskId: t.id,\n      name: t.name,\n      assignees: (t.assignees || []).map(a => a.username || a.email || 'User ' + a.id),\n      dueDate: t.due_date,\n      dueDateFormatted: t.due_date ? DateTime.fromMillis(parseInt(t.due_date)).setZone('America/New_York').toFormat('LLL d')  // ET, not the n8n host's zone (P016) : 'No date',\n      list: t.list?.name || 'Unknown',\n      url: t.url\n    }))\n  }\n}];"
       },
       "id": "fb8cc9ca-6251-4f9c-9032-0512e470f914",
       "name": "Filter to Others",
@@ -644,37 +644,6 @@
     },
     {
       "parameters": {
-        "documentId": {
-          "__rl": true,
-          "value": "1drgYKl4KU-BjvG9jglGtVWKXto4misU7PnUkgnsYZE8",
-          "mode": "id",
-          "cachedResultName": "1drgYKl4KU-BjvG9jglGtVWKXto4misU7PnUkgnsYZE8"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "Sheet1",
-          "mode": "name",
-          "cachedResultName": "Sheet1"
-        },
-        "options": {}
-      },
-      "id": "f352a7a0-614b-4c57-8cd5-344dd2509e64",
-      "name": "GSheet: Append Row",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [
-        5216,
-        4176
-      ],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "80VJb4L9NWLlKxVM",
-          "name": "Google Sheets account"
-        }
-      }
-    },
-    {
-      "parameters": {
         "operation": "createFromText",
         "content": "={{ $('Build Metadata').first().json.briefMarkdown }}",
         "name": "={{ DateTime.now().setZone('America/New_York').toFormat('yyyy-MM-dd') + \" — COS Brief\" }}",
@@ -900,6 +869,110 @@
       ],
       "id": "7c1e5b90-3a44-4f61-9d22-8e0c4b5a1f77",
       "name": "Render Email HTML"
+    },
+    {
+      "parameters": {
+        "jsCode": "// === FLATTEN METRICS FOR SUPABASE ===\n// The Sheets node this replaces was named 'Append Row' but had no `operation`\n// set, and the v4 default is READ — so it read a sheet every weekday for ~125\n// runs and wrote nothing. The tracker had a header row and zero data rows.\n//\n// Metrics live nested under $json.metrics; Postgres wants flat, typed columns\n// so the series can be aggregated (trend the free hours, the overdue count,\n// the goal percentage). One row per brief_date, upserted — a re-run corrects\n// the day rather than duplicating it.\nconst j = $json;\nconst m = j.metrics || {};\nconst num = (v) => (typeof v === 'number' && isFinite(v)) ? v : null;\n\nreturn [{ json: {\n  brief_date:            j.date,\n  day_of_week:           j.dayOfWeek || null,\n  meeting_count:         num(m.meetingCount),\n  meeting_hours:         num(m.meetingHours),\n  free_hours:            num(m.freeHours),\n  largest_free_block_min: num(m.largestFreeBlockMin),\n  task_total:            num(m.totalTaskCount),\n  task_overdue:          num(m.overdueTaskCount),\n  email_total:           num(m.totalEmailCount),\n  email_needs_reply:     num(m.needsReplyCount),\n  email_old:             num(m.oldEmailCount),\n  weekly_goal_pct:       num(m.weeklyGoalPct),\n  clickup_url:           j.clickupUrl || null,\n  gdrive_url:            j.gdriveUrl || null,\n  news_brief_url:        m.newsBriefLink || null,\n  notification_brief_url: m.notificationBriefLink || null\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5216,
+        4176
+      ],
+      "id": "b2f7c1a4-55d3-4e88-9a10-6d2f0e7c3b91",
+      "name": "Flatten Metrics"
+    },
+    {
+      "parameters": {
+        "tableId": "cos_brief_metrics",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "brief_date",
+              "fieldValue": "={{ $json.brief_date }}"
+            },
+            {
+              "fieldId": "day_of_week",
+              "fieldValue": "={{ $json.day_of_week }}"
+            },
+            {
+              "fieldId": "meeting_count",
+              "fieldValue": "={{ $json.meeting_count }}"
+            },
+            {
+              "fieldId": "meeting_hours",
+              "fieldValue": "={{ $json.meeting_hours }}"
+            },
+            {
+              "fieldId": "free_hours",
+              "fieldValue": "={{ $json.free_hours }}"
+            },
+            {
+              "fieldId": "largest_free_block_min",
+              "fieldValue": "={{ $json.largest_free_block_min }}"
+            },
+            {
+              "fieldId": "task_total",
+              "fieldValue": "={{ $json.task_total }}"
+            },
+            {
+              "fieldId": "task_overdue",
+              "fieldValue": "={{ $json.task_overdue }}"
+            },
+            {
+              "fieldId": "email_total",
+              "fieldValue": "={{ $json.email_total }}"
+            },
+            {
+              "fieldId": "email_needs_reply",
+              "fieldValue": "={{ $json.email_needs_reply }}"
+            },
+            {
+              "fieldId": "email_old",
+              "fieldValue": "={{ $json.email_old }}"
+            },
+            {
+              "fieldId": "weekly_goal_pct",
+              "fieldValue": "={{ $json.weekly_goal_pct }}"
+            },
+            {
+              "fieldId": "clickup_url",
+              "fieldValue": "={{ $json.clickup_url }}"
+            },
+            {
+              "fieldId": "gdrive_url",
+              "fieldValue": "={{ $json.gdrive_url }}"
+            },
+            {
+              "fieldId": "news_brief_url",
+              "fieldValue": "={{ $json.news_brief_url }}"
+            },
+            {
+              "fieldId": "notification_brief_url",
+              "fieldValue": "={{ $json.notification_brief_url }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        5416,
+        4176
+      ],
+      "id": "c3a8d2b5-66e4-4f99-8b21-7e3a1f8d4c02",
+      "name": "Supabase: Brief Metrics",
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "supabaseApi": {
+          "id": "s8xehWEboCBkOgBd",
+          "name": "Supabase alex-os-information"
+        }
+      }
     }
   ],
   "connections": {
@@ -1237,17 +1310,17 @@
       "main": [
         [
           {
-            "node": "GSheet: Append Row",
-            "type": "main",
-            "index": 0
-          },
-          {
             "node": "Truncate for Slack",
             "type": "main",
             "index": 0
           },
           {
             "node": "Render Email HTML",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Flatten Metrics",
             "type": "main",
             "index": 0
           }
@@ -1292,6 +1365,17 @@
         [
           {
             "node": "Missive: Email Brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flatten Metrics": {
+      "main": [
+        [
+          {
+            "node": "Supabase: Brief Metrics",
             "type": "main",
             "index": 0
           }
