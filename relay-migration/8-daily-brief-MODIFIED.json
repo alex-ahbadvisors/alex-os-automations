@@ -578,32 +578,7 @@
     },
     {
       "parameters": {
-        "authentication": "oAuth2",
-        "operation": "get",
-        "id": "868hqzpqw",
-        "includeMarkdownDescription": true
-      },
-      "id": "04afd800-9728-4348-bf98-38e77d9ca3a6",
-      "name": "Daily Brief Prompt",
-      "type": "n8n-nodes-base.clickUp",
-      "typeVersion": 1,
-      "position": [
-        3744,
-        4368
-      ],
-      "retryOnFail": true,
-      "maxTries": 2,
-      "executeOnce": true,
-      "credentials": {
-        "clickUpOAuth2Api": {
-          "id": "WiEsUqUCPM9Xds21",
-          "name": "ClickUp Alex Oauth"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "// === DETERMINISTIC ASSEMBLY v3.1 ===\n// All $() calls must be at top level — n8n Code v2 sandbox restriction.\n// No helper functions that reference $().\n\n// --- Safe data gathering (all top-level) ---\nvar calendar, agendas, myTasks, weeklyGoals, kendraTasks, tylerTasks, othersTasks, notifDoc, newsDoc, emails;\n\ntry { calendar = $('Format Calendar').all().map(i => i.json); } catch(e) { calendar = []; }\ntry { agendas = ($('Format Agendas').first().json || {}).agendas || []; } catch(e) { agendas = []; }\ntry { myTasks = ($('Categorize My Tasks').first().json || {}).myTasks || {}; } catch(e) { myTasks = {}; }\ntry { weeklyGoals = ($('Parse Weekly Goals').first().json || {}).weeklyGoals || null; } catch(e) { weeklyGoals = null; }\ntry { kendraTasks = ($('Format Kendra').first().json || {}).kendraTasks || []; } catch(e) { kendraTasks = []; }\ntry { tylerTasks = ($('Format Tyler').first().json || {}).tylerTasks || []; } catch(e) { tylerTasks = []; }\ntry { othersTasks = ($('Filter to Others').first().json || {}).othersTasks || []; } catch(e) { othersTasks = []; }\ntry { notifDoc = ($('Format Notif Doc').first().json || {}).notificationDoc || null; } catch(e) { notifDoc = null; }\ntry { newsDoc = ($('Format News Doc').first().json || {}).newsBriefDoc || null; } catch(e) { newsDoc = null; }\ntry { emails = ($('Filter & Format Emails').first().json || {}).emails || {}; } catch(e) { emails = {}; }\n\nconst today = DateTime.now().setZone('America/New_York');\nconst dateStr = today.toFormat('yyyy-MM-dd');\nconst dateFmt = today.toFormat('MMMM d, yyyy');\nconst dayOfWeek = today.toFormat('EEEE');\nconst isMonday = dayOfWeek === 'Monday';\nconst dayOfMonth = today.day;\nconst isFirstMonday = isMonday && dayOfMonth <= 7;\nconst isoWeek = 'W' + String(today.weekNumber).padStart(2, '0');\nconst isoYear = today.toFormat('kkkk');\n\nvar md = '# Daily Brief \\u2014 ' + dateFmt + ', ' + dayOfWeek + '\\n\\n';\n\n// --- Brief mode ---\nif (isFirstMonday) {\n  md += '> **Mode: Month-Start Monday** \\u2014 extended brief with monthly review trigger\\n\\n';\n} else if (isMonday) {\n  md += '> **Mode: Monday** \\u2014 week ahead preview included\\n\\n';\n}\n\n// --- COS Assessment placeholder (AI Agent fills this) ---\nmd += '[COS_ASSESSMENT]\\n\\n';\n\n// --- News & Notifications ---\nmd += '## News & Notifications\\n';\nmd += '- **Notification Brief** (yesterday): ' + (notifDoc ? '[' + notifDoc.name + '](' + notifDoc.url + ')' : 'Not available') + '\\n';\nmd += '- **News Brief** (today): ' + (newsDoc ? '[' + newsDoc.name + '](' + newsDoc.url + ')' : 'Not available') + '\\n\\n';\n\n// --- Calendar (sorted by start time) ---\nmd += \"## Today's Calendar\\n\\n\";\nvar allEvents = calendar.filter(i => !i.isAllDay && i.title);\nvar meetings = allEvents.filter(i => !i.isWorkBlock);\nvar workBlocks = allEvents.filter(i => i.isWorkBlock);\nvar seen = {};\nvar dedupedMeetings = [];\nfor (var mi = 0; mi < meetings.length; mi++) {\n  var m = meetings[mi];\n  var key = m.title + '|' + m.startTime;\n  if (!seen[key]) {\n    seen[key] = true;\n    dedupedMeetings.push(m);\n  }\n}\ndedupedMeetings.sort(function(a, b) { return new Date(a.startTime) - new Date(b.startTime); });\n\nif (dedupedMeetings.length === 0) {\n  md += 'Clear calendar \\u2014 protect for deep work.\\n\\n';\n} else {\n  for (var ci = 0; ci < dedupedMeetings.length; ci++) {\n    var e = dedupedMeetings[ci];\n    var time = e.startTime ? new Date(e.startTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }) : 'TBD';\n    var endTime = e.endTime ? new Date(e.endTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }) : '';\n    var names = (e.attendees || []).map(function(a) { return a.name; }).join(', ') || '';\n    var agenda = null;\n    for (var ai = 0; ai < agendas.length; ai++) {\n      if (e.title.toLowerCase().indexOf(agendas[ai].name.toLowerCase()) >= 0 || agendas[ai].name.toLowerCase().indexOf(e.title.toLowerCase()) >= 0) {\n        agenda = agendas[ai];\n        break;\n      }\n    }\n    var agendaLink = agenda ? ' \\u2014 [Agenda](https://app.clickup.com/t/' + agenda.taskId + ')' : '';\n    md += '- **' + time + (endTime ? '\\u2013' + endTime : '') + '** ' + e.title;\n    if (names) md += ' (' + names + ')';\n    md += agendaLink + '\\n';\n  }\n  md += '\\n';\n}\n\n// --- Capacity ---\nvar meetingMinutes = 0;\nfor (var cmi = 0; cmi < dedupedMeetings.length; cmi++) {\n  var ev = dedupedMeetings[cmi];\n  if (ev.startTime && ev.endTime) {\n    meetingMinutes += (new Date(ev.endTime) - new Date(ev.startTime)) / 60000;\n  }\n}\nvar meetingHours = Math.round(meetingMinutes / 60 * 10) / 10;\nvar workWindowHours = 10;\nvar freeHours = Math.max(0, Math.round((workWindowHours - meetingHours) * 10) / 10);\n\nvar workStart = new Date(); workStart.setHours(8, 0, 0, 0);\nvar workEnd = new Date(); workEnd.setHours(18, 0, 0, 0);\nvar maxGapMin = 0;\nvar maxGapStart = workStart;\nvar maxGapEnd = workEnd;\nvar prevEnd = workStart;\nfor (var gi = 0; gi < dedupedMeetings.length; gi++) {\n  var s = new Date(dedupedMeetings[gi].startTime);\n  var en = new Date(dedupedMeetings[gi].endTime);\n  var gap = (s - prevEnd) / 60000;\n  if (gap > maxGapMin) { maxGapMin = gap; maxGapStart = prevEnd; maxGapEnd = s; }\n  if (en > prevEnd) prevEnd = en;\n}\nvar finalGap = (workEnd - prevEnd) / 60000;\nif (finalGap > maxGapMin) { maxGapMin = finalGap; maxGapStart = prevEnd; maxGapEnd = workEnd; }\n\nvar fmtT = function(d) { return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }); };\n\nmd += \"## Today's Capacity\\n\";\nmd += '- **' + dedupedMeetings.length + '** meetings (' + meetingHours + ' hours)\\n';\nmd += '- **' + freeHours + '** hours free (8 AM \\u2013 6 PM work window)\\n';\nif (maxGapMin >= 30) {\n  md += '- Largest free block: ' + fmtT(maxGapStart) + ' \\u2013 ' + fmtT(maxGapEnd) + ' (' + Math.round(maxGapMin / 60 * 10) / 10 + ' hours)\\n';\n}\nif (workBlocks.length > 0) {\n  md += '- **Work blocks** (Reclaim): ';\n  var wbParts = [];\n  for (var wi = 0; wi < workBlocks.length; wi++) {\n    var wb = workBlocks[wi];\n    var wt = wb.startTime ? new Date(wb.startTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }) : '';\n    wbParts.push(wb.title + (wt ? ' (' + wt + ')' : ''));\n  }\n  md += wbParts.join(', ');\n  md += '\\n';\n}\nmd += '\\n';\n\n// --- My Action Items ---\nvar overdue = myTasks.overdue || [];\nvar dueToday = myTasks.dueToday || [];\nvar upcoming = myTasks.upcoming || [];\n\nmd += '## My Action Items\\n\\n';\n\nmd += '**Due Today:**\\n';\nif (dueToday.length === 0) { md += 'None\\n\\n'; }\nelse {\n  for (var di = 0; di < dueToday.length; di++) { var t = dueToday[di]; md += '- ' + t.name + ' \\u2014 ' + t.list + ' \\u2014 [ClickUp](https://app.clickup.com/t/' + t.taskId + ')\\n'; }\n  md += '\\n';\n}\n\nmd += '**Overdue:**\\n';\nif (overdue.length === 0) { md += 'None\\n\\n'; }\nelse {\n  for (var oi = 0; oi < overdue.length; oi++) { var t = overdue[oi]; md += '- ' + t.name + ' \\u2014 ' + t.daysOverdue + ' days overdue \\u2014 [ClickUp](https://app.clickup.com/t/' + t.taskId + ')\\n'; }\n  md += '\\n';\n}\n\nmd += '**Possible Today** (upcoming 1-3 days):\\n';\nif (upcoming.length === 0) { md += 'None\\n\\n'; }\nelse {\n  for (var ui = 0; ui < upcoming.length; ui++) { var t = upcoming[ui]; md += '- ' + t.name + ' \\u2014 due ' + t.dueDateFormatted + ' \\u2014 [ClickUp](https://app.clickup.com/t/' + t.taskId + ')\\n'; }\n  md += '\\n';\n}\n\n// --- Weekly Goals ---\nmd += '## Weekly Goals\\n';\nif (!weeklyGoals) {\n  md += 'No weekly goals set this week.\\n\\n';\n} else {\n  md += '**' + weeklyGoals.taskName + '** \\u2014 ' + weeklyGoals.completedItems + ' of ' + weeklyGoals.totalItems + ' complete (' + weeklyGoals.completionPct + '%) \\u2014 [ClickUp](https://app.clickup.com/t/' + weeklyGoals.taskId + ')\\n';\n  for (var wgi = 0; wgi < weeklyGoals.goals.length; wgi++) { var g = weeklyGoals.goals[wgi]; md += '- ' + (g.resolved ? '\\u2705' : '\\u2b1c') + ' ' + g.name + ' \\u2014 ' + g.section + '\\n'; }\n  md += '\\n';\n}\n\n// --- Email ---\nvar nr = emails.needsReply || [];\nvar td = emails.todo || [];\nvar pm = emails.possiblyMissed || [];\n\nmd += '## Email Attention Needed\\n\\n';\n\nmd += '**Needs Reply:**\\n';\nif (nr.length === 0) { md += 'None\\n\\n'; }\nelse {\n  for (var ni = 0; ni < nr.length; ni++) { var e = nr[ni]; md += '- ' + e.subject + ' \\u2014 from ' + e.from + ' \\u2014 ' + e.age + ' \\u2014 [Missive](' + e.missiveUrl + ')\\n'; }\n  md += '\\n';\n}\n\nmd += '**To-Do:**\\n';\nif (td.length === 0) { md += 'None\\n\\n'; }\nelse {\n  for (var ti = 0; ti < td.length; ti++) { var e = td[ti]; md += '- ' + e.subject + ' \\u2014 [Missive](' + e.missiveUrl + ')\\n'; }\n  md += '\\n';\n}\n\nmd += '**Possibly Missed:**\\n';\nif (pm.length === 0) { md += 'None\\n\\n'; }\nelse {\n  for (var pi = 0; pi < pm.length; pi++) { var e = pm[pi]; md += '- ' + e.subject + ' \\u2014 from ' + e.from + ' \\u2014 [Missive](' + e.missiveUrl + ')\\n'; }\n  md += '\\n';\n}\n\n// --- Team ---\nmd += '## Team Accountability\\n\\n';\n\nmd += '**Kendra (EA):**\\n';\nif (kendraTasks.length === 0) { md += 'No tasks due today.\\n\\n'; }\nelse {\n  for (var ki = 0; ki < kendraTasks.length; ki++) { var t = kendraTasks[ki]; md += '- [ ] ' + t.name + ' \\u2014 ' + t.list + ' \\u2014 [ClickUp](https://app.clickup.com/t/' + t.taskId + ')\\n'; }\n  md += '\\n';\n}\n\nmd += '**Tyler (Home Manager):**\\n';\nif (tylerTasks.length === 0) { md += 'No tasks due today.\\n\\n'; }\nelse {\n  for (var tyi = 0; tyi < tylerTasks.length; tyi++) { var t = tylerTasks[tyi]; md += '- [ ] ' + t.name + ' \\u2014 [ClickUp](https://app.clickup.com/t/' + t.taskId + ')\\n'; }\n  md += '\\n';\n}\n\nmd += '**Others \\u2014 Due Within 3 Days:**\\n';\nif (othersTasks.length === 0) { md += 'None\\n\\n'; }\nelse {\n  for (var oti = 0; oti < othersTasks.length; oti++) { var t = othersTasks[oti]; md += '- [ ] ' + t.name + ' \\u2014 assigned to ' + (t.assignees || []).join(', ') + ' \\u2014 due ' + t.dueDateFormatted + ' \\u2014 [ClickUp](https://app.clickup.com/t/' + t.taskId + ')\\n'; }\n  md += '\\n';\n}\n\n// --- Monday: Week Ahead Preview placeholder ---\nif (isMonday) {\n  md += '## Week Ahead Preview\\n\\n';\n  md += '*The AI Agent will synthesize the week ahead based on calendar, sprint goals, and quarterly bets.*\\n\\n';\n}\n\n// --- First Monday: Month-Start Review trigger ---\nif (isFirstMonday) {\n  md += '## Month-Start Review\\n\\n';\n  md += '\\u2192 **Trigger month-start review skill** in morning Claude Code session.\\n';\n  md += '\\u2192 Review quarterly bets, monthly targets, pattern trends, and AHB pipeline progress.\\n\\n';\n}\n\n// --- Metrics ---\nvar now = Date.now() / 1000;\nvar oldThreshold = 48 * 3600;\nvar oldEmails = [];\nfor (var oei = 0; oei < nr.length; oei++) {\n  if (nr[oei].receivedAt && (now - nr[oei].receivedAt) > oldThreshold) oldEmails.push(nr[oei]);\n}\n\nreturn [{\n  json: {\n    date: dateStr,\n    dateFormatted: dateFmt,\n    dayOfWeek: dayOfWeek,\n    isMonday: isMonday,\n    isFirstMonday: isFirstMonday,\n    isoWeek: isoWeek,\n    isoYear: isoYear,\n    sprintFilePath: 'sprints/' + isoYear + '-' + isoWeek + '.md',\n    briefMarkdown: md,\n    metrics: {\n      meetingCount: dedupedMeetings.length,\n      meetingHours: meetingHours,\n      freeHours: freeHours,\n      largestFreeBlockMin: maxGapMin,\n      totalTaskCount: overdue.length + dueToday.length + upcoming.length,\n      totalEmailCount: nr.length + td.length + pm.length,\n      overdueTaskCount: overdue.length,\n      needsReplyCount: nr.length,\n      oldEmailCount: oldEmails.length,\n      weeklyGoalPct: weeklyGoals ? weeklyGoals.completionPct : 0,\n      newsBriefLink: (newsDoc && newsDoc.url) ? newsDoc.url : '',\n      notificationBriefLink: (notifDoc && notifDoc.url) ? notifDoc.url : ''\n    }\n  }\n}];"
+        "jsCode": "// === DETERMINISTIC ASSEMBLY v3.1 ===\n// All $() calls must be at top level — n8n Code v2 sandbox restriction.\n// No helper functions that reference $().\n\n// --- Safe data gathering (all top-level) ---\nvar calendar, agendas, myTasks, weeklyGoals, kendraTasks, tylerTasks, othersTasks, notifDoc, newsDoc, emails;\n\n// ok* flags feed the Source Health footer. TRUE means the upstream node\n// resolved — including when it legitimately returned nothing (a clear calendar\n// is not a broken feed). FALSE means the reference threw: the branch never ran,\n// so that section of the brief is untrustworthy, not merely empty.\nvar okCalendar = false, okAgendas = false, okMyTasks = false, okGoals = false;\nvar okKendra = false, okTyler = false, okOthers = false;\nvar okNotif = false, okNews = false, okEmails = false;\n\ntry { calendar = $('Format Calendar').all().map(i => i.json); okCalendar = true; } catch(e) { calendar = []; }\ntry { agendas = ($('Format Agendas').first().json || {}).agendas || []; okAgendas = true; } catch(e) { agendas = []; }\ntry { myTasks = ($('Categorize My Tasks').first().json || {}).myTasks || {}; okMyTasks = true; } catch(e) { myTasks = {}; }\ntry { weeklyGoals = ($('Parse Weekly Goals').first().json || {}).weeklyGoals || null; okGoals = true; } catch(e) { weeklyGoals = null; }\ntry { kendraTasks = ($('Format Kendra').first().json || {}).kendraTasks || []; okKendra = true; } catch(e) { kendraTasks = []; }\ntry { tylerTasks = ($('Format Tyler').first().json || {}).tylerTasks || []; okTyler = true; } catch(e) { tylerTasks = []; }\ntry { othersTasks = ($('Filter to Others').first().json || {}).othersTasks || []; okOthers = true; } catch(e) { othersTasks = []; }\ntry { notifDoc = ($('Format Notif Doc').first().json || {}).notificationDoc || null; okNotif = true; } catch(e) { notifDoc = null; }\ntry { newsDoc = ($('Format News Doc').first().json || {}).newsBriefDoc || null; okNews = true; } catch(e) { newsDoc = null; }\ntry { emails = ($('Filter & Format Emails').first().json || {}).emails || {}; okEmails = true; } catch(e) { emails = {}; }\n\nconst today = DateTime.now().setZone('America/New_York');\nconst dateStr = today.toFormat('yyyy-MM-dd');\nconst dateFmt = today.toFormat('MMMM d, yyyy');\nconst dayOfWeek = today.toFormat('EEEE');\nconst isMonday = dayOfWeek === 'Monday';\nconst dayOfMonth = today.day;\nconst isFirstMonday = isMonday && dayOfMonth <= 7;\nconst isoWeek = 'W' + String(today.weekNumber).padStart(2, '0');\nconst isoYear = today.toFormat('kkkk');\n\nvar md = '# Daily Brief \\u2014 ' + dayOfWeek + ', ' + dateFmt + '\\n\\n';\n// One scannable line under the title, filled in at the bottom once the\n// counts exist. It is also what shows as the email preview text, so it\n// earns its place twice.\nmd += '[AT_A_GLANCE]\\n\\n';\n\n// --- Brief mode ---\nif (isFirstMonday) {\n  md += '> **Mode: Month-Start Monday** \\u2014 extended brief with monthly review trigger\\n\\n';\n} else if (isMonday) {\n  md += '> **Mode: Monday** \\u2014 week ahead preview included\\n\\n';\n}\n\n// --- Judgment-layer placeholder ---\n// Filled by 'Build Metadata' with the pending-judgment notice. The actual\n// judgment (five sections) is written locally by Athena's executive-brief\n// job at ~7:55 ET, NOT here. No LLM runs in this flow.\nmd += '[COS_ASSESSMENT]\\n\\n';\n\n// --- News & Notifications ---\nmd += '## News & Notifications\\n';\nmd += '- **Notification Brief** (yesterday): ' + (notifDoc ? '[' + notifDoc.name + '](' + notifDoc.url + ')' : 'Not available') + '\\n';\nmd += '- **News Brief** (today): ' + (newsDoc ? '[' + newsDoc.name + '](' + newsDoc.url + ')' : 'Not available') + '\\n\\n';\n\n// --- Calendar (sorted by start time) ---\nmd += \"## Today's Calendar\\n\\n\";\nvar allEvents = calendar.filter(i => !i.isAllDay && i.title);\nvar meetings = allEvents.filter(i => !i.isWorkBlock);\nvar workBlocks = allEvents.filter(i => i.isWorkBlock);\nvar seen = {};\nvar dedupedMeetings = [];\nfor (var mi = 0; mi < meetings.length; mi++) {\n  var m = meetings[mi];\n  var key = m.title + '|' + m.startTime;\n  if (!seen[key]) {\n    seen[key] = true;\n    dedupedMeetings.push(m);\n  }\n}\ndedupedMeetings.sort(function(a, b) { return new Date(a.startTime) - new Date(b.startTime); });\n\nif (dedupedMeetings.length === 0) {\n  md += 'Clear calendar \\u2014 protect for deep work.\\n\\n';\n} else {\n  for (var ci = 0; ci < dedupedMeetings.length; ci++) {\n    var e = dedupedMeetings[ci];\n    var time = e.startTime ? new Date(e.startTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }) : 'TBD';\n    var endTime = e.endTime ? new Date(e.endTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }) : '';\n    var names = (e.attendees || []).map(function(a) { return a.name; }).join(', ') || '';\n    var agenda = null;\n    for (var ai = 0; ai < agendas.length; ai++) {\n      if (e.title.toLowerCase().indexOf(agendas[ai].name.toLowerCase()) >= 0 || agendas[ai].name.toLowerCase().indexOf(e.title.toLowerCase()) >= 0) {\n        agenda = agendas[ai];\n        break;\n      }\n    }\n    var agendaLink = agenda ? ' \\u2014 [Agenda](https://app.clickup.com/t/' + agenda.taskId + ')' : '';\n    // '10:00 \\u2013 11:00 AM' rather than '10:00 AM \\u2013 11:00 AM': one\n    // meridiem is enough when both ends share it, and the row scans faster.\n    var sameMeridiem = time.slice(-2) === endTime.slice(-2);\n    var timeLabel = (sameMeridiem ? time.replace(/ ?[AP]M$/, '') : time) +\n                    (endTime ? '\\u2013' + endTime : '');\n    // A multi-day event's start/end times belong to OTHER days; printing them\n    // bare reads as a normal meeting today. Say so instead.\n    var evS = new Date(e.startTime).getTime();\n    var evE = new Date(e.endTime).getTime();\n    var evDayStart = today.startOf('day').toMillis();\n    var evDayEnd = today.endOf('day').toMillis();\n    if (isFinite(evS) && isFinite(evE) && (evS < evDayStart || evE > evDayEnd)) {\n      timeLabel = 'Multi-day';\n    }\n    md += '- **' + timeLabel + '** \\u00b7 ' + e.title;\n    if (names) md += '  \\n  *' + names + '*';\n    md += (agendaLink ? '  \\n  ' + agendaLink.replace(' \\u2014 ', '') : '') + '\\n';\n  }\n  md += '\\n';\n}\n\n// --- Capacity (rebuilt 2026-08-06 — three bugs, all of them silent) ---\n// 1. The window was built with `new Date().setHours(8)` = the n8n SERVER's\n//    local time. n8n Cloud runs UTC and this workflow pins no timezone, so the\n//    real window was 4 AM - 2 PM ET while every printed time is ET. The brief\n//    offered \"free blocks\" at 4 AM and stopped the day at 2 PM.\n// 2. Free hours were `10 - TOTAL meeting hours`, so a 9:45 PM call was\n//    subtracted from an 8-6 budget it was never inside.\n// 3. Nothing clamped an event to today. GCal returns events that merely\n//    OVERLAP the requested day, so a multi-day timed event (a trip) arrives\n//    with a startTime days earlier — which is how a free block of 98 hours\n//    gets printed.\n// All three are fixed by doing the arithmetic in ET and intersecting every\n// event with today before it can influence any number.\nvar WORK_START_HOUR = 8, WORK_END_HOUR = 18;\nvar winStart = today.set({ hour: WORK_START_HOUR, minute: 0, second: 0, millisecond: 0 }).toMillis();\nvar winEnd = today.set({ hour: WORK_END_HOUR, minute: 0, second: 0, millisecond: 0 }).toMillis();\nvar dayStart = today.startOf('day').toMillis();\nvar dayEnd = today.endOf('day').toMillis();\nvar workWindowHours = Math.round((winEnd - winStart) / 3600000 * 10) / 10;\n\nvar fmtT = function(ms) {\n  return DateTime.fromMillis(ms).setZone('America/New_York').toFormat('h:mm a');\n};\nvar overlapMs = function(aStart, aEnd, bStart, bEnd) {\n  return Math.max(0, Math.min(aEnd, bEnd) - Math.max(aStart, bStart));\n};\nvar hrs = function(ms) { return Math.round(ms / 3600000 * 10) / 10; };\n\n// Normalise every meeting to millis, dropping anything unparseable rather than\n// letting a bad timestamp poison the arithmetic.\n// Merge overlapping spans before measuring: a double-booked 11:00 slot is one\n// hour of Alex's day, not two. Without this, two overlapping meetings inflate\n// every total.\nvar mergedMs = function(list) {\n  var sorted = list.slice().sort(function(a, b) { return a.start - b.start; });\n  var total = 0, at = -1;\n  for (var mi = 0; mi < sorted.length; mi++) {\n    var st = Math.max(sorted[mi].start, at);\n    if (sorted[mi].end > st) { total += sorted[mi].end - st; at = sorted[mi].end; }\n  }\n  return total;\n};\n\nvar spans = [];              // clamped to the work window\nvar daySpans = [];           // clamped to today (midnight-midnight ET)\nvar outsideWindow = [];      // real meetings, just not between 8 and 6\nvar spillsPastToday = 0;     // multi-day events, counted only for today\nfor (var cmi = 0; cmi < dedupedMeetings.length; cmi++) {\n  var ev = dedupedMeetings[cmi];\n  if (!ev.startTime || !ev.endTime) continue;\n  var s = new Date(ev.startTime).getTime();\n  var e2 = new Date(ev.endTime).getTime();\n  if (!isFinite(s) || !isFinite(e2) || e2 <= s) continue;\n  if (s < dayStart || e2 > dayEnd) spillsPastToday++;\n  if (overlapMs(s, e2, dayStart, dayEnd) > 0) {\n    daySpans.push({ start: Math.max(s, dayStart), end: Math.min(e2, dayEnd) });\n  }\n  var inWin = overlapMs(s, e2, winStart, winEnd);\n  if (inWin > 0) {\n    spans.push({ start: Math.max(s, winStart), end: Math.min(e2, winEnd) });\n  } else {\n    outsideWindow.push({ title: ev.title, start: s, end: e2 });\n  }\n}\nspans.sort(function(a, b) { return a.start - b.start; });\nvar bookedTodayMs = mergedMs(daySpans);\n\n// Walk the window once: merged busy time (double-booked slots must not be\n// counted twice) and the largest uninterrupted gap.\nvar bookedInWindowMs = 0, cursor = winStart;\nvar maxGapMs = 0, maxGapStart = winStart, maxGapEnd = winStart;\nfor (var gi = 0; gi < spans.length; gi++) {\n  if (spans[gi].start > cursor) {\n    var gap = spans[gi].start - cursor;\n    if (gap > maxGapMs) { maxGapMs = gap; maxGapStart = cursor; maxGapEnd = spans[gi].start; }\n  }\n  if (spans[gi].end > cursor) {\n    bookedInWindowMs += spans[gi].end - Math.max(cursor, spans[gi].start);\n    cursor = spans[gi].end;\n  }\n}\nif (winEnd - cursor > maxGapMs) { maxGapMs = winEnd - cursor; maxGapStart = cursor; maxGapEnd = winEnd; }\n\nvar meetingHours = hrs(bookedTodayMs);\nvar bookedInWindowHours = hrs(bookedInWindowMs);\nvar freeHours = Math.max(0, Math.round((workWindowHours - bookedInWindowHours) * 10) / 10);\nvar maxGapMin = Math.round(maxGapMs / 60000);\n\nmd += \"## Today's Capacity\\n\";\nmd += '- **' + dedupedMeetings.length + '** ' +\n      (dedupedMeetings.length === 1 ? 'meeting' : 'meetings') + ' — ' + meetingHours + 'h today' +\n      (bookedInWindowHours !== meetingHours ? ' (' + bookedInWindowHours + 'h inside 8 AM–6 PM)' : '') + '\\n';\nmd += '- **' + freeHours + 'h free** between 8 AM and 6 PM\\n';\nif (maxGapMin >= 30) {\n  md += '- Largest free block: **' + fmtT(maxGapStart) + ' – ' + fmtT(maxGapEnd) + '** (' +\n        hrs(maxGapMs) + ' hours)\\n';\n} else if (spans.length > 0) {\n  md += '- No free block of 30 minutes or more — today is execution-only.\\n';\n}\nfor (var owi = 0; owi < outsideWindow.length; owi++) {\n  md += '- *Outside the window:* ' + outsideWindow[owi].title + ' (' +\n        fmtT(outsideWindow[owi].start) + ' – ' + fmtT(outsideWindow[owi].end) +\n        ') — not counted against free hours\\n';\n}\nif (spillsPastToday > 0) {\n  md += '- *' + spillsPastToday + ' multi-day event' + (spillsPastToday === 1 ? '' : 's') +\n        ' on the calendar — counted for today only*\\n';\n}\nif (workBlocks.length > 0) {\n  md += '- **Work blocks** (Reclaim): ';\n  var wbParts = [];\n  for (var wi = 0; wi < workBlocks.length; wi++) {\n    var wb = workBlocks[wi];\n    var wbMs = wb.startTime ? new Date(wb.startTime).getTime() : NaN;\n    wbParts.push(wb.title + (isFinite(wbMs) ? ' (' + fmtT(wbMs) + ')' : ''));\n  }\n  md += wbParts.join(', ');\n  md += '\\n';\n}\nmd += '\\n';\n\n// --- My Action Items ---\nvar overdue = myTasks.overdue || [];\nvar dueToday = myTasks.dueToday || [];\nvar upcoming = myTasks.upcoming || [];\n\nmd += '## My Action Items\\n\\n';\n\nmd += '### Due Today\\n\\n';\nif (dueToday.length === 0) { md += '*Nothing due today.*\\n\\n'; }\nelse {\n  for (var di = 0; di < dueToday.length; di++) { var t = dueToday[di]; md += '- ' + t.name + ' \\u2014 ' + t.list + ' \\u2014 [ClickUp](https://app.clickup.com/t/' + t.taskId + ')\\n'; }\n  md += '\\n';\n}\n\nmd += '### Overdue\\n\\n';\nif (overdue.length === 0) { md += '*Nothing overdue.*\\n\\n'; }\nelse {\n  for (var oi = 0; oi < overdue.length; oi++) { var t = overdue[oi]; md += '- ' + t.name + ' \\u2014 ' + t.daysOverdue + ' days overdue \\u2014 [ClickUp](https://app.clickup.com/t/' + t.taskId + ')\\n'; }\n  md += '\\n';\n}\n\nmd += '### Possible Today (next 1\\u20133 days)\\n\\n';\nif (upcoming.length === 0) { md += '*Nothing in the next three days.*\\n\\n'; }\nelse {\n  for (var ui = 0; ui < upcoming.length; ui++) { var t = upcoming[ui]; md += '- ' + t.name + ' \\u2014 due ' + t.dueDateFormatted + ' \\u2014 [ClickUp](https://app.clickup.com/t/' + t.taskId + ')\\n'; }\n  md += '\\n';\n}\n\n// --- Weekly Goals ---\nmd += '## Weekly Goals\\n';\nif (!weeklyGoals) {\n  md += 'No weekly goals set this week.\\n\\n';\n} else {\n  md += '**' + weeklyGoals.taskName + '** \\u2014 ' + weeklyGoals.completedItems + ' of ' + weeklyGoals.totalItems + ' complete (' + weeklyGoals.completionPct + '%) \\u2014 [ClickUp](https://app.clickup.com/t/' + weeklyGoals.taskId + ')\\n';\n  for (var wgi = 0; wgi < weeklyGoals.goals.length; wgi++) { var g = weeklyGoals.goals[wgi]; md += '- ' + (g.resolved ? '\\u2705' : '\\u2b1c') + ' ' + g.name + ' \\u2014 ' + g.section + '\\n'; }\n  md += '\\n';\n}\n\n// --- Email ---\nvar nr = emails.needsReply || [];\nvar td = emails.todo || [];\nvar pm = emails.possiblyMissed || [];\n\nmd += '## Email Attention Needed\\n\\n';\n\nmd += '### Needs Reply\\n\\n';\nif (nr.length === 0) { md += '*Nothing waiting on a reply.*\\n\\n'; }\nelse {\n  for (var ni = 0; ni < nr.length; ni++) { var e = nr[ni]; md += '- ' + e.subject + ' \\u2014 from ' + e.from + ' \\u2014 ' + e.age + ' \\u2014 [Missive](' + e.missiveUrl + ')\\n'; }\n  md += '\\n';\n}\n\nmd += '### To-Do\\n\\n';\nif (td.length === 0) { md += '*Empty.*\\n\\n'; }\nelse {\n  for (var ti = 0; ti < td.length; ti++) { var e = td[ti]; md += '- ' + e.subject + ' \\u2014 [Missive](' + e.missiveUrl + ')\\n'; }\n  md += '\\n';\n}\n\nmd += '### Possibly Missed\\n\\n';\nif (pm.length === 0) { md += '*Nothing flagged.*\\n\\n'; }\nelse {\n  for (var pi = 0; pi < pm.length; pi++) { var e = pm[pi]; md += '- ' + e.subject + ' \\u2014 from ' + e.from + ' \\u2014 [Missive](' + e.missiveUrl + ')\\n'; }\n  md += '\\n';\n}\n\n// --- Team ---\nmd += '## Team Accountability\\n\\n';\n\nmd += '### Kendra (EA)\\n\\n';\nif (kendraTasks.length === 0) { md += '*No tasks due today.*\\n\\n'; }\nelse {\n  for (var ki = 0; ki < kendraTasks.length; ki++) { var t = kendraTasks[ki]; md += '- [ ] ' + t.name + ' \\u2014 ' + t.list + ' \\u2014 [ClickUp](https://app.clickup.com/t/' + t.taskId + ')\\n'; }\n  md += '\\n';\n}\n\nmd += '### Tyler (Home Manager)\\n\\n';\nif (tylerTasks.length === 0) { md += '*No tasks due today.*\\n\\n'; }\nelse {\n  for (var tyi = 0; tyi < tylerTasks.length; tyi++) { var t = tylerTasks[tyi]; md += '- [ ] ' + t.name + ' \\u2014 [ClickUp](https://app.clickup.com/t/' + t.taskId + ')\\n'; }\n  md += '\\n';\n}\n\nmd += '### Others \\u2014 due within 3 days\\n\\n';\nif (othersTasks.length === 0) { md += '*Nothing due.*\\n\\n'; }\nelse {\n  for (var oti = 0; oti < othersTasks.length; oti++) { var t = othersTasks[oti]; md += '- [ ] ' + t.name + ' \\u2014 assigned to ' + (t.assignees || []).join(', ') + ' \\u2014 due ' + t.dueDateFormatted + ' \\u2014 [ClickUp](https://app.clickup.com/t/' + t.taskId + ')\\n'; }\n  md += '\\n';\n}\n\n// --- Monday: Week Ahead Preview placeholder ---\nif (isMonday) {\n  md += '## Week Ahead Preview\\n\\n';\n  md += '*Week-ahead synthesis (calendar, sprint goals, quarterly bets) is added by Athena at ~7:55 ET.*\\n\\n';\n}\n\n// --- First Monday: Month-Start Review trigger ---\nif (isFirstMonday) {\n  md += '## Month-Start Review\\n\\n';\n  md += '\\u2192 **Trigger month-start review skill** in morning Claude Code session.\\n';\n  md += '\\u2192 Review quarterly bets, monthly targets, pattern trends, and AHB pipeline progress.\\n\\n';\n}\n\n// --- Source Health (deterministic freshness stamp) ---\n// A silently-broken feed is the failure mode that cost two briefs on 6/29 — and\n// with no LLM in this flow, nothing else narrates it. Green = the fetch\n// resolved (zero rows is a legitimate answer). Red = the branch never produced\n// output, so that section of the brief is untrustworthy, not merely quiet.\n// Computed from data already in scope: zero extra API calls.\nvar plural = function(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); };\nvar healthRows = [\n  ['Calendar (GCal)', okCalendar, plural(calendar.length, 'event')],\n  ['Meeting agendas (ClickUp)', okAgendas, plural(agendas.length, 'agenda')],\n  ['My tasks (ClickUp)', okMyTasks, plural(overdue.length + dueToday.length + upcoming.length, 'task')],\n  ['Weekly goals (ClickUp)', okGoals, weeklyGoals ? weeklyGoals.completionPct + '% complete' : 'none set this week'],\n  ['Kendra tasks (ClickUp)', okKendra, plural(kendraTasks.length, 'task')],\n  ['Tyler tasks (ClickUp)', okTyler, plural(tylerTasks.length, 'task')],\n  [\"Others' tasks (ClickUp)\", okOthers, plural(othersTasks.length, 'task')],\n  ['Email buckets (Missive)', okEmails, plural(nr.length + td.length + pm.length, 'thread')],\n  ['News brief (Drive)', okNews, newsDoc ? newsDoc.name : 'no doc found for today'],\n  ['Notification brief (Drive)', okNotif, notifDoc ? notifDoc.name : 'no doc found for yesterday']\n];\nmd += '## Source Health\\n';\nmd += '_Deterministic base generated ' + today.toFormat('yyyy-MM-dd HH:mm') + ' ET by n8n `[8]`. No LLM ran in this flow._\\n\\n';\nfor (var hi = 0; hi < healthRows.length; hi++) {\n  var hr = healthRows[hi];\n  md += '- ' + (hr[1] ? '\\u2705' : '\\uD83D\\uDD34') + ' **' + hr[0] + '** \\u2014 ' + (hr[1] ? hr[2] : 'FEED DID NOT RUN') + '\\n';\n}\nmd += '\\n';\n\n// --- Metrics ---\nvar now = Date.now() / 1000;\nvar oldThreshold = 48 * 3600;\nvar oldEmails = [];\nfor (var oei = 0; oei < nr.length; oei++) {\n  if (nr[oei].receivedAt && (now - nr[oei].receivedAt) > oldThreshold) oldEmails.push(nr[oei]);\n}\n\n// --- At a glance (the one line that has to survive a phone lock screen) ---\nvar glance = [];\nglance.push(dedupedMeetings.length === 0\n  ? 'No meetings'\n  : dedupedMeetings.length + (dedupedMeetings.length === 1 ? ' meeting' : ' meetings') +\n    ' (' + meetingHours + 'h)');\nglance.push(freeHours + 'h free (8\\u20136)');\nif (overdue.length) glance.push('**' + overdue.length + ' overdue**');\nif (dueToday.length) glance.push(dueToday.length + ' due today');\nif (nr.length) glance.push(nr.length + ' needs reply');\nif (weeklyGoals) glance.push('goals ' + weeklyGoals.completionPct + '%');\nmd = md.replace('[AT_A_GLANCE]', glance.join('  \\u00b7  '));\n\nreturn [{\n  json: {\n    date: dateStr,\n    atAGlance: glance.join(' \\u00b7 ').replace(/\\*\\*/g, ''),\n    dateFormatted: dateFmt,\n    dayOfWeek: dayOfWeek,\n    isMonday: isMonday,\n    isFirstMonday: isFirstMonday,\n    isoWeek: isoWeek,\n    isoYear: isoYear,\n    sprintFilePath: 'sprints/' + isoYear + '-' + isoWeek + '.md',\n    briefMarkdown: md,\n    metrics: {\n      meetingCount: dedupedMeetings.length,\n      meetingHours: meetingHours,\n      freeHours: freeHours,\n      largestFreeBlockMin: maxGapMin,\n      totalTaskCount: overdue.length + dueToday.length + upcoming.length,\n      totalEmailCount: nr.length + td.length + pm.length,\n      overdueTaskCount: overdue.length,\n      needsReplyCount: nr.length,\n      oldEmailCount: oldEmails.length,\n      weeklyGoalPct: weeklyGoals ? weeklyGoals.completionPct : 0,\n      newsBriefLink: (newsDoc && newsDoc.url) ? newsDoc.url : '',\n      notificationBriefLink: (notifDoc && notifDoc.url) ? notifDoc.url : ''\n    }\n  }\n}];"
       },
       "id": "6575c94b-f467-4189-ac11-f45a9f7c63dd",
       "name": "Deterministic Assembly",
@@ -616,7 +591,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Combine deterministic brief with AI assessment\nconst assembly = $('Deterministic Assembly').first().json;\nconst assessment = $input.first().json.output || $input.first().json.text || '';\n\n// Replace placeholder with AI assessment\nconst finalBrief = assembly.briefMarkdown.replace(\n  '[COS_ASSESSMENT]',\n  '## COS Assessment\\n\\n' + assessment + '\\n\\n---'\n);\n\nreturn [{\n  json: {\n    date: assembly.date,\n    dateFormatted: assembly.dateFormatted,\n    dayOfWeek: assembly.dayOfWeek,\n    briefMarkdown: finalBrief,\n    metrics: assembly.metrics\n  }\n}];"
+        "jsCode": "// === BUILD METADATA (hybrid, 2026-08-06) ===\n// The in-flow AI synthesis was removed (PRD 2026-08-05: deterministic base in\n// n8n, judgment layer added locally by Athena's executive-brief job ~7:55 ET).\n// This node is KEPT as the splice point: it swaps the [COS_ASSESSMENT]\n// placeholder for a marker that says, in the brief itself, that the judgment\n// layer has not been added yet. Athena's augmenter keys on the HTML comment.\n// Rollback to in-flow synthesis = restore the AI Agent + Anthropic Chat Model\n// nodes and put the old two-line replace() back (git history has it).\nconst assembly = $('Deterministic Assembly').first().json;\n\nconst PENDING = [\n  '> **Deterministic base.** Gathered by n8n `[8]` at ~7:45 ET. The judgment layer',\n  '> (Athena\\'s five sections) is written into the committed wiki copy',\n  '> `briefs/' + assembly.date + '/cos-brief.md` at ~7:55 ET. If this notice is still',\n  '> present there after 8:15 ET, the judgment layer did not run — the data below is',\n  '> complete and unenriched, not partial.',\n  '',\n  '<!-- ATHENA_JUDGMENT_LAYER_PENDING -->',\n  '',\n  '---'\n].join('\\n');\n\nconst finalBrief = assembly.briefMarkdown.replace('[COS_ASSESSMENT]', PENDING);\n\nreturn [{\n  json: {\n    date: assembly.date,\n    dateFormatted: assembly.dateFormatted,\n    dayOfWeek: assembly.dayOfWeek,\n    atAGlance: assembly.atAGlance,\n    briefMarkdown: finalBrief,\n    metrics: assembly.metrics\n  }\n}];"
       },
       "id": "35ad9625-0b4f-446c-9b5c-4568dbb9c4ed",
       "name": "Build Metadata",
@@ -649,7 +624,7 @@
         "nodeCredentialType": "httpBearerAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "=  {\n    \"drafts\": {\n      \"send\": true,\n      \"subject\": \"Daily Brief — {{ $json.dateFormatted }}\",\n      \"body\": {{ JSON.stringify($json.briefMarkdown + '\\n\\nOpen in ClickUp: ' + ($json.clickupUrl || '') + ($json.gdriveUrl ? '\\nGoogle Doc: ' + $json.gdriveUrl : '')) }},\n      \"from_field\": {\n        \"address\": \"alex@ahbadvisors.com\",\n        \"name\": \"Alexander Brownstein\"\n      },\n      \"to_fields\": [\n        { \"address\": \"alex@ahbadvisors.com\", \"name\": \"Alex Brownstein\" },\n        { \"address\": \"kendra@ahbadvisors.com\", \"name\": \"Kendra Fidlin\" }\n      ]\n    }\n  }",
+        "jsonBody": "={\n    \"drafts\": {\n      \"send\": true,\n      \"subject\": {{ JSON.stringify($json.emailSubject) }},\n      \"body\": {{ JSON.stringify($json.briefHtml) }},\n      \"from_field\": {\n        \"address\": \"alex@ahbadvisors.com\",\n        \"name\": \"Alexander Brownstein\"\n      },\n      \"to_fields\": [\n        { \"address\": \"alex@ahbadvisors.com\", \"name\": \"Alex Brownstein\" },\n        { \"address\": \"kendra@ahbadvisors.com\", \"name\": \"Kendra Fidlin\" }\n      ]\n    }\n  }",
         "options": {}
       },
       "id": "678d5a2d-f2c8-4787-b7b8-3fadd0ddd0fa",
@@ -657,7 +632,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        5216,
+        5436,
         4560
       ],
       "credentials": {
@@ -879,372 +854,6 @@
     },
     {
       "parameters": {
-        "promptType": "define",
-        "text": "=  Today is {{ $('Structure Agent Input').first().json.metadata.date }} ({{ $('Structure Agent Input').first().json.metadata.isoWeek }}). Monday: {{ $('Structure Agent Input').first().json.metadata.isMonday }}. Month-start: {{ $('Structure Agent Input').first().json.metadata.isFirstMonday }}.                                                      \n  {{ $('Structure Agent Input').first().json.userMessage }}\n\n  Produce the enrichment. Start with ## COS Assessment.",
-        "options": {
-          "systemMessage": "={{ $json.markdown_description }}"
-        }
-      },
-      "id": "c2d87dfe-7c50-469d-95da-cb2b6d9556ad",
-      "name": "AI Agent",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 3,
-      "position": [
-        3968,
-        4368
-      ]
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "claude-opus-4-6",
-          "mode": "list",
-          "cachedResultName": "Claude Opus 4.6"
-        },
-        "options": {
-          "maxTokensToSample": 2048
-        }
-      },
-      "id": "ad7e357d-7404-465d-a778-c1028f3150e6",
-      "name": "Anthropic Chat Model",
-      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
-      "typeVersion": 1.3,
-      "position": [
-        4040,
-        4592
-      ],
-      "credentials": {
-        "anthropicApi": {
-          "id": "PdQDpy0E1BohbFDv",
-          "name": "Anthropic account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "authentication": "oAuth2",
-        "resource": "file",
-        "operation": "get",
-        "owner": {
-          "__rl": true,
-          "value": "alex-ahbadvisors",
-          "mode": "name"
-        },
-        "repository": {
-          "__rl": true,
-          "value": "alex-os",
-          "mode": "list",
-          "cachedResultName": "alex-os",
-          "cachedResultUrl": "https://github.com/alex-ahbadvisors/alex-os"
-        },
-        "filePath": "CLAUDE.md",
-        "asBinaryProperty": false,
-        "additionalParameters": {}
-      },
-      "type": "n8n-nodes-base.github",
-      "typeVersion": 1.1,
-      "position": [
-        2176,
-        4656
-      ],
-      "id": "a42e4ec8-a9ae-4c29-ac91-f01ec0f9fb78",
-      "name": "CLAUDE.md",
-      "webhookId": "1b8ccf98-a5bf-4968-9a82-c4f1cc251511",
-      "credentials": {
-        "githubOAuth2Api": {
-          "id": "VsAQA7Ut5keA6h7X",
-          "name": "GitHub account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "authentication": "oAuth2",
-        "resource": "file",
-        "operation": "get",
-        "owner": {
-          "__rl": true,
-          "value": "alex-ahbadvisors",
-          "mode": "name"
-        },
-        "repository": {
-          "__rl": true,
-          "value": "alex-os",
-          "mode": "list",
-          "cachedResultName": "alex-os",
-          "cachedResultUrl": "https://github.com/alex-ahbadvisors/alex-os"
-        },
-        "filePath": "agents/chief-of-staff/soul.md",
-        "asBinaryProperty": false,
-        "additionalParameters": {}
-      },
-      "type": "n8n-nodes-base.github",
-      "typeVersion": 1.1,
-      "position": [
-        2176,
-        4848
-      ],
-      "id": "087613f5-ecba-475b-b067-36fc9793318b",
-      "name": "COS-soul.md",
-      "webhookId": "1b8ccf98-a5bf-4968-9a82-c4f1cc251511",
-      "credentials": {
-        "githubOAuth2Api": {
-          "id": "VsAQA7Ut5keA6h7X",
-          "name": "GitHub account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "authentication": "oAuth2",
-        "resource": "file",
-        "operation": "get",
-        "owner": {
-          "__rl": true,
-          "value": "alex-ahbadvisors",
-          "mode": "name"
-        },
-        "repository": {
-          "__rl": true,
-          "value": "alex-os",
-          "mode": "list",
-          "cachedResultName": "alex-os",
-          "cachedResultUrl": "https://github.com/alex-ahbadvisors/alex-os"
-        },
-        "filePath": "personal/patterns.md",
-        "asBinaryProperty": false,
-        "additionalParameters": {}
-      },
-      "type": "n8n-nodes-base.github",
-      "typeVersion": 1.1,
-      "position": [
-        2176,
-        5040
-      ],
-      "id": "7191bf40-18c2-4741-bdd1-94bdd2540615",
-      "name": "patterns.md",
-      "webhookId": "1b8ccf98-a5bf-4968-9a82-c4f1cc251511",
-      "credentials": {
-        "githubOAuth2Api": {
-          "id": "VsAQA7Ut5keA6h7X",
-          "name": "GitHub account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "authentication": "oAuth2",
-        "resource": "file",
-        "operation": "get",
-        "owner": {
-          "__rl": true,
-          "value": "alex-ahbadvisors",
-          "mode": "name"
-        },
-        "repository": {
-          "__rl": true,
-          "value": "alex-os",
-          "mode": "list",
-          "cachedResultName": "alex-os",
-          "cachedResultUrl": "https://github.com/alex-ahbadvisors/alex-os"
-        },
-        "filePath": "personal/goals.md",
-        "asBinaryProperty": false,
-        "additionalParameters": {}
-      },
-      "type": "n8n-nodes-base.github",
-      "typeVersion": 1.1,
-      "position": [
-        2176,
-        5232
-      ],
-      "id": "293e1bcb-6420-4ce8-a463-36dae4376994",
-      "name": "goals.md",
-      "webhookId": "1b8ccf98-a5bf-4968-9a82-c4f1cc251511",
-      "credentials": {
-        "githubOAuth2Api": {
-          "id": "VsAQA7Ut5keA6h7X",
-          "name": "GitHub account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "authentication": "oAuth2",
-        "resource": "file",
-        "operation": "get",
-        "owner": {
-          "__rl": true,
-          "value": "alex-ahbadvisors",
-          "mode": "name"
-        },
-        "repository": {
-          "__rl": true,
-          "value": "alex-os",
-          "mode": "list",
-          "cachedResultName": "alex-os",
-          "cachedResultUrl": "https://github.com/alex-ahbadvisors/alex-os"
-        },
-        "filePath": "personal/mission-vision-values.md",
-        "asBinaryProperty": false,
-        "additionalParameters": {}
-      },
-      "type": "n8n-nodes-base.github",
-      "typeVersion": 1.1,
-      "position": [
-        2176,
-        5424
-      ],
-      "id": "bbc0ea36-242e-40c5-bc9b-b02790edc6a4",
-      "name": "mission+vision+values.md",
-      "webhookId": "1b8ccf98-a5bf-4968-9a82-c4f1cc251511",
-      "credentials": {
-        "githubOAuth2Api": {
-          "id": "VsAQA7Ut5keA6h7X",
-          "name": "GitHub account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "numberInputs": 7
-      },
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        2400,
-        5152
-      ],
-      "id": "fca2b6ea-98d5-4c54-abfb-af27803ec6f2",
-      "name": "Merge GitHub Files"
-    },
-    {
-      "parameters": {
-        "jsCode": "  var files = {};\n  var items = $input.all();\n\n  for (var i = 0; i < items.length; i++) {\n    var item = items[i].json;\n    var path = item.path || ('file_' + i);\n    try {\n      files[path] = Buffer.from(item.content, 'base64').toString('utf-8');\n    } catch(e) {\n      files[path] = '[Failed to decode: ' + path + ']';\n    }\n  }\n\n  return [{\n    json: {\n      githubContext: files\n    }\n  }];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        2624,
-        5232
-      ],
-      "id": "0159a810-fcce-4b30-993c-43ca3d7f97b0",
-      "name": "Convert base64 to text"
-    },
-    {
-      "parameters": {
-        "authentication": "oAuth2",
-        "resource": "file",
-        "operation": "get",
-        "owner": {
-          "__rl": true,
-          "value": "alex-ahbadvisors",
-          "mode": "name"
-        },
-        "repository": {
-          "__rl": true,
-          "value": "alex-os",
-          "mode": "list",
-          "cachedResultName": "alex-os",
-          "cachedResultUrl": "https://github.com/alex-ahbadvisors/alex-os"
-        },
-        "filePath": "={{ $json.sprintPath }}",
-        "asBinaryProperty": false,
-        "additionalParameters": {}
-      },
-      "type": "n8n-nodes-base.github",
-      "typeVersion": 1.1,
-      "position": [
-        2176,
-        5616
-      ],
-      "id": "ffd47bd9-23e2-409d-b877-681007ea3aa7",
-      "name": "Sprint",
-      "webhookId": "1b8ccf98-a5bf-4968-9a82-c4f1cc251511",
-      "credentials": {
-        "githubOAuth2Api": {
-          "id": "VsAQA7Ut5keA6h7X",
-          "name": "GitHub account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "const now = new Date();\n  const jan1 = new Date(now.getFullYear(), 0, 1);\n  const days = Math.floor((now - jan1) / 86400000);\n  const week = Math.ceil((days + jan1.getDay() + 1) / 7);\n                                                \n  return [{       \n    json: {\n      sprintPath: `sprints/${now.getFullYear()}-W${String(week).padStart(2, '0')}.md`\n    }\n  }];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1952,
-        5616
-      ],
-      "id": "2541a1a6-62d2-4974-a152-dd0555ce4fea",
-      "name": "Sprint Week Code"
-    },
-    {
-      "parameters": {
-        "authentication": "oAuth2",
-        "resource": "file",
-        "operation": "get",
-        "owner": {
-          "__rl": true,
-          "value": "alex-ahbadvisors",
-          "mode": "name"
-        },
-        "repository": {
-          "__rl": true,
-          "value": "alex-os",
-          "mode": "list",
-          "cachedResultName": "alex-os",
-          "cachedResultUrl": "https://github.com/alex-ahbadvisors/alex-os"
-        },
-        "filePath": "=skills/morning-brief.md",
-        "asBinaryProperty": false,
-        "additionalParameters": {}
-      },
-      "type": "n8n-nodes-base.github",
-      "typeVersion": 1.1,
-      "position": [
-        2176,
-        5808
-      ],
-      "id": "5a9cd740-bd0b-4ee0-a2bf-b97416b59b4d",
-      "name": "morning brief skill",
-      "webhookId": "1b8ccf98-a5bf-4968-9a82-c4f1cc251511",
-      "credentials": {
-        "githubOAuth2Api": {
-          "id": "VsAQA7Ut5keA6h7X",
-          "name": "GitHub account"
-        }
-      }
-    },
-    {
-      "parameters": {},
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        3296,
-        4368
-      ],
-      "id": "4113141d-a305-4126-87c5-63a641df76f7",
-      "name": "Merge GitHub \"Context\"with Deterministic Data"
-    },
-    {
-      "parameters": {
-        "jsCode": "var briefData = {};\nvar githubContext = {};\n\ntry { briefData = $('Deterministic Assembly').first().json; } catch(e) { briefData = {}; }\ntry { githubContext = $('Convert base64 to text').first().json.githubContext; } catch(e) { githubContext = {}; }\n\nvar userMessage = '<CONTEXT>\\n\\n';\n\nvar paths = Object.keys(githubContext || {});\nfor (var i = 0; i < paths.length; i++) {\n  userMessage += '## ' + paths[i] + '\\n\\n';\n  userMessage += githubContext[paths[i]] + '\\n\\n';\n}\n\nuserMessage += '</CONTEXT>\\n\\n';\nuserMessage += '<DETERMINISTIC_DATA>\\n\\n';\nuserMessage += briefData.briefMarkdown || '[Brief not available]';\nuserMessage += '\\n\\n</DETERMINISTIC_DATA>';\n\nreturn [{\n  json: {\n    userMessage: userMessage,\n    metrics: briefData.metrics || {},\n    metadata: {\n      date: briefData.date,\n      isoWeek: briefData.isoWeek,\n      isoYear: briefData.isoYear,\n      isMonday: briefData.isMonday,\n      isFirstMonday: briefData.isFirstMonday\n    }\n  }\n}];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        3520,
-        4368
-      ],
-      "id": "2fbf6924-1b8c-4ba0-b9a5-d921c4dd491b",
-      "name": "Structure Agent Input"
-    },
-    {
-      "parameters": {
         "authentication": "oAuth2",
         "resource": "file",
         "operation": "create",
@@ -1278,6 +887,19 @@
           "name": "GitHub account"
         }
       }
+    },
+    {
+      "parameters": {
+        "jsCode": "// === RENDER EMAIL HTML ===\n// Missive's drafts.body is HTML, not markdown. Shipping raw markdown is why\n// the brief arrived as a wall of literal ** and [text](url) with every line\n// break collapsed — the same bug fixed in flow 2c on 2026-08-05.\n//\n// The markdown stays canonical (ClickUp, Drive, Obsidian and Athena's\n// augmenter all read it). This node renders that one string into email-safe\n// HTML at the last step before the send. Nothing else in the flow changes.\n//\n// Deliberately narrow: it handles exactly the constructs this brief emits —\n// h1/h2/h3, bullets, blockquotes, tables, rules, bold/italic/code, links.\n// No external library (n8n Code nodes have no npm), no layout tables, no\n// background colours (they fight dark mode). Structure and spacing are\n// inline-styled; body text colour is left to inherit so the mail client's\n// own light/dark handling wins.\n\nconst src = $json;\nconst md = src.briefMarkdown || '';\n\nconst esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n\n// Inline spans, applied AFTER escaping so user text can never inject markup.\nfunction inline(text) {\n  let t = esc(text);\n  t = t.replace(/`([^`]+)`/g,\n    '<code style=\"font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:0.9em\">$1</code>');\n  // [label](url) -> anchor. Only http(s) targets become links; anything else\n  // renders as plain text rather than a clickable unknown scheme.\n  t = t.replace(/\\[([^\\]]+)\\]\\((https?:\\/\\/[^)\\s]+)\\)/g,\n    '<a href=\"$2\" style=\"color:#2563eb;text-decoration:underline\">$1</a>');\n  t = t.replace(/\\[\\[[^\\]|]*\\|([^\\]]+)\\]\\]/g, '$1');   // wikilinks -> plain text\n  t = t.replace(/\\[\\[([^\\]]+)\\]\\]/g, '$1');\n  t = t.replace(/\\*\\*([^*]+)\\*\\*/g, '<strong>$1</strong>');\n  t = t.replace(/(^|[\\s(])\\*([^*\\n]+)\\*(?=[\\s).,;:!?]|$)/g, '$1<em>$2</em>');\n  t = t.replace(/(^|[\\s(])_([^_\\n]+)_(?=[\\s).,;:!?]|$)/g, '$1<em>$2</em>');\n  return t;\n}\n\nconst H = {\n  h1: 'margin:0 0 4px;font-size:22px;line-height:1.3;font-weight:700',\n  h2: 'margin:28px 0 8px;font-size:16px;line-height:1.3;font-weight:700;text-transform:uppercase;letter-spacing:0.04em',\n  h3: 'margin:18px 0 6px;font-size:14px;line-height:1.3;font-weight:700',\n  p:  'margin:0 0 10px;font-size:15px;line-height:1.55',\n  li: 'margin:0 0 6px;font-size:15px;line-height:1.5',\n  ul: 'margin:0 0 12px;padding-left:20px',\n  bq: 'margin:0 0 14px;padding:8px 14px;border-left:3px solid #c7cdd6;font-size:14px;line-height:1.5;color:#6b7280',\n  hr: 'border:0;border-top:1px solid #e5e7eb;margin:22px 0',\n  td: 'padding:6px 10px;border-bottom:1px solid #e5e7eb;font-size:14px;text-align:left;vertical-align:top',\n};\n\nconst out = [];\nconst lines = md.split('\\n');\nlet listOpen = false, quoteBuf = [], tableBuf = [];\n\nfunction closeList() { if (listOpen) { out.push('</ul>'); listOpen = false; } }\n\nfunction flushQuote() {\n  if (!quoteBuf.length) return;\n  out.push('<blockquote style=\"' + H.bq + '\">' +\n           quoteBuf.map(inline).join('<br>') + '</blockquote>');\n  quoteBuf = [];\n}\n\nfunction flushTable() {\n  if (!tableBuf.length) return;\n  const rows = tableBuf\n    .filter((r) => !/^\\|[\\s:|-]+\\|$/.test(r.trim()))\n    .map((r) => r.trim().replace(/^\\|/, '').replace(/\\|$/, '').split('|'));\n  if (rows.length) {\n    const head = rows.shift();\n    out.push('<table style=\"border-collapse:collapse;width:100%;margin:0 0 14px\">');\n    out.push('<thead><tr>' + head.map((c) =>\n      '<th style=\"' + H.td + ';font-weight:700\">' + inline(c.trim()) + '</th>').join('') +\n      '</tr></thead><tbody>');\n    rows.forEach((r) => {\n      out.push('<tr>' + r.map((c) =>\n        '<td style=\"' + H.td + '\">' + inline(c.trim()) + '</td>').join('') + '</tr>');\n    });\n    out.push('</tbody></table>');\n  }\n  tableBuf = [];\n}\n\nfunction flushBlocks() { flushQuote(); flushTable(); }\n\nfor (let i = 0; i < lines.length; i++) {\n  const raw = lines[i];\n  const line = raw.trim();\n\n  if (line.indexOf('<!--') === 0) { continue; }            // marker comments\n  if (line === '') { closeList(); flushBlocks(); continue; }\n\n  if (line.charAt(0) === '|') { closeList(); flushQuote(); tableBuf.push(line); continue; }\n  flushTable();\n\n  if (line.charAt(0) === '>') {\n    closeList();\n    quoteBuf.push(line.replace(/^>\\s?/, ''));\n    continue;\n  }\n  flushQuote();\n\n  if (/^-{3,}$/.test(line)) { closeList(); out.push('<hr style=\"' + H.hr + '\">'); continue; }\n\n  if (line.indexOf('### ') === 0) {\n    closeList();\n    out.push('<h3 style=\"' + H.h3 + '\">' + inline(line.slice(4)) + '</h3>');\n    continue;\n  }\n  if (line.indexOf('## ') === 0) {\n    closeList();\n    out.push('<h2 style=\"' + H.h2 + '\">' + inline(line.slice(3)) + '</h2>');\n    continue;\n  }\n  if (line.indexOf('# ') === 0) {\n    closeList();\n    out.push('<h1 style=\"' + H.h1 + '\">' + inline(line.slice(2)) + '</h1>');\n    continue;\n  }\n\n  if (/^[-*]\\s+/.test(line)) {\n    if (!listOpen) { out.push('<ul style=\"' + H.ul + '\">'); listOpen = true; }\n    // A '  \\n' continuation under a bullet (attendees, agenda link) belongs to\n    // the same <li>, indented and muted.\n    let item = inline(line.replace(/^[-*]\\s+/, ''));\n    while (i + 1 < lines.length && /^\\s{2,}\\S/.test(lines[i + 1]) &&\n           !/^\\s*[-*]\\s/.test(lines[i + 1])) {\n      item += '<br><span style=\"color:#6b7280\">' + inline(lines[++i].trim()) + '</span>';\n    }\n    out.push('<li style=\"' + H.li + '\">' + item + '</li>');\n    continue;\n  }\n\n  closeList();\n  out.push('<p style=\"' + H.p + '\">' + inline(line) + '</p>');\n}\ncloseList();\nflushBlocks();\n\n// Footer: the artifact links, as real buttons-ish text rather than raw URLs.\nconst links = [];\nif (src.clickupUrl) links.push('<a href=\"' + src.clickupUrl +\n  '\" style=\"color:#2563eb;text-decoration:underline\">Open in ClickUp</a>');\nif (src.gdriveUrl) links.push('<a href=\"' + src.gdriveUrl +\n  '\" style=\"color:#2563eb;text-decoration:underline\">Google Doc</a>');\nif (links.length) {\n  out.push('<hr style=\"' + H.hr + '\">');\n  out.push('<p style=\"' + H.p + ';color:#6b7280\">' + links.join(' &nbsp;·&nbsp; ') + '</p>');\n}\n\nconst html =\n  '<div style=\"max-width:680px;margin:0 auto;padding:4px 2px;' +\n  'font-family:-apple-system,BlinkMacSystemFont,\\'Segoe UI\\',Roboto,Helvetica,Arial,sans-serif;' +\n  '-webkit-text-size-adjust:100%\">' + out.join('\\n') + '</div>';\n\n// Subject carries the load-bearing counts so the inbox row is useful unopened,\n// but only the first three — a subject longer than ~78 chars is truncated by\n// every mail client and the tail is wasted.\nconst glanceBits = (src.atAGlance || '').split(' · ').slice(0, 3).join(' · ');\nconst subject = 'Daily Brief — ' + src.dayOfWeek.slice(0, 3) + ' ' +\n                (src.dateFormatted || '').replace(/,\\s*\\d{4}$/, '') +\n                (glanceBits ? ' · ' + glanceBits : '');\n\nreturn [{ json: Object.assign({}, src, { briefHtml: html, emailSubject: subject }) }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5216,
+        4560
+      ],
+      "id": "7c1e5b90-3a44-4f61-9d22-8e0c4b5a1f77",
+      "name": "Render Email HTML"
     }
   ],
   "connections": {
@@ -1336,41 +958,6 @@
           },
           {
             "node": "Reclaim Block Titles",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "CLAUDE.md",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "COS-soul.md",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "patterns.md",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "goals.md",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "mission+vision+values.md",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Sprint Week Code",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "morning brief skill",
             "type": "main",
             "index": 0
           }
@@ -1597,28 +1184,6 @@
         ]
       ]
     },
-    "Deterministic Assembly": {
-      "main": [
-        [
-          {
-            "node": "Merge GitHub \"Context\"with Deterministic Data",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Daily Brief Prompt": {
-      "main": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Build Metadata": {
       "main": [
         [
@@ -1682,7 +1247,7 @@
             "index": 0
           },
           {
-            "node": "Missive: Email Brief",
+            "node": "Render Email HTML",
             "type": "main",
             "index": 0
           }
@@ -1711,18 +1276,7 @@
         ]
       ]
     },
-    "Anthropic Chat Model": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "AI Agent": {
+    "Deterministic Assembly": {
       "main": [
         [
           {
@@ -1733,132 +1287,11 @@
         ]
       ]
     },
-    "mission+vision+values.md": {
+    "Render Email HTML": {
       "main": [
         [
           {
-            "node": "Merge GitHub Files",
-            "type": "main",
-            "index": 4
-          }
-        ]
-      ]
-    },
-    "goals.md": {
-      "main": [
-        [
-          {
-            "node": "Merge GitHub Files",
-            "type": "main",
-            "index": 3
-          }
-        ]
-      ]
-    },
-    "patterns.md": {
-      "main": [
-        [
-          {
-            "node": "Merge GitHub Files",
-            "type": "main",
-            "index": 2
-          }
-        ]
-      ]
-    },
-    "COS-soul.md": {
-      "main": [
-        [
-          {
-            "node": "Merge GitHub Files",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "CLAUDE.md": {
-      "main": [
-        [
-          {
-            "node": "Merge GitHub Files",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Merge GitHub Files": {
-      "main": [
-        [
-          {
-            "node": "Convert base64 to text",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Sprint": {
-      "main": [
-        [
-          {
-            "node": "Merge GitHub Files",
-            "type": "main",
-            "index": 5
-          }
-        ]
-      ]
-    },
-    "Sprint Week Code": {
-      "main": [
-        [
-          {
-            "node": "Sprint",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "morning brief skill": {
-      "main": [
-        [
-          {
-            "node": "Merge GitHub Files",
-            "type": "main",
-            "index": 6
-          }
-        ]
-      ]
-    },
-    "Convert base64 to text": {
-      "main": [
-        [
-          {
-            "node": "Merge GitHub \"Context\"with Deterministic Data",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "Merge GitHub \"Context\"with Deterministic Data": {
-      "main": [
-        [
-          {
-            "node": "Structure Agent Input",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Structure Agent Input": {
-      "main": [
-        [
-          {
-            "node": "Daily Brief Prompt",
+            "node": "Missive: Email Brief",
             "type": "main",
             "index": 0
           }
