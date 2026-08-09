@@ -1,5 +1,5 @@
 {
-  "name": "[R6] Package Delivery → ClickUp",
+  "name": "[R6] Package Delivery \u2192 ClickUp",
   "nodes": [
     {
       "parameters": {
@@ -115,7 +115,7 @@
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
       "position": [
-        96,
+        208,
         0
       ],
       "credentials": {
@@ -124,6 +124,39 @@
           "name": "ClickUp Alex Oauth"
         }
       }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "guard-buildinglink-sender",
+              "leftValue": "={{ (($('Missive Get First Message').item.json.messages || [])[0]?.from_field?.address) || '' }}",
+              "rightValue": "buildinglink.com",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -16,
+        0
+      ],
+      "id": "44444444-0001-4d8a-9e6c-guardpkgroom1",
+      "name": "Guard: BuildingLink pickup only"
     }
   ],
   "connections": {
@@ -164,11 +197,23 @@
       "main": [
         [
           {
-            "node": "Create Package Task",
+            "node": "Guard: BuildingLink pickup only",
             "type": "main",
             "index": 0
           }
         ]
+      ]
+    },
+    "Guard: BuildingLink pickup only": {
+      "main": [
+        [
+          {
+            "node": "Create Package Task",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
       ]
     }
   },
