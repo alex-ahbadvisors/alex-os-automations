@@ -104,7 +104,7 @@
         "space": "90113618058",
         "folderless": true,
         "list": "901112996098",
-        "name": "=[{{ $now.format('yyyy-MM-dd') }}] Package Delivered: {{ $('Set Trigger Context').item.json.subject }}",
+        "name": "=[{{ $now.format('yyyy-MM-dd') }}] Pickup: {{ $('Set Trigger Context').item.json.subject }}",
         "additionalFields": {
           "content": "=**Delivery Details**\n\nSubject: {{ $('Set Trigger Context').item.json.subject }}\nFrom: {{ $json.fromField }}\n\n**Email Link**: {{ $('Set Trigger Context').item.json.conversationUrl }}",
           "markdownContent": true
