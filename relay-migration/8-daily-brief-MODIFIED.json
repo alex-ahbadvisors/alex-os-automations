@@ -973,6 +973,162 @@
           "name": "Supabase alex-os-information"
         }
       }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1drgYKl4KU-BjvG9jglGtVWKXto4misU7PnUkgnsYZE8",
+          "mode": "id",
+          "cachedResultName": "! Daily COS Brief Tracker"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name",
+          "cachedResultName": "Sheet1"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "Date"
+          ],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "options": []
+            },
+            {
+              "id": "Doc Link",
+              "displayName": "Doc Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "options": []
+            },
+            {
+              "id": "ClickUp Link",
+              "displayName": "ClickUp Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "options": []
+            },
+            {
+              "id": "# of Meetings",
+              "displayName": "# of Meetings",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "options": []
+            },
+            {
+              "id": "# of tasks",
+              "displayName": "# of tasks",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "options": []
+            },
+            {
+              "id": "# of emails",
+              "displayName": "# of emails",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "options": []
+            },
+            {
+              "id": "# overdue tasks",
+              "displayName": "# overdue tasks",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "options": []
+            },
+            {
+              "id": "# old emails",
+              "displayName": "# old emails",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "options": []
+            },
+            {
+              "id": "Daily News Brief Link",
+              "displayName": "Daily News Brief Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "options": []
+            },
+            {
+              "id": "Daily Notification Brief Link",
+              "displayName": "Daily Notification Brief Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "options": []
+            }
+          ],
+          "value": {
+            "Date": "={{ $json.brief_date }}",
+            "Doc Link": "={{ $json.gdrive_url }}",
+            "ClickUp Link": "={{ $json.clickup_url }}",
+            "# of Meetings": "={{ $json.meeting_count }}",
+            "# of tasks": "={{ $json.task_total }}",
+            "# of emails": "={{ $json.email_total }}",
+            "# overdue tasks": "={{ $json.task_overdue }}",
+            "# old emails": "={{ $json.email_old }}",
+            "Daily News Brief Link": "={{ $json.news_brief_url }}",
+            "Daily Notification Brief Link": "={{ $json.notification_brief_url }}"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        5416,
+        4316
+      ],
+      "id": "d4b9e3c6-77f5-4a11-9c32-8f4b2a9e5d13",
+      "name": "GSheet: Brief Metrics",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "80VJb4L9NWLlKxVM",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
     }
   ],
   "connections": {
@@ -1376,6 +1532,11 @@
         [
           {
             "node": "Supabase: Brief Metrics",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GSheet: Brief Metrics",
             "type": "main",
             "index": 0
           }
