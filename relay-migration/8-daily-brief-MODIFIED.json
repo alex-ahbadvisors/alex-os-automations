@@ -605,19 +605,6 @@
     },
     {
       "parameters": {
-        "jsCode": "const brief = $json.briefMarkdown;\nconst maxLen = 3500;\nconst truncated = brief.length > maxLen\n  ? brief.substring(0, maxLen) + '\\n\\n_... truncated. See full brief in ClickUp or Google Drive._'\n  : brief;\n\nreturn [{ json: { ...JSON.parse(JSON.stringify($json)), slackBrief: truncated } }];"
-      },
-      "id": "36d4c51a-b19f-4a9a-b8e8-dbc1ea5fad21",
-      "name": "Truncate for Slack",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        5216,
-        4368
-      ]
-    },
-    {
-      "parameters": {
         "method": "POST",
         "url": "https://public.missiveapp.com/v1/drafts",
         "authentication": "predefinedCredentialType",
@@ -1465,11 +1452,6 @@
     "Collect Artifact URLs": {
       "main": [
         [
-          {
-            "node": "Truncate for Slack",
-            "type": "main",
-            "index": 0
-          },
           {
             "node": "Render Email HTML",
             "type": "main",
