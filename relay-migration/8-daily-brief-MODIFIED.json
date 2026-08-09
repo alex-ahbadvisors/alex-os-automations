@@ -605,45 +605,6 @@
     },
     {
       "parameters": {
-        "jsCode": "const brief = $json.briefMarkdown;\nconst maxLen = 3500;\nconst truncated = brief.length > maxLen\n  ? brief.substring(0, maxLen) + '\\n\\n_... truncated. See full brief in ClickUp or Google Drive._'\n  : brief;\n\nreturn [{ json: { ...JSON.parse(JSON.stringify($json)), slackBrief: truncated } }];"
-      },
-      "id": "36d4c51a-b19f-4a9a-b8e8-dbc1ea5fad21",
-      "name": "Truncate for Slack",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        5216,
-        4368
-      ]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://public.missiveapp.com/v1/drafts",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "httpBearerAuth",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n    \"drafts\": {\n      \"send\": true,\n      \"subject\": {{ JSON.stringify($json.emailSubject) }},\n      \"body\": {{ JSON.stringify($json.briefHtml) }},\n      \"from_field\": {\n        \"address\": \"alex@ahbadvisors.com\",\n        \"name\": \"Alexander Brownstein\"\n      },\n      \"to_fields\": [\n        { \"address\": \"alex@ahbadvisors.com\", \"name\": \"Alex Brownstein\" },\n        { \"address\": \"kendra@ahbadvisors.com\", \"name\": \"Kendra Fidlin\" }\n      ]\n    }\n  }",
-        "options": {}
-      },
-      "id": "678d5a2d-f2c8-4787-b7b8-3fadd0ddd0fa",
-      "name": "Missive: Email Brief",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        5436,
-        4560
-      ],
-      "credentials": {
-        "httpBearerAuth": {
-          "id": "naMGpImlvunQE8Zi",
-          "name": "Missive"
-        }
-      }
-    },
-    {
-      "parameters": {
         "operation": "createFromText",
         "content": "={{ $('Build Metadata').first().json.briefMarkdown }}",
         "name": "={{ DateTime.now().setZone('America/New_York').toFormat('yyyy-MM-dd') + \" — COS Brief\" }}",
@@ -856,19 +817,6 @@
           "name": "GitHub account"
         }
       }
-    },
-    {
-      "parameters": {
-        "jsCode": "// === RENDER EMAIL HTML ===\n// Missive's drafts.body is HTML, not markdown. Shipping raw markdown is why\n// the brief arrived as a wall of literal ** and [text](url) with every line\n// break collapsed — the same bug fixed in flow 2c on 2026-08-05.\n//\n// The markdown stays canonical (ClickUp, Drive, Obsidian and Athena's\n// augmenter all read it). This node renders that one string into email-safe\n// HTML at the last step before the send. Nothing else in the flow changes.\n//\n// Deliberately narrow: it handles exactly the constructs this brief emits —\n// h1/h2/h3, bullets, blockquotes, tables, rules, bold/italic/code, links.\n// No external library (n8n Code nodes have no npm), no layout tables, no\n// background colours (they fight dark mode). Structure and spacing are\n// inline-styled; body text colour is left to inherit so the mail client's\n// own light/dark handling wins.\n\nconst src = $json;\nconst md = src.briefMarkdown || '';\n\nconst esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n\n// Inline spans, applied AFTER escaping so user text can never inject markup.\nfunction inline(text) {\n  let t = esc(text);\n  t = t.replace(/`([^`]+)`/g,\n    '<code style=\"font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:0.9em\">$1</code>');\n  // [label](url) -> anchor. Only http(s) targets become links; anything else\n  // renders as plain text rather than a clickable unknown scheme.\n  t = t.replace(/\\[([^\\]]+)\\]\\((https?:\\/\\/[^)\\s]+)\\)/g,\n    '<a href=\"$2\" style=\"color:#2563eb;text-decoration:underline\">$1</a>');\n  t = t.replace(/\\[\\[[^\\]|]*\\|([^\\]]+)\\]\\]/g, '$1');   // wikilinks -> plain text\n  t = t.replace(/\\[\\[([^\\]]+)\\]\\]/g, '$1');\n  t = t.replace(/\\*\\*([^*]+)\\*\\*/g, '<strong>$1</strong>');\n  t = t.replace(/(^|[\\s(])\\*([^*\\n]+)\\*(?=[\\s).,;:!?]|$)/g, '$1<em>$2</em>');\n  t = t.replace(/(^|[\\s(])_([^_\\n]+)_(?=[\\s).,;:!?]|$)/g, '$1<em>$2</em>');\n  return t;\n}\n\nconst H = {\n  h1: 'margin:0 0 4px;font-size:22px;line-height:1.3;font-weight:700',\n  h2: 'margin:28px 0 8px;font-size:16px;line-height:1.3;font-weight:700;text-transform:uppercase;letter-spacing:0.04em',\n  h3: 'margin:18px 0 6px;font-size:14px;line-height:1.3;font-weight:700',\n  p:  'margin:0 0 10px;font-size:15px;line-height:1.55',\n  li: 'margin:0 0 6px;font-size:15px;line-height:1.5',\n  ul: 'margin:0 0 12px;padding-left:20px',\n  bq: 'margin:0 0 14px;padding:8px 14px;border-left:3px solid #c7cdd6;font-size:14px;line-height:1.5;color:#6b7280',\n  hr: 'border:0;border-top:1px solid #e5e7eb;margin:22px 0',\n  td: 'padding:6px 10px;border-bottom:1px solid #e5e7eb;font-size:14px;text-align:left;vertical-align:top',\n};\n\nconst out = [];\nconst lines = md.split('\\n');\nlet listOpen = false, quoteBuf = [], tableBuf = [];\n\nfunction closeList() { if (listOpen) { out.push('</ul>'); listOpen = false; } }\n\nfunction flushQuote() {\n  if (!quoteBuf.length) return;\n  out.push('<blockquote style=\"' + H.bq + '\">' +\n           quoteBuf.map(inline).join('<br>') + '</blockquote>');\n  quoteBuf = [];\n}\n\nfunction flushTable() {\n  if (!tableBuf.length) return;\n  const rows = tableBuf\n    .filter((r) => !/^\\|[\\s:|-]+\\|$/.test(r.trim()))\n    .map((r) => r.trim().replace(/^\\|/, '').replace(/\\|$/, '').split('|'));\n  if (rows.length) {\n    const head = rows.shift();\n    out.push('<table style=\"border-collapse:collapse;width:100%;margin:0 0 14px\">');\n    out.push('<thead><tr>' + head.map((c) =>\n      '<th style=\"' + H.td + ';font-weight:700\">' + inline(c.trim()) + '</th>').join('') +\n      '</tr></thead><tbody>');\n    rows.forEach((r) => {\n      out.push('<tr>' + r.map((c) =>\n        '<td style=\"' + H.td + '\">' + inline(c.trim()) + '</td>').join('') + '</tr>');\n    });\n    out.push('</tbody></table>');\n  }\n  tableBuf = [];\n}\n\nfunction flushBlocks() { flushQuote(); flushTable(); }\n\nfor (let i = 0; i < lines.length; i++) {\n  const raw = lines[i];\n  const line = raw.trim();\n\n  if (line.indexOf('<!--') === 0) { continue; }            // marker comments\n  if (line === '') { closeList(); flushBlocks(); continue; }\n\n  if (line.charAt(0) === '|') { closeList(); flushQuote(); tableBuf.push(line); continue; }\n  flushTable();\n\n  if (line.charAt(0) === '>') {\n    closeList();\n    quoteBuf.push(line.replace(/^>\\s?/, ''));\n    continue;\n  }\n  flushQuote();\n\n  if (/^-{3,}$/.test(line)) { closeList(); out.push('<hr style=\"' + H.hr + '\">'); continue; }\n\n  if (line.indexOf('### ') === 0) {\n    closeList();\n    out.push('<h3 style=\"' + H.h3 + '\">' + inline(line.slice(4)) + '</h3>');\n    continue;\n  }\n  if (line.indexOf('## ') === 0) {\n    closeList();\n    out.push('<h2 style=\"' + H.h2 + '\">' + inline(line.slice(3)) + '</h2>');\n    continue;\n  }\n  if (line.indexOf('# ') === 0) {\n    closeList();\n    out.push('<h1 style=\"' + H.h1 + '\">' + inline(line.slice(2)) + '</h1>');\n    continue;\n  }\n\n  if (/^[-*]\\s+/.test(line)) {\n    if (!listOpen) { out.push('<ul style=\"' + H.ul + '\">'); listOpen = true; }\n    // A '  \\n' continuation under a bullet (attendees, agenda link) belongs to\n    // the same <li>, indented and muted.\n    let item = inline(line.replace(/^[-*]\\s+/, ''));\n    while (i + 1 < lines.length && /^\\s{2,}\\S/.test(lines[i + 1]) &&\n           !/^\\s*[-*]\\s/.test(lines[i + 1])) {\n      item += '<br><span style=\"color:#6b7280\">' + inline(lines[++i].trim()) + '</span>';\n    }\n    out.push('<li style=\"' + H.li + '\">' + item + '</li>');\n    continue;\n  }\n\n  closeList();\n  out.push('<p style=\"' + H.p + '\">' + inline(line) + '</p>');\n}\ncloseList();\nflushBlocks();\n\n// Footer: the artifact links, as real buttons-ish text rather than raw URLs.\nconst links = [];\nif (src.clickupUrl) links.push('<a href=\"' + src.clickupUrl +\n  '\" style=\"color:#2563eb;text-decoration:underline\">Open in ClickUp</a>');\nif (src.gdriveUrl) links.push('<a href=\"' + src.gdriveUrl +\n  '\" style=\"color:#2563eb;text-decoration:underline\">Google Doc</a>');\nif (links.length) {\n  out.push('<hr style=\"' + H.hr + '\">');\n  out.push('<p style=\"' + H.p + ';color:#6b7280\">' + links.join(' &nbsp;·&nbsp; ') + '</p>');\n}\n\nconst html =\n  '<div style=\"max-width:680px;margin:0 auto;padding:4px 2px;' +\n  'font-family:-apple-system,BlinkMacSystemFont,\\'Segoe UI\\',Roboto,Helvetica,Arial,sans-serif;' +\n  '-webkit-text-size-adjust:100%\">' + out.join('\\n') + '</div>';\n\n// Subject carries the load-bearing counts so the inbox row is useful unopened,\n// but only the first three — a subject longer than ~78 chars is truncated by\n// every mail client and the tail is wasted.\nconst glanceBits = (src.atAGlance || '').split(' · ').slice(0, 3).join(' · ');\nconst subject = 'Daily Brief — ' + src.dayOfWeek.slice(0, 3) + ' ' +\n                (src.dateFormatted || '').replace(/,\\s*\\d{4}$/, '') +\n                (glanceBits ? ' · ' + glanceBits : '');\n\nreturn [{ json: Object.assign({}, src, { briefHtml: html, emailSubject: subject }) }];\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        5216,
-        4560
-      ],
-      "id": "7c1e5b90-3a44-4f61-9d22-8e0c4b5a1f77",
-      "name": "Render Email HTML"
     },
     {
       "parameters": {
@@ -1466,16 +1414,6 @@
       "main": [
         [
           {
-            "node": "Truncate for Slack",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Render Email HTML",
-            "type": "main",
-            "index": 0
-          },
-          {
             "node": "Flatten Metrics",
             "type": "main",
             "index": 0
@@ -1510,17 +1448,6 @@
         [
           {
             "node": "Build Metadata",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Render Email HTML": {
-      "main": [
-        [
-          {
-            "node": "Missive: Email Brief",
             "type": "main",
             "index": 0
           }
