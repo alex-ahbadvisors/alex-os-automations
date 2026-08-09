@@ -144,6 +144,15 @@
                 "type": "string",
                 "operation": "contains"
               }
+            },
+            {
+              "id": "guard-package-room",
+              "leftValue": "={{ ((($('Missive Get First Message').item.json.messages||[])[0]?.body)||'') + ' ' + ((($('Missive Get First Message').item.json.messages||[])[0]?.preview)||'') }}",
+              "rightValue": "Package Room",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
             }
           ]
         },
