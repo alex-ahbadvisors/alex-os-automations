@@ -254,3 +254,17 @@ When a new failure is discovered during import testing:
 - **Times caught**: 0
 - **Times missed**: 1
 
+---
+
+## P018: Code node whose JavaScript does not parse
+
+- **Status**: active
+- **Severity**: high
+- **Category**: silent-until-runtime
+- **Description**: n8n accepts any string as `jsCode`. A syntax error surfaces only when that node executes — for a node deep in a scheduled flow, that means the next morning, in production, with no earlier signal.
+- **Detection**: `node --check` on every Code node's body, wrapped in an async IIFE so top-level `await` still parses. Automated as check P018 in `validate-n8n.py`. Skips silently when `node` is not on PATH.
+- **Fix**: fix the syntax. By far the most common cause is a `//` comment placed **inside** an expression — a ternary, an object literal, an argument list — where it swallows the rest of the line. Put the comment on its own line above.
+- **Discovered**: 2026-08-09, [8] Daily Brief. A comment written inside a ternary — `dueDateFormatted: t.due_date ? fmt(...)  // a comment : 'No date',` — ate the `: 'No date',`, so the object literal never closed and the next line failed with `Unexpected identifier 'list'`. It was introduced by an automated edit, passed every other validator check, and was only found when Alex clicked Execute step in the n8n editor.
+- **Times caught**: 0
+- **Times missed**: 1
+
