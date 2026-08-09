@@ -885,10 +885,75 @@
     },
     {
       "parameters": {
-        "operation": "upsert",
         "tableId": "cos_brief_metrics",
-        "dataToSend": "autoMapInputData",
-        "options": {}
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "brief_date",
+              "fieldValue": "={{ $json.brief_date }}"
+            },
+            {
+              "fieldId": "day_of_week",
+              "fieldValue": "={{ $json.day_of_week }}"
+            },
+            {
+              "fieldId": "meeting_count",
+              "fieldValue": "={{ $json.meeting_count }}"
+            },
+            {
+              "fieldId": "meeting_hours",
+              "fieldValue": "={{ $json.meeting_hours }}"
+            },
+            {
+              "fieldId": "free_hours",
+              "fieldValue": "={{ $json.free_hours }}"
+            },
+            {
+              "fieldId": "largest_free_block_min",
+              "fieldValue": "={{ $json.largest_free_block_min }}"
+            },
+            {
+              "fieldId": "task_total",
+              "fieldValue": "={{ $json.task_total }}"
+            },
+            {
+              "fieldId": "task_overdue",
+              "fieldValue": "={{ $json.task_overdue }}"
+            },
+            {
+              "fieldId": "email_total",
+              "fieldValue": "={{ $json.email_total }}"
+            },
+            {
+              "fieldId": "email_needs_reply",
+              "fieldValue": "={{ $json.email_needs_reply }}"
+            },
+            {
+              "fieldId": "email_old",
+              "fieldValue": "={{ $json.email_old }}"
+            },
+            {
+              "fieldId": "weekly_goal_pct",
+              "fieldValue": "={{ $json.weekly_goal_pct }}"
+            },
+            {
+              "fieldId": "clickup_url",
+              "fieldValue": "={{ $json.clickup_url }}"
+            },
+            {
+              "fieldId": "gdrive_url",
+              "fieldValue": "={{ $json.gdrive_url }}"
+            },
+            {
+              "fieldId": "news_brief_url",
+              "fieldValue": "={{ $json.news_brief_url }}"
+            },
+            {
+              "fieldId": "notification_brief_url",
+              "fieldValue": "={{ $json.notification_brief_url }}"
+            }
+          ]
+        }
       },
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
