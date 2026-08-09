@@ -681,6 +681,78 @@ def check_p017_sheets_write_without_mapping(workflow, nodes, forward, reverse):
     return issues
 
 
+def check_p018_code_node_syntax(workflow, nodes, forward, reverse):
+    """P018: a Code node whose JavaScript does not parse.
+
+    n8n accepts any string as jsCode. A syntax error is only discovered when
+    that node executes — which, for a node deep in a scheduled flow, can be the
+    next morning in production.
+
+    Found 2026-08-09 in [8] Daily Brief: a `//` comment written INSIDE a
+    ternary swallowed the rest of the expression —
+
+        dueDateFormatted: t.due_date ? fmt(...)  // a comment : 'No date',
+        list: t.list?.name || 'Unknown',
+
+    the `: 'No date',` vanished into the comment, so the object literal broke
+    and the next line failed with "Unexpected identifier 'list'". Nothing
+    caught it until the node ran.
+
+    Uses `node --check`, wrapping the body in an async IIFE so top-level await
+    (legal in a Code node) parses. Skips silently if node is not on PATH —
+    a missing dev dependency must not turn into a false failure.
+    """
+    import shutil
+    import subprocess
+    import tempfile
+
+    issues = []
+    if not shutil.which("node"):
+        return issues
+
+    for node in nodes:
+        if node.get("type", "") not in ("n8n-nodes-base.code", "n8n-nodes-base.function"):
+            continue
+        params = node.get("parameters", {}) or {}
+        code = params.get("jsCode") or params.get("functionCode") or ""
+        if not code.strip():
+            continue
+        name = node.get("name", "?")
+
+        tmp = tempfile.NamedTemporaryFile("w", suffix=".js", delete=False)
+        try:
+            tmp.write("(async () => {\n" + code + "\n})")
+            tmp.close()
+            r = subprocess.run(["node", "--check", tmp.name],
+                               capture_output=True, text=True, timeout=20)
+            if r.returncode != 0:
+                detail = ""
+                for line in (r.stderr or "").splitlines():
+                    if "SyntaxError" in line:
+                        detail = line.strip()
+                        break
+                issues.append({
+                    "pattern": "P018",
+                    "severity": "HIGH",
+                    "node": name,
+                    "message": ("Code node '%s' does not parse as JavaScript — it will "
+                                "throw the moment it executes, which for a scheduled "
+                                "flow means in production. %s" % (name, detail)),
+                    "fix": ("Fix the syntax. Most common cause: a // comment placed "
+                            "inside an expression (ternary, object literal, argument "
+                            "list) — it swallows the rest of the line. Put the comment "
+                            "on its own line above."),
+                })
+        except Exception:  # noqa: BLE001 — a broken checker must not fail the run
+            pass
+        finally:
+            try:
+                os.unlink(tmp.name)
+            except OSError:
+                pass
+    return issues
+
+
 def run_all_checks(workflow):
     nodes = workflow.get("nodes", [])
     forward, reverse = get_connections(workflow)
@@ -699,6 +771,7 @@ def run_all_checks(workflow):
     all_issues += check_p013_drive_bulk_upload_rate_limit(workflow, nodes, forward, reverse)
     all_issues += check_p016_server_local_date_math(workflow, nodes, forward, reverse)
     all_issues += check_p017_sheets_write_without_mapping(workflow, nodes, forward, reverse)
+    all_issues += check_p018_code_node_syntax(workflow, nodes, forward, reverse)
     all_issues += check_code_nodes_for_dollar_refs(workflow, nodes, forward, reverse)
 
     return all_issues, nodes
@@ -713,7 +786,7 @@ def print_report(filepath, issues, nodes):
     print(f"  n8n Pre-Import Validation Report")
     print(f"  Workflow: {workflow_name}")
     print(f"  Nodes: {node_count} total, {len(code_nodes)} Code nodes")
-    print(f"  Patterns checked: 15 (P001-P013, P016-P017 + general)")
+    print(f"  Patterns checked: 16 (P001-P013, P016-P018 + general)")
     print(f"{'='*60}\n")
 
     if not issues:

@@ -402,7 +402,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const tasks = $input.first().json.tasks || [];\nconst excludeIds = ['120026283', '248566802', '87390158'];\n\nconst othersTasks = tasks.filter(t => {\n  const assignees = (t.assignees || []).map(a => String(a.id));\n  return !assignees.some(id => excludeIds.includes(id));\n});\n\nreturn [{\n  json: {\n    othersTasks: othersTasks.map(t => ({\n      taskId: t.id,\n      name: t.name,\n      assignees: (t.assignees || []).map(a => a.username || a.email || 'User ' + a.id),\n      dueDate: t.due_date,\n      dueDateFormatted: t.due_date ? DateTime.fromMillis(parseInt(t.due_date)).setZone('America/New_York').toFormat('LLL d')  // ET, not the n8n host's zone (P016) : 'No date',\n      list: t.list?.name || 'Unknown',\n      url: t.url\n    }))\n  }\n}];"
+        "jsCode": "const tasks = $input.first().json.tasks || [];\nconst excludeIds = ['120026283', '248566802', '87390158'];\n\nconst othersTasks = tasks.filter(t => {\n  const assignees = (t.assignees || []).map(a => String(a.id));\n  return !assignees.some(id => excludeIds.includes(id));\n});\n\nreturn [{\n  json: {\n    othersTasks: othersTasks.map(t => ({\n      taskId: t.id,\n      name: t.name,\n      assignees: (t.assignees || []).map(a => a.username || a.email || 'User ' + a.id),\n      dueDate: t.due_date,\n      dueDateFormatted: t.due_date ? DateTime.fromMillis(parseInt(t.due_date)).setZone('America/New_York').toFormat('LLL d') : 'No date',\n      list: t.list?.name || 'Unknown',\n      url: t.url\n    }))\n  }\n}];"
       },
       "id": "fb8cc9ca-6251-4f9c-9032-0512e470f914",
       "name": "Filter to Others",
