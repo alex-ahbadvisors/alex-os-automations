@@ -1,0 +1,313 @@
+{
+  "updatedAt": "2026-08-09T19:50:44.067Z",
+  "createdAt": "2026-08-09T19:41:24.663Z",
+  "id": "Ak0pw7lVp36SbUQf",
+  "name": "[maint] Prune Email Triage - To-Do (14-day retention)",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "e623613d-2d7a-4951-b801-1014183cd3a9",
+      "name": "When clicking 'Execute workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1104,
+        192
+      ],
+      "notes": "MANUAL ONLY — this workflow never runs on its own. It prunes only when you click Execute. To put it on a schedule later, add a Schedule Trigger node and wire it into Config alongside this one; nothing else needs to change."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg-retention",
+              "name": "retention_days",
+              "value": 14,
+              "type": "number"
+            },
+            {
+              "id": "cfg-dryrun",
+              "name": "dry_run",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "cfg-column",
+              "name": "age_column",
+              "value": "date",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f59944a8-f614-4379-bab0-6ed2547bfbda",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -880,
+        192
+      ],
+      "notes": "SAFETY SWITCH. dry_run = true means this workflow reports what it WOULD delete and deletes nothing. Set to false only after you have read one dry-run summary and agree with the count. retention_days = how many days of rows to keep."
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "6BIIWj3nPZH1pjQw",
+          "mode": "list",
+          "cachedResultName": "Email Triage - To-Do",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/6BIIWj3nPZH1pjQw"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "date",
+              "condition": "lt",
+              "keyValue": "={{ $now.minus({ days: $json.retention_days }).toISO() }}"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "id": "bc83af0c-3a99-4d6a-9e2a-f0e01275a4f8",
+      "name": "Find Expired Rows",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        -656,
+        192
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "notes": "executeOnce = true is REQUIRED. A DataTable get node runs once per incoming item and returns all matching rows each time, which would multiply the delete list (the cartesian-product trap). One input item today, but this keeps it safe if anything upstream ever fans out."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cond-hasrows",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f261a31f-e719-47a8-951f-e3a09028246f",
+      "name": "Any Expired Rows?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -448,
+        192
+      ],
+      "notes": "alwaysOutputData on the get node emits one empty item when nothing matches. This gate stops that empty item from being treated as a deletable row."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cond-dryrun",
+              "leftValue": "={{ $('Config').first().json.dry_run }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c533cced-7972-4a24-9e50-1dca5ba875dc",
+      "name": "Dry Run?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -224,
+        112
+      ],
+      "notes": "TRUE branch = report only, nothing is deleted. FALSE branch = actually delete."
+    },
+    {
+      "parameters": {
+        "jsCode": "// DRY RUN — deletes nothing. Reports exactly what the live run would remove.\n// Runs once over all incoming items (Run Once for All Items mode).\nconst rows = $input.all();\nconst cfg = $('Config').first().json;\n\n// Oldest and newest of the rows that WOULD be deleted, so the count is checkable.\nconst dates = rows.map(r => r.json.date).filter(Boolean).sort();\n\nreturn [{\n  json: {\n    mode: 'DRY RUN — nothing deleted',\n    table: 'Email Triage - To-Do',\n    retention_days: cfg.retention_days,\n    age_column: cfg.age_column,\n    would_delete_count: rows.length,\n    oldest_affected: dates[0] || null,\n    newest_affected: dates[dates.length - 1] || null,\n    sample_subjects: rows.slice(0, 5).map(r => r.json.messages_subject || '(no subject)'),\n    next_step: 'If this count looks right, set dry_run = false in the Config node.'\n  }\n}];"
+      },
+      "id": "9c2d8fb4-e0ad-43d4-a87d-3d28be809fb7",
+      "name": "Report Only (No Delete)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "deleteRows",
+        "dataTableId": {
+          "__rl": true,
+          "value": "6BIIWj3nPZH1pjQw",
+          "mode": "list",
+          "cachedResultName": "Email Triage - To-Do",
+          "cachedResultUrl": "/projects/tdE5XmVdmL2qzRMP/datatables/6BIIWj3nPZH1pjQw"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "22de81ee-746b-4c74-b166-8999de0b6893",
+      "name": "Delete Row",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        0,
+        208
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput",
+      "notes": "Deletes ONE row per item, matched on the row's own primary id — not on the date filter again. Deleting by id means the set deleted is exactly the set that was previewed, even if a row is written between the read and the delete. onError=continue so one bad row cannot abort the whole prune."
+    },
+    {
+      "parameters": {
+        "jsCode": "// LIVE RUN receipt. Runs once over all items so the count is a real total,\n// not a per-item log line.\nconst rows = $input.all();\nconst cfg = $('Config').first().json;\n\nreturn [{\n  json: {\n    mode: 'LIVE — rows deleted',\n    table: 'Email Triage - To-Do',\n    retention_days: cfg.retention_days,\n    age_column: cfg.age_column,\n    deleted_count: rows.length,\n    ran_at: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "afa8c6c4-c37a-46a7-8ee3-4673bc74e605",
+      "name": "Deletion Receipt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        208
+      ]
+    }
+  ],
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Find Expired Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Expired Rows": {
+      "main": [
+        [
+          {
+            "node": "Any Expired Rows?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Expired Rows?": {
+      "main": [
+        [
+          {
+            "node": "Dry Run?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dry Run?": {
+      "main": [
+        [
+          {
+            "node": "Report Only (No Delete)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Delete Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Row": {
+      "main": [
+        [
+          {
+            "node": "Deletion Receipt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "versionId": "5373d78b-29be-4d1d-aa82-a31483695d3e",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    }
+  ]
+}
