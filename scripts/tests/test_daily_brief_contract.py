@@ -18,8 +18,8 @@ No npm install, no network, no live n8n. Node is invoked as a local
 subprocess only -- this makes zero network calls.
 
 Covers:
-  A  the trigger node fires Mon-Fri only (no live n8n needed -- this is a
-     structural check of the cron expression's weekday field).
+  A  the trigger node fires Mon-Fri only (structural cron check) at the
+     proven-compatible typeVersion (round 2).
   B  August 25 exact fixture: occupied_minutes=375, free_minutes=225, total
      600; a triple overlap counts once; the one-denominator glance line.
   C  before-window-only and after-window-only meetings (excluded from the
@@ -29,6 +29,11 @@ Covers:
      resolve an exact 600-minute (8am-6pm) window.
   F  largest free gap, in integer minutes.
   G  a clear calendar (zero events).
+  H  persisted metrics (meetingHours/freeHours/occupiedMinutes/freeMinutes)
+     share one denominator and sum exactly (round 2).
+  I  the standalone n8n/code-nodes/deterministic-assembly-v3.1.js copy is
+     byte-identical to the workflow node's jsCode (round 2 -- the standalone
+     file had drifted stale and would reintroduce the old bug if restored).
 """
 import json
 import os
@@ -45,6 +50,7 @@ except ImportError:  # pragma: no cover - repo's stated floor is Python 3.9+
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 WORKFLOW_PATH = os.path.join(HERE, "..", "..", "relay-migration", "8-daily-brief-MODIFIED.json")
+STANDALONE_PATH = os.path.join(HERE, "..", "..", "n8n", "code-nodes", "deterministic-assembly-v3.1.js")
 ET = ZoneInfo("America/New_York")
 FAILS = []
 
@@ -84,7 +90,7 @@ if not (subprocess.run(["node", "--version"], capture_output=True).returncode ==
     sys.exit(0)
 
 # ---------------------------------------------------------------------------
-print("A. trigger node is genuinely weekday-only")
+print("A. trigger node is genuinely weekday-only, at a proven typeVersion")
 # ---------------------------------------------------------------------------
 check(TRIGGER is not None, "trigger node exists")
 rule = (TRIGGER or {}).get("parameters", {}).get("rule", {}).get("interval", [{}])[0]
@@ -114,12 +120,33 @@ if len(fields) == 5:
     check(not fires[0] and not fires[6] and not fires[7],
           "does NOT fire Saturday/Sunday (weekday=0/6/7): %r" % expr)
 
+# Round-2 finding: cronExpression needs a typeVersion this repo has already
+# proven working. n8n-workflows/weekly-goals-reminder.json's "Monday 9 AM
+# Trigger" runs cronExpression at 1.3 -- that is the precedented choice this
+# node now matches, rather than staying on the old bare-hour/minute node's 1.2.
+check(TRIGGER.get("typeVersion") == 1.3,
+      "trigger uses typeVersion 1.3, matching this repo's other working "
+      "cronExpression trigger, not left on the old node's 1.2: %r" % TRIGGER.get("typeVersion"))
+
 check(ASSEMBLY is not None, "Deterministic Assembly node exists")
 JS_CODE = ASSEMBLY["parameters"]["jsCode"]
 check("' calendar '" in JS_CODE and "'entries'" in JS_CODE,
       "headline builds 'N calendar entries/entry', not an additive meeting count (proven at runtime in B/C/G below)")
 check("occupiedMin" in JS_CODE and "freeMin" in JS_CODE,
       "integer-minute variables present in the node source")
+
+# ---------------------------------------------------------------------------
+print("I. the standalone code-node copy is byte-identical to the workflow node")
+# ---------------------------------------------------------------------------
+try:
+    with open(STANDALONE_PATH, encoding="utf-8") as fh:
+        standalone_js = fh.read()
+    check(standalone_js == JS_CODE,
+          "n8n/code-nodes/deterministic-assembly-v3.1.js == the workflow node's jsCode "
+          "(this file had drifted stale before round 2 and would reintroduce the old "
+          "bug if anyone ever restored a workflow from it)")
+except OSError as exc:
+    check(False, "standalone code-node file readable: %s" % exc)
 
 # ---------------------------------------------------------------------------
 # Hermetic JS harness: a minimal Luxon-compatible DateTime (ET-aware, DST-
@@ -306,6 +333,8 @@ try:
           "Today's Capacity section: one denominator, integer minutes")
     outside = [l for l in r["briefMarkdown"].split("\n") if "Outside the window" in l]
     check(len(outside) == 2, "before-window and after-window entries both surfaced separately: %r" % outside)
+    check(r["metrics"]["occupiedMinutes"] == 375 and r["metrics"]["freeMinutes"] == 225,
+          "persisted exact integer-minute metrics: occupied=375, free=225")
 
     # -------------------------------------------------------------------
     print("C. before-window-only and after-window-only meetings")
@@ -342,6 +371,8 @@ try:
         ])
         check("2h30m occupied" in r["atAGlance"] and "7h30m open" in r["atAGlance"],
               "%s: 90 min booked, window still exactly 600 min (90+450)" % label)
+        check(r["metrics"]["occupiedMinutes"] + r["metrics"]["freeMinutes"] == 600,
+              "%s: persisted integer minutes still sum to exactly 600" % label)
 
     # -------------------------------------------------------------------
     print("F. largest free gap, integer minutes")
@@ -359,6 +390,25 @@ try:
     r = harness.run(et_ms(2026, 8, 25, 7, 50), [])
     check("0h0m occupied" in r["atAGlance"] and "10h0m open" in r["atAGlance"] and "0 calendar entries" in r["atAGlance"],
           "zero events: 0 occupied, full window free, 0 calendar entries")
+    check(r["metrics"]["occupiedMinutes"] == 0 and r["metrics"]["freeMinutes"] == 600,
+          "zero events: persisted integer minutes are 0 and 600")
+
+    # -------------------------------------------------------------------
+    print("H. persisted meeting/free metrics share one denominator (round 2)")
+    # -------------------------------------------------------------------
+    # Re-use the August 25 fixture: before round 2, metrics.meetingHours was a
+    # WHOLE-DAY number (7.3) while metrics.freeHours was WINDOW-ONLY (3.7/3.8)
+    # -- the same defect the rendered headline had, one layer down in the
+    # persisted trend row (cos_brief_metrics). Both must now derive from the
+    # same occupied/free window split.
+    r = harness.run(et_ms(2026, 8, 25, 7, 50), events)
+    check(r["metrics"]["meetingHours"] == 6.3,
+          "metrics.meetingHours is now WINDOW-based (6.3h, matching the headline's 6h15m), "
+          "not the old whole-day 7.3h: %r" % r["metrics"]["meetingHours"])
+    check(abs(r["metrics"]["meetingHours"] * 60 - r["metrics"]["occupiedMinutes"]) <= 3,
+          "legacy meetingHours and exact occupiedMinutes agree to within rounding")
+    check(r["metrics"]["occupiedMinutes"] + r["metrics"]["freeMinutes"] == 600,
+          "exact integer-minute metrics sum coherently to the full window (600), always")
 finally:
     harness.cleanup()
 
