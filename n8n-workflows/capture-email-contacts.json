@@ -222,7 +222,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const m = $('Markdown').first().json.messages;\nconst mine = ['alex@ahbadvisors.com','ahbrownstein@gmail.com','abrownstein@3cventures.com'];\nconst fields = [m.from_field, ...(m.to_fields || []), ...(m.cc_fields || [])].filter(Boolean);\nconst seen = new Set(); const out = [];\nfor (const f of fields) {\n  const email = (f.address || '').toLowerCase();\n  if (!email || mine.includes(email) || seen.has(email)) continue;\n  seen.add(email);\n  out.push({ json: { contact_email: email, contact_name: f.name || email.split('@')[0] }, pairedItem: 0 });\n}\nreturn out;"
+        "jsCode": "const m = $('Markdown').first().json.messages;\nconst mine = new Set(['alex@ahbadvisors.com','ahbrownstein@gmail.com','abrownstein@3cventures.com']);\nconst fields = [m.from_field, ...(m.to_fields || []), ...(m.cc_fields || [])].filter(Boolean);\nconst seen = new Set();\nconst out = [];\nfor (const f of fields) {\n  const email = typeof f.address === 'string' ? f.address.trim().toLowerCase() : '';\n  if (!email || mine.has(email) || seen.has(email)) continue;\n  seen.add(email);\n  out.push({json: {contact_email: email, contact_name: f.name || email.split('@')[0],\n    identity_error: /^[^\\s@]+@[^\\s@]+$/.test(email) ? null : 'invalid_email'}, pairedItem: 0});\n}\nreturn out;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -235,10 +235,28 @@
     },
     {
       "parameters": {
-        "url": "={{ 'https://vitdycrekiqytcihchvg.supabase.co/rest/v1/contacts?select=id,emails,full_name&emails=ov.{' + $('Participants').all().map(i => '\"' + i.json.contact_email + '\"').join(',') + '}' }}",
+        "method": "POST",
+        "url": "https://vitdycrekiqytcihchvg.supabase.co/rest/v1/rpc/crm_lookup_email_identities",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "supabaseApi",
-        "options": {}
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({p_emails: $('Participants').all().map(i => i.json.contact_email)}) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 30000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          }
+        }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
@@ -255,11 +273,13 @@
           "id": "s8xehWEboCBkOgBd",
           "name": "Supabase alex-os-information"
         }
-      }
+      },
+      "retryOnFail": false,
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
-        "jsCode": "const parts = $('Participants').all().map(i => i.json);\nconst found = $input.all().map(i => i.json).filter(c => c && c.id);\nconst idx = {};\nfor (const c of found) for (const e of (c.emails || [])) idx[String(e).toLowerCase()] = c.id;\nreturn parts.map((p, i) => ({\n  json: {\n    contact_email: p.contact_email,\n    contact_name: p.contact_name,\n    contact_id: idx[(p.contact_email || '').toLowerCase()] || null,\n  },\n  pairedItem: i,\n}));"
+        "jsCode": "function readIdentities(items, emails) {\n  const fail = () => new Map(emails.map(email => [email, {action:'hold', reason:'lookup_failed'}]));\n  if (items.length !== 1) return fail();\n  const response = items[0].json;\n  let body = response.body;\n  if (typeof body === 'string') { try { body = JSON.parse(body); } catch { return fail(); } }\n  if (response.error || response.statusCode !== 200 || !body || body.schema_version !== 1 ||\n      !Array.isArray(body.identities) || body.identities.length !== emails.length) return fail();\n  const result = new Map();\n  for (const entry of body.identities) {\n    if (!entry || !emails.includes(entry.email) || result.has(entry.email) || !Array.isArray(entry.owners)) return fail();\n    const owners = new Set();\n    let broken = false;\n    for (const owner of entry.owners) {\n      if (!owner || owner.resolution !== 'ok' || typeof owner.owner_id !== 'string' ||\n          typeof owner.canonical_id !== 'string' || !owner.canonical_id ||\n          !Array.isArray(owner.path) || owner.path[0] !== owner.owner_id ||\n          owner.path[owner.path.length - 1] !== owner.canonical_id ||\n          new Set(owner.path).size !== owner.path.length || owner.path.length > 100 ||\n          owner.review_status === 'merged') { broken = true; continue; }\n      owners.add(owner.canonical_id);\n    }\n    const shared = new Set(['info','hello','support','sales','admin','office','team','billing',\n      'accounts','contact','help','noreply','no-reply','notifications']).has(entry.email.split('@')[0]);\n    result.set(entry.email, broken ? {action:'hold', reason:'broken_redirect'} :\n      owners.size > 1 ? {action:'hold', reason:'ambiguous_identity'} :\n      owners.size === 1 ? {action:'reuse', contact_id:[...owners][0]} :\n      shared ? {action:'hold', reason:'shared_mailbox'} : {action:'create'});\n  }\n  return result;\n}\nconst parts = $('Participants').all().map(i => i.json);\nconst identities = readIdentities($input.all(), parts.map(p => p.contact_email));\nreturn parts.map((p, i) => ({json: {...p, ...(p.identity_error ?\n  {action:'hold', reason:p.identity_error} : identities.get(p.contact_email))}, pairedItem:0}));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -282,12 +302,11 @@
           "conditions": [
             {
               "id": "5716e92c-8d6a-4cb4-8e43-fbd1a0fe41e2",
-              "leftValue": "={{ $json.contact_id }}",
-              "rightValue": "",
+              "leftValue": "={{ $json.action }}",
+              "rightValue": "create",
               "operator": {
                 "type": "string",
-                "operation": "notEmpty",
-                "singleValue": true
+                "operation": "notEquals"
               }
             }
           ],
@@ -307,30 +326,40 @@
     },
     {
       "parameters": {
-        "tableId": "contacts",
-        "fieldsUi": {
-          "fieldValues": [
+        "method": "POST",
+        "url": "https://vitdycrekiqytcihchvg.supabase.co/rest/v1/contacts",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
             {
-              "fieldId": "emails",
-              "fieldValue": "={{ '{\"' + $json.contact_email + '\"}' }}"
-            },
-            {
-              "fieldId": "full_name",
-              "fieldValue": "={{ $json.contact_name }}"
-            },
-            {
-              "fieldId": "source",
-              "fieldValue": "missive-auto"
-            },
-            {
-              "fieldId": "review_status",
-              "fieldValue": "unscreened"
+              "name": "Prefer",
+              "value": "return=representation"
             }
           ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({emails: [$json.contact_email], full_name: $json.contact_name, source: 'missive-auto', review_status: 'unscreened'}) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 30000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          }
         }
       },
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
       "position": [
         4880,
         560
@@ -344,27 +373,32 @@
           "name": "Supabase alex-os-information"
         }
       },
-      "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {},
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        5104,
-        448
-      ],
-      "id": "abf3d895-9283-4903-bfcb-171ae7573922",
-      "name": "Merge Participants"
+      "onError": "continueRegularOutput",
+      "retryOnFail": false
     },
     {
       "parameters": {
-        "jsCode": "const interactionId = $('Create Interaction').first().json.id;\nconst created = {};\ntry { for (const r of $('Create Contacts').all()) {\n  const e = (r.json.emails && r.json.emails[0]) || '';\n  if (e) created[String(e).toLowerCase()] = r.json.id;\n} } catch (e) {}\nconst rows = [];\nfor (const p of $('Resolve').all().map(i => i.json)) {\n  const cid = p.contact_id || created[(p.contact_email || '').toLowerCase()];\n  if (cid) rows.push({ json: {\n    note_id: interactionId,\n    contact_id: cid,\n    match_method: p.contact_id ? 'email' : 'name',\n  }});\n}\nreturn rows;"
+        "jsCode": "// v1 runs this branch after Participants/If/Create Contacts has finished.\n// No conditional Merge inputs: all-existing, all-new and zero participants\n// have the same explicit recheck gate. Never manufacture an empty create.\nlet parts = [];\ntry { parts = $('Participants').all(); } catch { /* Final diagnostic detects a missing upstream run. */ }\nreturn parts.length ? [{json:{recheck:true}}] : [];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        5328,
+        4208,
+        624
+      ],
+      "id": "abf3d895-9283-4903-bfcb-171ae7573922",
+      "name": "Merge Participants",
+      "notes": "Must remain below Participants and above Build Attachments as a Create Interaction branch. executionOrder v1 is required.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "function readIdentities(items, emails) {\n  const fail = () => new Map(emails.map(email => [email, {action:'hold', reason:'lookup_failed'}]));\n  if (items.length !== 1) return fail();\n  const response = items[0].json;\n  let body = response.body;\n  if (typeof body === 'string') { try { body = JSON.parse(body); } catch { return fail(); } }\n  if (response.error || response.statusCode !== 200 || !body || body.schema_version !== 1 ||\n      !Array.isArray(body.identities) || body.identities.length !== emails.length) return fail();\n  const result = new Map();\n  for (const entry of body.identities) {\n    if (!entry || !emails.includes(entry.email) || result.has(entry.email) || !Array.isArray(entry.owners)) return fail();\n    const owners = new Set();\n    let broken = false;\n    for (const owner of entry.owners) {\n      if (!owner || owner.resolution !== 'ok' || typeof owner.owner_id !== 'string' ||\n          typeof owner.canonical_id !== 'string' || !owner.canonical_id ||\n          !Array.isArray(owner.path) || owner.path[0] !== owner.owner_id ||\n          owner.path[owner.path.length - 1] !== owner.canonical_id ||\n          new Set(owner.path).size !== owner.path.length || owner.path.length > 100 ||\n          owner.review_status === 'merged') { broken = true; continue; }\n      owners.add(owner.canonical_id);\n    }\n    const shared = new Set(['info','hello','support','sales','admin','office','team','billing',\n      'accounts','contact','help','noreply','no-reply','notifications']).has(entry.email.split('@')[0]);\n    result.set(entry.email, broken ? {action:'hold', reason:'broken_redirect'} :\n      owners.size > 1 ? {action:'hold', reason:'ambiguous_identity'} :\n      owners.size === 1 ? {action:'reuse', contact_id:[...owners][0]} :\n      shared ? {action:'hold', reason:'shared_mailbox'} : {action:'create'});\n  }\n  return result;\n}\nconst parts = $('Resolve').all().map(i => i.json);\nconst identities = readIdentities($input.all(), parts.map(p => p.contact_email));\nconst attempted = parts.filter(p => p.action === 'create');\nlet responses = [];\ntry { responses = $('Create Contacts').all().map(i => i.json); } catch { /* No create branch is legitimate. */ }\nconst createOutcomes = new Map();\nfor (let i = 0; i < attempted.length; i++) {\n  const p = attempted[i];\n  const response = responses[i] || {};\n  let body = response.body;\n  if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = null; } }\n  let outcome = 'unknown_insert_outcome';\n  if (responses.length === attempted.length && !response.error) {\n    if (body && body.code === 'CRM01' && typeof body.message === 'string' &&\n        body.message.startsWith('crm_known_email_identity:')) outcome = 'known_identity_conflict';\n    else if (response.statusCode >= 200 && response.statusCode < 300 && Array.isArray(body) && body.length === 1 &&\n        typeof body[0].id === 'string' && Array.isArray(body[0].emails) &&\n        body[0].emails.some(e => typeof e === 'string' && e.trim().toLowerCase() === p.contact_email)) outcome = 'created';\n    else if (response.statusCode >= 400 && response.statusCode < 500) outcome = 'insert_rejected';\n  }\n  createOutcomes.set(p.contact_email, outcome);\n}\nconst interactionId = $('Create Interaction').first().json.id;\nconst rows = [], exceptions = [], seen = new Set();\nfor (let i = 0; i < parts.length; i++) {\n  const p = parts[i];\n  const fresh = identities.get(p.contact_email);\n  const outcome = createOutcomes.get(p.contact_email);\n  // An initially unsafe identity stays held for operator review, even if a\n  // concurrent edit makes its second snapshot appear unambiguous.\n  const reason = p.action === 'hold' ? p.reason :\n    fresh.action !== 'reuse' ? (fresh.reason || 'identity_unresolved_after_insert') :\n    outcome === 'insert_rejected' || outcome === 'unknown_insert_outcome' ? outcome : null;\n  if (fresh.action === 'reuse' && p.action !== 'hold') {\n    const key = interactionId + ':' + fresh.contact_id;\n    if (!seen.has(key)) { rows.push({note_id:interactionId, contact_id:fresh.contact_id, match_method:'email'}); seen.add(key); }\n  }\n  if (reason) exceptions.push({participant_index:i, reason, create_outcome:outcome || null});\n}\nreturn [{json:{rows, exceptions, participant_count:parts.length}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5552,
         448
       ],
       "id": "e677847b-8c10-4ab0-81f9-7fce14639e86",
@@ -624,6 +658,78 @@
         }
       },
       "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://vitdycrekiqytcihchvg.supabase.co/rest/v1/rpc/crm_lookup_email_identities",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({p_emails: $('Participants').all().map(i => i.json.contact_email)}) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 30000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        5328,
+        448
+      ],
+      "id": "49243f5f-db01-5893-b4a7-428922fb96ce",
+      "name": "Recheck Contact Identities",
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "s8xehWEboCBkOgBd",
+          "name": "Supabase alex-os-information"
+        }
+      },
+      "retryOnFail": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.first().json.rows.map(row => ({json:row, pairedItem:0}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5776,
+        448
+      ],
+      "id": "ce904d07-e6c7-57ac-a286-988caf84630b",
+      "name": "Valid Junction Rows"
+    },
+    {
+      "parameters": {
+        "jsCode": "let parts = [], result = null;\ntry { parts = $('Participants').all(); } catch { throw new Error('crm_capture_identity_exception: participants_not_executed'); }\nif (parts.length === 0) return [{json:{identity_status:'no_external_participants'}}];\ntry { result = $('Build Junction Rows').first().json; } catch { /* Detected below, never interpreted as success. */ }\nif (!result || !Array.isArray(result.exceptions) || result.participant_count !== parts.length) {\n  throw new Error('crm_capture_identity_exception: resolution_incomplete; inspect saved execution; do not replay writes blindly');\n}\n// The existing junction node continues per-item failures. Check its receipts\n// here too, so a failed link cannot leave a green capture execution.\nlet junctions = [];\ntry { junctions = $('Create Junction Rows').all().map(i => i.json); } catch { /* Zero rows is legitimate. */ }\nconst exceptions = [...result.exceptions];\nconst missingLinks = result.rows.filter(row => !junctions.some(j => !j.error &&\n  j.note_id === row.note_id && j.contact_id === row.contact_id));\nif (missingLinks.length) exceptions.push({reason:'junction_write_unverified', count:missingLinks.length});\nif (exceptions.length) {\n  // Only indexes/reason codes: never put private email/message/HTTP request\n  // contents into the outward error or a notification.\n  throw new Error('crm_capture_identity_exception: ' + JSON.stringify(exceptions.slice(0,20)) + ' total=' + exceptions.length +\n    '; successful links and attachments retained; inspect execution before retry');\n}\nreturn [{json:{identity_status:'resolved', participant_count:parts.length, junction_count:result.rows.length}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3984,
+        1200
+      ],
+      "id": "7f81673f-64b1-5eea-ba76-534a316a5a1e",
+      "name": "Report Capture Identity Exceptions",
+      "notes": "Must remain the bottom Create Interaction branch with executionOrder v1. Reports identity exceptions only after participant links and attachment work finish.",
+      "notesInFlow": true
     }
   ],
   "connections": {
@@ -702,7 +808,17 @@
             "index": 0
           },
           {
+            "node": "Merge Participants",
+            "type": "main",
+            "index": 0
+          },
+          {
             "node": "Build Attachments",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Report Capture Identity Exceptions",
             "type": "main",
             "index": 0
           }
@@ -744,13 +860,7 @@
     },
     "If": {
       "main": [
-        [
-          {
-            "node": "Merge Participants",
-            "type": "main",
-            "index": 0
-          }
-        ],
+        [],
         [
           {
             "node": "Create Contacts",
@@ -760,22 +870,11 @@
         ]
       ]
     },
-    "Create Contacts": {
-      "main": [
-        [
-          {
-            "node": "Merge Participants",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
     "Merge Participants": {
       "main": [
         [
           {
-            "node": "Build Junction Rows",
+            "node": "Recheck Contact Identities",
             "type": "main",
             "index": 0
           }
@@ -786,7 +885,7 @@
       "main": [
         [
           {
-            "node": "Create Junction Rows",
+            "node": "Valid Junction Rows",
             "type": "main",
             "index": 0
           }
@@ -874,6 +973,28 @@
           }
         ]
       ]
+    },
+    "Recheck Contact Identities": {
+      "main": [
+        [
+          {
+            "node": "Build Junction Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid Junction Rows": {
+      "main": [
+        [
+          {
+            "node": "Create Junction Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -881,10 +1002,6 @@
     "timeSavedMode": "fixed",
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": true
-  },
-  "staticData": null,
-  "meta": {
-    "templateCredsSetupCompleted": true
   },
   "versionId": "08e7b18d-f454-4fbd-bcd3-38bd0a161127",
   "activeVersionId": "08e7b18d-f454-4fbd-bcd3-38bd0a161127",
@@ -896,5 +1013,6 @@
       "id": "L1wo431MCPrwlBMG",
       "name": "export"
     }
-  ]
+  ],
+  "pinData": {}
 }
