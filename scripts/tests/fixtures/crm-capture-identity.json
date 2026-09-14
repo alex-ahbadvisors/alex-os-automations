@@ -355,6 +355,35 @@
         "size": 25000,
         "url": "https://example.test/synthetic.pdf"
       }
+    ],
+    "bcc_fields": [
+      {
+        "address": "bcc-only@example.test",
+        "name": "Synthetic BCC"
+      }
     ]
-  }
+  },
+  "input_isolation": {
+    "oversized_email": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@example.test",
+    "invalid_email": "invalid address@example.test",
+    "batch_limit": 1000,
+    "overflow_participants": 1002,
+    "bulk_domain": "bounded.example.test",
+    "nul_email": "bad\u0000@example.test",
+    "unpaired_surrogate_email": "bad\ud800@example.test"
+  },
+  "junction_receipt_shapes": [
+    {
+      "id": "synthetic-only-id"
+    },
+    {},
+    {
+      "data": [
+        {
+          "note_id": "synthetic-note",
+          "contact_id": "synthetic-contact"
+        }
+      ]
+    }
+  ]
 }

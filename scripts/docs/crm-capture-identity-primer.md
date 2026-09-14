@@ -10,7 +10,7 @@ synthetic live write, or additional historical reconciliation is performed here.
 The 833 approved historical review decisions are outside this change. The reviewed
 weekly reconciler remains the review writer at the existing Monday 08:07
 America/New_York schedule. This does not provide instant ClickUp synchronization.
-The reverse workflow source is inactive; all nine old nodes remain intact for
+Both capture and reverse workflow source exports are inactive; all nine old nodes remain intact for
 history. An inactive JSON field does not prove the deployed workflow is inactive.
 
 Implementation/review receipts are kept outside source, under:
@@ -35,13 +35,23 @@ single scalar JSON envelope, so an API row limit cannot hide another owner.
   mailboxes such as `support@...` are held; an already known mailbox may be reused.
 - More than one canonical owner, a missing/cyclic/overlong redirect, or a merged
   row with no target: hold that participant and report a system exception.
-- Malformed/incomplete lookup responses, invalid input or permission errors:
-  hold, never reinterpret the failure as an empty identity set.
+- Invalid, oversized (>320 JavaScript characters), control-character or malformed
+  Unicode addresses are held individually and excluded from both lookup batches.
+  Only the first1,000 syntactically valid unique participants enter the lookup;
+  later participants remain explicit `participant_lookup_limit` exceptions. A bad
+  address cannot prevent otherwise valid participants from matching/linking.
+- Malformed/incomplete lookup responses or permission errors: hold, never
+  reinterpret the failure as an empty identity set.
 
 `crm_lookup_email_identities(text[])` is STABLE and SECURITY INVOKER, with a fixed
 `pg_catalog, public` search path. It grants EXECUTE only to the existing
 `service_role` (and the function owner), revokes PUBLIC/anon/authenticated, and
-changes no table grants or RLS. It accepts at most 1,000 requested addresses. The
+changes no table grants or RLS. It refuses callers lacking BYPASSRLS or superuser
+capability with `crm_identity_lookup_visibility_unverified`: silently RLS-filtered
+rows must never appear to be new identities. Invoker SELECT privileges remain
+required. The deployed service credential must use the existing `service_role`,
+and its capability and actual row visibility must be checked before activation.
+The SQL accepts at most1,000 requested addresses. The
 trim set matches JavaScript whitespace, including vertical tab, NBSP and BOM.
 The literal PostgreSQL escape `\v` must not be used: it means letter `v`.
 
@@ -57,7 +67,10 @@ of **Create Interaction** must remain in this top-to-bottom canvas order:
 
 1. **Participants** (y=448): normalize/deduplicate participants, look up owners,
    resolve, and attempt explicit zero-owner creates. The If true output ends for
-   known/held participants; its false output creates once and ends.
+   known/held participants; its false output creates once and ends. Held input
+   records retain their indexes and reasons but never enter the RPC request.
+   The existing policy links from/to/cc only. BCC is retained in interaction
+   metadata but intentionally excluded from participant linking, as in base.
 2. **Merge Participants** (y=624): despite its retained name, this is now a Code
    gate, not a conditional two-input Merge. After the first branch finishes, it
    triggers one fresh lookup for all original participants, constructs valid
@@ -69,6 +82,12 @@ of **Create Interaction** must remain in this top-to-bottom canvas order:
    anything remains unresolved or unverified. Successful links and attachment
    work have already completed. The outward error contains indexes/reason codes,
    not email addresses, message bodies or raw HTTP requests.
+
+An existing fatal attachment error (download/extraction, for example) can stop
+execution before the final diagnostic branch. The execution is still visibly
+failed; its earlier identity-exception bundle remains available for inspection.
+The design does not promise the final identity error runs after an unrelated
+fatal failure, and it does not suppress attachment errors to force that outcome.
 
 n8n's documented v1 behavior completes each branch before the next, using canvas
 position. Moving these branch roots or changing execution order changes behavior;
@@ -120,16 +139,25 @@ This package adds no general replay/idempotency engine.
 After independent review and human merge/deployment approval:
 
 1. Export both complete live workflows privately, including active/version state,
-   and compare against the preflight bindings below. Check for intervening edits.
+   and compare against the preflight bindings below. Use the exact committed
+   candidate for import, never the redacted reviewer packet: packet placeholders
+   are not present in committed source. Verify webhook path/ID and the owner
+   mailbox allowlist against the unchanged original values, and verify no review
+   placeholder (`.invalid` or `omitted`) appears in these operational fields. Check for intervening edits.
    Keep raw exports out of model review; capture exports may contain private
    pinned messages. Preserve backups and current function/trigger definitions.
 2. Deactivate the old reverse workflow and verify the actual deployed active
    state. Keep the weekly reconciler and its durable journal. Do not partially
    edit or automatically reactivate the legacy reverse writer.
 3. Pause capture for the coordinated change and let in-flight executions settle.
-   Install the read-only lookup, verify its signature/ACL/search path and existing
-   service credential privileges. Import the reviewed capture while paused, bind
-   the existing credentials, and verify the four branch positions plus v1.
+   Record a live active:false readback before import; the source active:false flag
+   alone is insufficient. Install the read-only lookup and verify its signature,
+   ACL and search path. Record `service_role.rolbypassrls=true` from `pg_roles`,
+   existing SELECT/INSERT privileges, and that the exact deployed HTTP credential
+   resolves known kept/deleted identities to the same IDs as an administrative
+   SQL read. Empty/filtered rows are a failed visibility gate, never a successful
+   check. Import while paused, bind existing credentials, and record active:false
+   again plus webhook/allowlist/branch-position/v1 readbacks. Do not activate yet.
 4. Apply the separately reviewed INSERT guard only with the compatible caller in
    place. Verify its trigger, body hash, transaction-isolation assumptions and
    actual HTTP CRM01 response. The new guard is not deployed by these instructions
@@ -137,14 +165,25 @@ After independent review and human merge/deployment approval:
 5. Run an explicitly approved, clearly labeled synthetic deployed-engine smoke:
    all-known, all-new, mixed, zero participants, zero attachments, kept/deleted
    reuse, ambiguity, a competing create, CRM01 and transport uncertainty. Verify
-   error visibility only after other work finishes, one identity, retained review
-   decisions, no new duplicate pending task, and expected junctions/attachments.
+   error visibility after other non-fatal work finishes, one identity, retained
+   review decisions, no new duplicate pending task, and expected junctions/attachments.
+   Record the actual deployed Supabase **Create Junction Rows** receipt shape:
+   each successful item must expose top-level `note_id` and `contact_id`. Independently
+   SELECT the exact expected `(note_id, contact_id)` pairs and counts from the
+   database, including existing-pair/unique-conflict behavior. Bare IDs, empty or
+   wrapped receipts must fail `junction_write_unverified`; do not activate by
+   ignoring that error. An incompatible receipt shape needs a reviewed adapter or
+   readback change. Synthetic echo receipts in local tests do not prove this
+   deployed integration contract.
    No real-person test record or outbound email. Clean up approved synthetic data.
 6. Activate capture only after those checks pass. Record exact imported/exported
    hashes, active/version readbacks, SQL/trigger receipts, smoke evidence and
    cleanup in the outbox receipt directory. A merged PR alone is not deployment.
 
-Preflight exports (2026-09-14 UTC; all nodes/connections/settings matched source):
+Preflight exports (2026-09-14 UTC): all nodes/connections/settings matched the
+**unmodified repository base** `2862c9c15bd4e9acc2a4df8ce173c162476820d6`.
+They did not match the newly modified candidate or the parent-only redacted
+review packet, and no such equivalence is claimed:
 
 | Workflow | ID | Version | Private export SHA256 |
 |---|---|---|---|
@@ -166,7 +205,9 @@ as an automatic rollback step. The historical833 decisions are not rolled back.
 ## Local verification
 
 Run `python3 scripts/tests/test-crm-capture-identity.py`, and both workflow files
-through `scripts/validate-n8n.py`. Node is required. The source checks also compare
+through `scripts/validate-n8n.py`. Node is required. Input-isolation tests execute the actual Participants code
+with valid+invalid/oversized/control/Unicode mixes, exactly1,000 and1,002
+participants; malformed junction receipt shapes must fail visibly. The source checks also compare
 unrelated nodes/connections and the complete reverse graph against base
 `2862c9c15bd4e9acc2a4df8ce173c162476820d6`.
 
@@ -175,7 +216,7 @@ For real synthetic PostgreSQL, run the test with `--postgres`, optionally adding
 optional guard is SHA256-bound in the runner. Docker uses only the preinstalled
 pinned PostgreSQL16 image, no pull, no network, no published ports or host mounts,
 and removes the container in `finally`. Tests verify invoker permissions/RLS,
-lookup immutability, all owner paths, more than1,000 owners in a scalar result,
+lookup immutability, fail-closed non-BYPASSRLS roles, all owner paths, more than1,000 owners in a scalar result,
 concurrent INSERT/read snapshots and unique junctions. Without the guard they
 prove both racing owners remain visible; with it they prove the second claim is
 refused and the fresh lookup resolves one owner. These are not live SQL tests.

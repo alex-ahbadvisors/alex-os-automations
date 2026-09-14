@@ -9,6 +9,8 @@ mounts. The optional previously reviewed guard is hash-bound, not deployed or
 changed by this package. No credentials, real contacts, or live writes are used.
 """
 import argparse
+import ast
+import re
 import hashlib
 import json
 import pathlib
@@ -69,7 +71,8 @@ async function resolve(participants,response) {
   return run('Resolve',items([response]),{'Participants':items(participants)});
 }
 const part=email=>({contact_email:email.trim().toLowerCase(),contact_name:'Synthetic',
-  identity_error:/^[^\s@]+@[^\s@]+$/.test(email.trim())?null:'invalid_email'});
+  identity_error:/^[^\s@]+@[^\s@]+$/.test(email.trim())?null:'invalid_email',
+  lookup_eligible:/^[^\s@]+@[^\s@]+$/.test(email.trim())});
 (async()=>{
   for(const c of f.cases) {
     const p=part(c.email);
@@ -90,7 +93,8 @@ const part=email=>({contact_email:email.trim().toLowerCase(),contact_name:'Synth
     {statusCode:200,body:[]},{statusCode:200,body:{schema_version:1,identities:[]}},
     {statusCode:200,body:{schema_version:1,identities:[{email:'keep@example.test',owners:[]},{email:'keep@example.test',owners:[]}]}},
     {statusCode:200,body:{schema_version:2,identities:[]}},
-    {statusCode:200,body:'not json'}]) {
+    {statusCode:200,body:'not json'},
+    {statusCode:403,body:{code:'42501',message:'crm_identity_lookup_visibility_unverified'}}]) {
     const result=await resolve([part('keep@example.test')],bad);
     check(()=>assert.equal(result[0].json.action,'hold'));
     check(()=>assert.equal(result[0].json.reason,'lookup_failed'));
@@ -113,7 +117,7 @@ const part=email=>({contact_email:email.trim().toLowerCase(),contact_name:'Synth
   // Execute the actual expressions and JS along the capture graph. HTTP writes
   // are a synthetic store with a named guard conflict, never external requests.
   async function capture({emails=['keep@example.test','new@example.test'],response=null,
-    race=false,unknownCommitted=false,lookupFailure=false,linkFailure=false,attachments=true,contacts=copy(f.contacts)}={}) {
+    race=false,unknownCommitted=false,lookupFailure=false,linkFailure=false,linkReceipt=null,attachments=true,contacts=copy(f.contacts)}={}) {
     const before=JSON.stringify(contacts), events=[],writes=[];
     const message={...copy(f.message),from_field:{address:'alex@ahbadvisors.com'},
       to_fields:emails.map(address=>({address})),cc_fields:[],attachments:attachments?f.message.attachments:[]};
@@ -124,7 +128,8 @@ const part=email=>({contact_email:email.trim().toLowerCase(),contact_name:'Synth
       d['Match Contact']=items([lookup(query.p_emails,contacts)]);
       d.Resolve=await run('Resolve',d['Match Contact'],d);
       const createParts=d.Resolve.filter(i=>expression(nodes.If.parameters.conditions.conditions[0].leftValue,d,i.json)==='create');
-      const skipped=d.Resolve.filter(i=>!createParts.includes(i));
+      check(()=>assert(query.p_emails.length<=f.input_isolation.batch_limit));
+      check(()=>assert(query.p_emails.every(e=>e.length<=320 && !/\s/.test(e))));
       d['Create Contacts']=[];
       for(const input of createParts) {
         const payload=JSON.parse(expression(nodes['Create Contacts'].parameters.jsonBody,d,input.json));
@@ -138,7 +143,7 @@ const part=email=>({contact_email:email.trim().toLowerCase(),contact_name:'Synth
       d['Recheck Contact Identities']=items([lookupFailure?{error:{message:'synthetic read timeout'}}:lookup(query.p_emails,contacts)]);
       d['Build Junction Rows']=await run('Build Junction Rows',d['Recheck Contact Identities'],d);
       d['Valid Junction Rows']=await run('Valid Junction Rows',d['Build Junction Rows'],d);
-      d['Create Junction Rows']=d['Valid Junction Rows'].map(i=>({json:linkFailure?{error:'synthetic link failure'}:i.json}));
+      d['Create Junction Rows']=d['Valid Junction Rows'].map(i=>({json:linkFailure?{error:'synthetic link failure'}:linkReceipt?copy(linkReceipt):i.json}));
       for(const i of d['Create Junction Rows']) if(!i.json.error)events.push('junction_written');
     }
     if(!d.Participants.length) {
@@ -152,7 +157,7 @@ const part=email=>({contact_email:email.trim().toLowerCase(),contact_name:'Synth
     let error=null;
     try {d['Report Capture Identity Exceptions']=await run('Report Capture Identity Exceptions',d['Create Interaction'],d);}
     catch(e){error=e.message;events.push('identity_exception');}
-    check(()=>assert.deepEqual(contacts.slice(0,f.contacts.length),JSON.parse(before).slice(0,f.contacts.length),'existing review decisions unchanged'));
+    check(()=>assert.deepEqual(contacts.slice(0,JSON.parse(before).length),JSON.parse(before),'existing review decisions unchanged'));
     return {d,error,events,writes,contacts};
   }
   const normal=await capture();
@@ -194,6 +199,45 @@ const part=email=>({contact_email:email.trim().toLowerCase(),contact_name:'Synth
       if(emails.includes('alias@example.test'))check(()=>assert.equal(result.d['Valid Junction Rows'].length,1));
     }
   }
+  // Execute actual Participants and both RPC expressions with mixed invalid,
+  // oversize and valid addresses: a malformed item cannot poison other links.
+  for(const bad of [f.input_isolation.oversized_email,f.input_isolation.invalid_email,f.input_isolation.nul_email,f.input_isolation.unpaired_surrogate_email]) {
+    const result=await capture({emails:['keep@example.test',bad,'new@example.test']});
+    check(()=>assert.equal(result.writes.length,1));
+    check(()=>assert.equal(result.d['Valid Junction Rows'].length,2));
+    check(()=>assert.equal(result.d['Build Junction Rows'][0].json.exceptions.length,1));
+    check(()=>assert.equal(result.d['Build Junction Rows'][0].json.exceptions[0].participant_index,1));
+    check(()=>assert.match(result.error,/email_too_long|invalid_email/));
+    const recheck=JSON.parse(expression(nodes['Recheck Contact Identities'].parameters.jsonBody,result.d));
+    check(()=>assert.deepEqual(recheck.p_emails,['keep@example.test','new@example.test']));
+  }
+  const allBad=await capture({emails:[f.input_isolation.oversized_email,f.input_isolation.invalid_email]});
+  check(()=>assert.equal(allBad.writes.length,0));
+  check(()=>assert.equal(allBad.d['Valid Junction Rows'].length,0));
+  check(()=>assert.equal(allBad.d['Build Junction Rows'][0].json.exceptions.length,2));
+  check(()=>assert.match(allBad.error,/email_too_long/));
+  const bulk=Array.from({length:f.input_isolation.overflow_participants},(_,i)=>({
+    id:'synthetic-bulk-'+i,emails:['person'+i+'@'+f.input_isolation.bulk_domain],
+    review_status:'kept',relationship_tier:1,merged_into:null}));
+  const overflow=await capture({emails:bulk.map(c=>c.emails[0]),contacts:[...copy(f.contacts),...bulk]});
+  check(()=>assert.equal(overflow.writes.length,0));
+  check(()=>assert.equal(overflow.d['Valid Junction Rows'].length,1000));
+  check(()=>assert.deepEqual(overflow.d['Build Junction Rows'][0].json.exceptions.map(e=>e.participant_index),[1000,1001]));
+  check(()=>assert.match(overflow.error,/participant_lookup_limit/));
+  const exactlyFull=await capture({emails:bulk.slice(0,1000).map(c=>c.emails[0]),contacts:[...copy(f.contacts),...bulk]});
+  check(()=>assert.equal(exactlyFull.error,null));
+  check(()=>assert.equal(exactlyFull.d['Valid Junction Rows'].length,1000));
+  const invalidPlusFull=await capture({emails:[f.input_isolation.invalid_email,...bulk.slice(0,1000).map(c=>c.emails[0])],contacts:[...copy(f.contacts),...bulk]});
+  check(()=>assert.equal(invalidPlusFull.d['Valid Junction Rows'].length,1000));
+  check(()=>assert.equal(invalidPlusFull.d['Build Junction Rows'][0].json.exceptions.length,1));
+  check(()=>assert.equal(invalidPlusFull.d['Build Junction Rows'][0].json.exceptions[0].reason,'invalid_email'));
+  // The receipt contract is deliberately strict. These shapes are NOT proof
+  // of missing DB rows; they must fail closed pending supervised readback.
+  for(const linkReceipt of f.junction_receipt_shapes) {
+    const result=await capture({linkReceipt});
+    check(()=>assert.match(result.error,/junction_write_unverified/));
+    check(()=>assert(result.events.indexOf('attachment_saved')<result.events.indexOf('identity_exception')));
+  }
   const unresolvedConflict=await capture({response:f.conflict_responses[2]});
   check(()=>assert.match(unresolvedConflict.error,/identity_unresolved_after_insert/));
   const failedRead=await capture({lookupFailure:true});
@@ -214,7 +258,9 @@ def source_checks():
     w = json.loads(CAPTURE.read_text())
     reverse = json.loads(REVERSE.read_text())
     nodes = {n['name']: n for n in w['nodes']}
+    assert w['active'] is False
     assert w['settings']['executionOrder'] == 'v1'
+    assert len({tuple(n['position']) for n in w['nodes']}) == len(w['nodes']), 'overlapping node positions'
     edges = w['connections']['Create Interaction']['main'][0]
     assert [e['node'] for e in edges] == ['Participants', 'Merge Participants', 'Build Attachments', 'Report Capture Identity Exceptions']
     positions = [nodes[e['node']]['position'][1] for e in edges]
@@ -240,6 +286,10 @@ def source_checks():
     # attachment connection; this comparison fails if the seven-file scope drifts.
     baseline = lambda path: json.loads(subprocess.check_output(['git','show',f'{BASE}:{path}'],cwd=ROOT,text=True))
     old = baseline('n8n-workflows/capture-email-contacts.json')
+    # Reviewer export abstractions must never be mistaken for committed values.
+    prior_participants = next(n for n in old['nodes'] if n['name']=='Participants')
+    allowlist = lambda code: ast.literal_eval(re.search(r"const mine\s*=\s*(?:new Set\()?([\[][\s\S]*?[\]])", code).group(1))
+    assert allowlist(nodes['Participants']['parameters']['jsCode']) == allowlist(prior_participants['parameters']['jsCode'])
     editable = {'Participants','Match Contact','Resolve','If','Create Contacts','Merge Participants','Build Junction Rows'}
     for n in old['nodes']:
         if n['name'] not in editable: assert nodes[n['name']] == n, n['name']+' drifted'
@@ -298,12 +348,21 @@ CREATE TABLE interaction_note_contacts(note_id uuid,contact_id uuid,PRIMARY KEY(
             assert r.returncode and 'permission denied for function' in r.stderr
         sql('CREATE ROLE synthetic_restricted; GRANT EXECUTE ON FUNCTION public.crm_lookup_email_identities(text[]) TO synthetic_restricted;')
         r = sql("SET ROLE synthetic_restricted; SELECT public.crm_lookup_email_identities(ARRAY['keep@example.test']);",check=False)
-        assert r.returncode and 'permission denied for table contacts' in r.stderr, 'invoker must not bypass table privileges'
+        assert r.returncode and 'crm_identity_lookup_visibility_unverified' in r.stderr, 'non-bypass role must fail closed'
         sql('GRANT SELECT ON contacts TO synthetic_restricted;')
-        r = sql("SET ROLE synthetic_restricted; SELECT public.crm_lookup_email_identities(ARRAY['keep@example.test']);")
-        assert json.loads(r.stdout.splitlines()[-1])['identities'][0]['owners'] == [], 'invoker must respect RLS'
+        r = sql("SET ROLE synthetic_restricted; SELECT public.crm_lookup_email_identities(ARRAY['keep@example.test']);",check=False)
+        assert r.returncode and 'crm_identity_lookup_visibility_unverified' in r.stderr, 'RLS cannot masquerade as new identity'
+        sql('CREATE ROLE synthetic_bypass BYPASSRLS; GRANT EXECUTE ON FUNCTION public.crm_lookup_email_identities(text[]) TO synthetic_bypass;')
+        r = sql("SET ROLE synthetic_bypass; SELECT public.crm_lookup_email_identities(ARRAY['keep@example.test']);",check=False)
+        assert r.returncode and 'permission denied for table contacts' in r.stderr, 'invoker still requires SELECT'
+        sql('ALTER ROLE service_role NOBYPASSRLS;')
+        r = sql("SET ROLE service_role; SELECT public.crm_lookup_email_identities(ARRAY['keep@example.test']);",check=False)
+        assert r.returncode and 'crm_identity_lookup_visibility_unverified' in r.stderr
+        sql('ALTER ROLE service_role BYPASSRLS;')
         for invalid in ['NULL',"ARRAY[NULL]::text[]", "ARRAY['']", "array_fill('x@example.test'::text,ARRAY[1001])"]:
             assert sql('SELECT public.crm_lookup_email_identities('+invalid+');',check=False).returncode
+        boundary = sql("SELECT public.crm_lookup_email_identities(ARRAY(SELECT 'boundary-'||g||'@example.test' FROM generate_series(1,1000) g));")
+        assert len(json.loads(boundary.stdout)['identities']) == 1000
         envelopes = {}
         for c in fixture['cases']:
             r = sql('SET ROLE service_role; SELECT public.crm_lookup_email_identities(ARRAY['+quote(c['email'])+']);')
@@ -341,12 +400,13 @@ SELECT ('00000000-0000-0000-0000-'||lpad((20000+g)::text,12,'0'))::uuid,
             time.sleep(.025)
         else: raise AssertionError('first transaction failed to start')
         assert json.loads(sql("SELECT public.crm_lookup_email_identities(ARRAY['race@example.test']);").stdout)['identities'][0]['owners'] == []
-        second = sql("INSERT INTO contacts(id,emails,review_status) VALUES('00000000-0000-0000-0000-000000001002',ARRAY['RACE@example.test'],'unscreened');",check=False)
+        second = sql("\\set VERBOSITY verbose\nINSERT INTO contacts(id,emails,review_status) VALUES('00000000-0000-0000-0000-000000001002',ARRAY['RACE@example.test'],'unscreened');",check=False)
         first.wait(timeout=10)
         assert first.returncode == 0
         owners = json.loads(sql("SELECT public.crm_lookup_email_identities(ARRAY['race@example.test']);").stdout)['identities'][0]['owners']
         if guard_path:
-            assert second.returncode and 'crm_known_email_identity' in second.stderr
+            assert second.returncode and 'CRM01' in second.stderr and 'crm_known_email_identity:' in second.stderr
+            print('PASS: hash-bound reviewed guard emitted SQLSTATE CRM01 and exact crm_known_email_identity: message prefix')
             assert len(owners)==1 and owners[0]['resolution']=='ok'
         else:
             assert second.returncode==0 and len(owners)==2, 'unguarded racing owners must both be returned'

@@ -8,6 +8,14 @@ SET search_path = pg_catalog, public
 AS $lookup$
 DECLARE result jsonb;
 BEGIN
+  -- This identity decision requires complete row visibility. RLS can silently
+  -- return an empty set, which must never be interpreted as a new identity.
+  -- The existing service_role has BYPASSRLS; the owner may verify as superuser.
+  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles
+                 WHERE rolname = current_user AND (rolbypassrls OR rolsuper)) THEN
+    RAISE EXCEPTION USING ERRCODE = '42501',
+      MESSAGE = 'crm_identity_lookup_visibility_unverified';
+  END IF;
   IF p_emails IS NULL OR cardinality(p_emails) > 1000 OR EXISTS (
     SELECT 1 FROM unnest(p_emails) e
     WHERE e IS NULL OR btrim(e, E' \t\n\r\f\013' || U&'\00A0\1680\2000\2001\2002\2003\2004\2005\2006\2007\2008\2009\200A\2028\2029\202F\205F\3000\FEFF') = '' OR length(e) > 320
