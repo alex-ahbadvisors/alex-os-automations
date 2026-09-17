@@ -1,5 +1,5 @@
 {
-  "name": "[R6] Package Delivery → ClickUp",
+  "name": "[R6] Package Delivery \u2192 ClickUp",
   "nodes": [
     {
       "parameters": {
@@ -104,7 +104,7 @@
         "space": "90113618058",
         "folderless": true,
         "list": "901112996098",
-        "name": "=[{{ $now.format('yyyy-MM-dd') }}] Package Delivered: {{ $('Set Trigger Context').item.json.subject }}",
+        "name": "=[{{ $now.format('yyyy-MM-dd') }}] Pickup: {{ $('Set Trigger Context').item.json.subject }}",
         "additionalFields": {
           "content": "=**Delivery Details**\n\nSubject: {{ $('Set Trigger Context').item.json.subject }}\nFrom: {{ $json.fromField }}\n\n**Email Link**: {{ $('Set Trigger Context').item.json.conversationUrl }}",
           "markdownContent": true
@@ -115,7 +115,7 @@
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
       "position": [
-        96,
+        208,
         0
       ],
       "credentials": {
@@ -124,6 +124,48 @@
           "name": "ClickUp Alex Oauth"
         }
       }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "guard-buildinglink-sender",
+              "leftValue": "={{ (($('Missive Get First Message').item.json.messages || [])[0]?.from_field?.address) || '' }}",
+              "rightValue": "buildinglink.com",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "guard-package-room",
+              "leftValue": "={{ ((($('Missive Get First Message').item.json.messages||[])[0]?.body)||'') + ' ' + ((($('Missive Get First Message').item.json.messages||[])[0]?.preview)||'') }}",
+              "rightValue": "Package Room",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -16,
+        0
+      ],
+      "id": "44444444-0001-4d8a-9e6c-guardpkgroom1",
+      "name": "Guard: BuildingLink pickup only"
     }
   ],
   "connections": {
@@ -164,11 +206,23 @@
       "main": [
         [
           {
-            "node": "Create Package Task",
+            "node": "Guard: BuildingLink pickup only",
             "type": "main",
             "index": 0
           }
         ]
+      ]
+    },
+    "Guard: BuildingLink pickup only": {
+      "main": [
+        [
+          {
+            "node": "Create Package Task",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
       ]
     }
   },
