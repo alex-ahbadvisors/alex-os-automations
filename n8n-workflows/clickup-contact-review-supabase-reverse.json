@@ -3,7 +3,7 @@
   "createdAt": "2026-06-07T23:40:16.500Z",
   "id": "5O85So5XAkqyInnJ",
   "name": "ClickUp Contact Review -> Supabase (reverse)",
-  "active": true,
+  "active": false,
   "isArchived": false,
   "nodes": [
     {
@@ -323,15 +323,6 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "staticData": {
-    "node:ClickUp Trigger": {
-      "webhookId": "50e77430-5912-4344-8b70-4e6077cf8d97",
-      "secret": "ALXTRBVNJVWSF9GFJXZDOH4QHFU2M3WJD1AQD7CZ74ZL8N9QB8POCJE5GMZ5ZRTM"
-    }
-  },
-  "meta": {
-    "templateCredsSetupCompleted": true
-  },
   "versionId": "17c08288-37bc-4b89-8712-5b6f89665a92",
   "activeVersionId": "17c08288-37bc-4b89-8712-5b6f89665a92",
   "triggerCount": 1,
@@ -342,5 +333,6 @@
       "id": "L1wo431MCPrwlBMG",
       "name": "export"
     }
-  ]
+  ],
+  "pinData": {}
 }

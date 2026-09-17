@@ -1,0 +1,682 @@
+{
+  "updatedAt": "2026-08-06T05:52:01.460Z",
+  "createdAt": "2026-08-05T22:06:04.785Z",
+  "id": "nQ0MI4Z3sKt6tAtr",
+  "name": "[R6] AP Invoices (Reimbursable / Non-Reimbursable / Personal)",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "a1f0c3d2-ap01-4b8e-9c6a-ap0invoices01",
+        "options": {}
+      },
+      "id": "344c9897-5d9f-43f5-bb03-408df14e8ac3",
+      "name": "Missive Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        2128,
+        0
+      ],
+      "webhookId": "a1f0c3d2-ap01-4b8e-9c6a-ap0invoices01"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "conversationId",
+              "value": "={{ $json.body.conversation.id }}",
+              "type": "string"
+            },
+            {
+              "id": "c2",
+              "name": "labelId",
+              "value": "={{ $json.body.rule?.id || ($json.body.conversation.shared_labels?.[0]?.id) }}",
+              "type": "string"
+            },
+            {
+              "id": "c3",
+              "name": "conversationUrl",
+              "value": "={{ $json.body.conversation.web_url || $json.body.conversation.app_url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "275f2926-846b-41a5-ae96-57e754cbfd91",
+      "name": "Set Trigger Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2352,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "mr1",
+              "name": "clickupType",
+              "type": "string",
+              "value": "={{ (($json.messages || []).some(m => (m.to_fields || []).some(t => (t.address||'').toLowerCase().includes('alex@ahbadvisors.com')))) ? 'Business - Non Reimbursable' : 'Personal' }}"
+            },
+            {
+              "id": "mr2",
+              "name": "driveFolder",
+              "type": "string",
+              "value": "={{ (($json.messages || []).some(m => (m.to_fields || []).some(t => (t.address||'').toLowerCase().includes('alex@ahbadvisors.com')))) ? '1JAWODQ_2C9XCdV_s_AvpJMn3evpEwm-F' : '1mptu9A2xxlckDp3ThINgyU6MnXDaZmsh' }}"
+            },
+            {
+              "id": "mr3",
+              "name": "apLabelId",
+              "type": "string",
+              "value": "={{ (($json.messages || []).some(m => (m.to_fields || []).some(t => (t.address||'').toLowerCase().includes('alex@ahbadvisors.com')))) ? 'a2acce35-2b2b-4ee6-bf77-f951d1542730' : '8745cb57-0cf7-4b5f-8acf-07df96600fd2' }}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "1ed57aaa-030f-431b-b487-9de1410427b0",
+      "name": "Merge Routes",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2800,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://public.missiveapp.com/v1/conversations/{{ $('Set Trigger Context').item.json.conversationId }}/messages?limit=10",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "id": "a1477bc0-9583-4129-95b0-c3c3b4a8c286",
+      "name": "Missive Get Messages",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2576,
+        0
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e1",
+              "name": "emailText",
+              "value": "={{ (() => { let pdf=''; try { pdf = ($('Extract Invoice PDF Text').first().json.text) || ''; } catch(e) { pdf=''; } let body=''; try { body = ($('Missive Get Messages').first().json.messages || []).map(m => (m.subject ? ('Subject: ' + m.subject + '\\n') : '') + (m.body || m.preview || '')).join('\\n\\n---\\n\\n'); } catch(e) { body=''; } const parts=[]; if (pdf && pdf.trim()) parts.push('=== INVOICE PDF (attachment) ===\\n' + pdf); if (body && body.trim()) parts.push('=== EMAIL BODY ===\\n' + body); return parts.join('\\n\\n'); })() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7bffc1f2-a2ef-4d28-8942-8caa2754b479",
+      "name": "Build Extraction Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3696,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-haiku-4-5",
+          "mode": "list",
+          "cachedResultName": "claude-haiku-4-5"
+        },
+        "options": {}
+      },
+      "id": "500ec24a-daa2-4033-a194-735b00a4888b",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        3928,
+        224
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "PdQDpy0E1BohbFDv",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\"type\": \"object\", \"properties\": {\"Vendor Name\": {\"type\": \"string\"}, \"Invoice Amount\": {\"type\": \"number\"}, \"Currency\": {\"type\": \"string\", \"enum\": [\"USD\", \"EUR\", \"GBP\", \"JPY\", \"AUD\", \"CAD\", \"CHF\", \"CNY\", \"NZD\"]}, \"Due Date\": {\"type\": \"string\", \"format\": \"date\"}, \"Product/Service Detail\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}}, \"Multiple Payment Due Dates\": {\"type\": \"string\", \"enum\": [\"yes\", \"no\"]}, \"Payment Details\": {\"type\": \"string\"}, \"Additional Context\": {\"type\": \"string\"}}, \"required\": [\"Vendor Name\", \"Invoice Amount\", \"Currency\", \"Due Date\"]}"
+      },
+      "id": "a5d9c1b0-c970-4c44-83d8-cd56435188a8",
+      "name": "Invoice Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        4056,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert forensic accountant who takes both emails and attachments to figure out the context therein. Your goal is to help create a thoughtful record and log of the detail in your executives inbox.\n\nBasics:\nExtract the vendor name, invoice amount, and due date from the email/attachment below. Respond with these as fields labeled Vendor Name (as text), Invoice Amount (as number), Currency (as currency type e.g,, USD, EUR, GBP, JPY etc.), and Due Date (as date).\n\nIf there's additional Product/Service Detail on what the invoice is for (e.g., product or services), list that out in bulleted text for better formatting.\n\nSometimes the invoice states that there are multiple payment due dates. If this is true, state yes-otherwise leave as no.\n\nIf there are payment details (e.g., credit card, wire information, ach information) extract those as text with appropriate formatting (e.g., often time there are addresses, different hard enter lines etc.)\n\nFinally if there is additional context to note (e.g., sometimes there's an attachment with a password), provide context in a text.\n\nEmail / attachment content:\n---\n{{ $json.emailText }}\n---",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "id": "91a77919-a074-4e61-bd95-4142074b955b",
+      "name": "Extract Invoice",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        3920,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 500
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "team": "9011763462",
+        "space": "90113618058",
+        "folderless": true,
+        "list": "901107582230",
+        "name": "=[{{ $json.output['Due Date'] }}] {{ $json.output['Vendor Name'] }} – {{ $json.output['Invoice Amount'] }}  {{ $json.output.Currency }}",
+        "additionalFields": {
+          "content": "=**Vendor Name**: {{ $json.output['Vendor Name'] }} \n**Invoice Amount**: {{ $json.output['Invoice Amount'] }} \n**Invoice Currency**: {{ $json.output.Currency }}\n\n**Due Date**:  {{ $json.output['Due Date'] }}\n**Invoice Date**:  {{ $now.format('MMMM d, yyyy') }}\n\n**Invoice/Product/Service Detail**:\n{{ ($json.output['Product/Service Detail'] || []).map(x => '- ' + x).join('\\n') }}\n\n**Missive link**: {{ $('Set Trigger Context').item.json.conversationUrl }}\n\n**Payment Details**:\n{{ $json.output['Payment Details'] || '' }}",
+          "dueDate": "={{ $json.output['Due Date'] }}",
+          "markdownContent": true,
+          "status": "update required"
+        }
+      },
+      "id": "fb2828da-00e8-45fe-8f5d-1349a292e172",
+      "name": "Create AP Task",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        4272,
+        0
+      ],
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "update",
+        "id": "={{ $('Create AP Task').first().json.id }}",
+        "updateFields": {}
+      },
+      "id": "289fd98b-d69c-411c-91a1-57e5e20d284a",
+      "name": "Update AP Custom Fields",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        4720,
+        0
+      ],
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build one item per attachment across all fetched messages.\nlet msgs = [];\ntry { msgs = $('Missive Get Messages').first().json.messages || []; } catch (e) { msgs = []; }\nconst vendor = (() => { try { return $('Extract Invoice').first().json.output['Vendor Name'] || 'Vendor'; } catch (e) { return 'Vendor'; } })();\nconst today = $now.format('yyyy-MM-dd');\nconst out = [];\nfor (const m of msgs) {\n  const atts = m.attachments || [];\n  for (const a of atts) {\n    if (!a.url && !a.download_url) continue;\n    const fileName = a.filename || a.name || 'attachment';\n    out.push({ json: {\n      attachmentUrl: a.download_url || a.url,\n      driveFileName: '[' + today + '] ' + vendor + ' - ' + fileName + ' - Invoice.pdf'\n    }});\n  }\n}\nreturn out;"
+      },
+      "id": "ccfc9d22-5c10-4c0a-9104-0084e480eddf",
+      "name": "Split Attachments",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4944,
+        0
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.attachmentUrl }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "dcdc66e5-8109-4283-bd17-abc37be469fa",
+      "name": "Download Attachment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        5168,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Split Attachments').item.json.driveFileName }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Merge Routes').item.json.driveFolder }}"
+        },
+        "options": {}
+      },
+      "id": "52f4d0a1-3758-44b1-a485-b2fb87016ebe",
+      "name": "Upload To Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        5392,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zCC4OdEB1yyc3uZv",
+          "name": "AHB Advisors Google Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "taskAttachment"
+      },
+      "id": "5740ef8f-2f32-4b47-8254-0b54a07c623e",
+      "name": "Attach File To Task",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        5616,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://public.missiveapp.com/v1/posts",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"posts\": {\n    \"conversation\": \"{{ $('Set Trigger Context').item.json.conversationId }}\",\n    \"organization\": \"c7be17b4-c416-4d3a-b20d-62a89a261016\",\n    \"add_shared_labels\": [\"{{ $('Merge Routes').item.json.apLabelId }}\"],\n    \"notification\": { \"title\": \"AP Invoice\", \"body\": \"Classified + ClickUp task created\" },\n    \"markdown\": \"AP invoice \\u2014 classified as **{{ $('Merge Routes').item.json.clickupType }}**; ClickUp task created.\"\n  }\n}",
+        "options": {}
+      },
+      "id": "06ad62ab-9e0d-4bbc-afcc-21f00daf869c",
+      "name": "Apply AP Label",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        5840,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pick the invoice PDF: first PDF-ish attachment across all fetched messages.\n// Always outputs exactly one item so the linear spine never breaks; if no PDF\n// is found, pdfUrl is '' and the downstream download/extract are skipped-safe\n// (they run best-effort and the extractor falls back to the email body).\nlet msgs = [];\ntry { msgs = $('Missive Get Messages').first().json.messages || []; } catch (e) { msgs = []; }\nlet pdfUrl = '';\nlet pdfName = '';\nfor (const m of msgs) {\n  const atts = (m && m.attachments) || [];\n  for (const a of atts) {\n    if (!a) continue;\n    const url = a.download_url || a.url;\n    if (!url) continue;\n    const fn = String(a.filename || a.name || '').toLowerCase();\n    const mt = String(a.media_type || a.content_type || a.mime_type || '').toLowerCase();\n    const isPdf = fn.endsWith('.pdf') || mt.includes('pdf');\n    if (isPdf) { pdfUrl = url; pdfName = a.filename || a.name || 'invoice.pdf'; break; }\n  }\n  if (pdfUrl) break;\n}\nreturn [{ json: { pdfUrl, pdfName, hasPdf: Boolean(pdfUrl) } }];"
+      },
+      "id": "981ea89f-6e97-4208-8b42-489797b8d44c",
+      "name": "Select Invoice PDF",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3024,
+        0
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.pdfUrl }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "6f6e29b2-7133-4986-a34b-a6cbf3fc590b",
+      "name": "Download Invoice PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3248,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "id": "af142c33-3091-47d0-9dc5-31b20fb13698",
+      "name": "Extract Invoice PDF Text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        3472,
+        0
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "C0AMDDL01QU",
+          "cachedResultName": "oc-athena"
+        },
+        "text": "=:receipt: *AP invoice needs review before it's actioned*\n*Vendor:* {{ $('Extract Invoice').item.json.output['Vendor Name'] }}\n*Amount:* {{ $('Extract Invoice').item.json.output['Invoice Amount'] }} {{ $('Extract Invoice').item.json.output.Currency }}\n*Due:* {{ $('Extract Invoice').item.json.output['Due Date'] }}\n*Type:* {{ $('Merge Routes').item.json.clickupType }}\n*ClickUp task:* {{ $json.url || ('https://app.clickup.com/t/' + $json.id) }}\n*Email:* {{ $('Set Trigger Context').item.json.conversationUrl }}\n_Status: *update required* (review hold) — verify vendor/amount/due before moving it forward._",
+        "otherOptions": {}
+      },
+      "id": "5e1c3f54-e0f6-4c10-b255-58c0fad0d818",
+      "name": "Slack Confirm AP",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        4496,
+        0
+      ],
+      "webhookId": "fc355ba6-74e2-4261-9a1d-fb6b1864d57b",
+      "credentials": {
+        "slackApi": {
+          "id": "DvovCyTPlCPUoL2k",
+          "name": "Abel N8N Token"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Missive Webhook": {
+      "main": [
+        [
+          {
+            "node": "Set Trigger Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Trigger Context": {
+      "main": [
+        [
+          {
+            "node": "Missive Get Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Routes": {
+      "main": [
+        [
+          {
+            "node": "Select Invoice PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Missive Get Messages": {
+      "main": [
+        [
+          {
+            "node": "Merge Routes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Extraction Input": {
+      "main": [
+        [
+          {
+            "node": "Extract Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extract Invoice",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invoice Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Extract Invoice",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Invoice": {
+      "main": [
+        [
+          {
+            "node": "Create AP Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create AP Task": {
+      "main": [
+        [
+          {
+            "node": "Slack Confirm AP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update AP Custom Fields": {
+      "main": [
+        [
+          {
+            "node": "Split Attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Attachments": {
+      "main": [
+        [
+          {
+            "node": "Download Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Attachment": {
+      "main": [
+        [
+          {
+            "node": "Upload To Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload To Drive": {
+      "main": [
+        [
+          {
+            "node": "Attach File To Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach File To Task": {
+      "main": [
+        [
+          {
+            "node": "Apply AP Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select Invoice PDF": {
+      "main": [
+        [
+          {
+            "node": "Download Invoice PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Invoice PDF": {
+      "main": [
+        [
+          {
+            "node": "Extract Invoice PDF Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Invoice PDF Text": {
+      "main": [
+        [
+          {
+            "node": "Build Extraction Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Confirm AP": {
+      "main": [
+        [
+          {
+            "node": "Update AP Custom Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": true
+  },
+  "staticData": null,
+  "meta": null,
+  "versionId": "73de0c78-c536-4db0-be7d-a595d020c338",
+  "activeVersionId": "73de0c78-c536-4db0-be7d-a595d020c338",
+  "triggerCount": 1,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    }
+  ]
+}

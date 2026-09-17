@@ -1,0 +1,389 @@
+{
+  "schema_version": 1,
+  "contacts": [
+    {
+      "id": "00000000-0000-0000-0000-000000000001",
+      "emails": [
+        " Keep@Example.test ",
+        "alias@example.test",
+        "same-owner@example.test",
+        "\twhite@example.test\n",
+        "victor@example.test",
+        "suffix@example.tv",
+        "\u000bvertical@example.test\u000b",
+        "\u00a0unicode-white@example.test\ufeff"
+      ],
+      "review_status": "kept",
+      "merged_into": null,
+      "relationship_tier": 2,
+      "updated_at": "2026-09-01T00:00:00Z"
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000002",
+      "emails": [
+        "deleted@example.test"
+      ],
+      "review_status": "deleted",
+      "merged_into": null,
+      "relationship_tier": 3,
+      "updated_at": "2026-09-01T00:00:00Z"
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000003",
+      "emails": [
+        "old@example.test"
+      ],
+      "review_status": "merged",
+      "merged_into": "00000000-0000-0000-0000-000000000001",
+      "relationship_tier": null,
+      "updated_at": "2026-09-01T00:00:00Z"
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000004",
+      "emails": [
+        "cycle@example.test"
+      ],
+      "review_status": "merged",
+      "merged_into": "00000000-0000-0000-0000-000000000005",
+      "relationship_tier": null,
+      "updated_at": "2026-09-01T00:00:00Z"
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000005",
+      "emails": [],
+      "review_status": "merged",
+      "merged_into": "00000000-0000-0000-0000-000000000004",
+      "relationship_tier": null,
+      "updated_at": "2026-09-01T00:00:00Z"
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000006",
+      "emails": [
+        "missing@example.test"
+      ],
+      "review_status": "merged",
+      "merged_into": "00000000-0000-0000-0000-000000000099",
+      "relationship_tier": null,
+      "updated_at": "2026-09-01T00:00:00Z"
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000007",
+      "emails": [
+        "ambiguous@example.test"
+      ],
+      "review_status": "unscreened",
+      "merged_into": null,
+      "relationship_tier": null,
+      "updated_at": "2026-09-01T00:00:00Z"
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000008",
+      "emails": [
+        "AMBIGUOUS@example.test"
+      ],
+      "review_status": "deleted",
+      "merged_into": null,
+      "relationship_tier": null,
+      "updated_at": "2026-09-01T00:00:00Z"
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000009",
+      "emails": [
+        "orphan@example.test"
+      ],
+      "review_status": "merged",
+      "merged_into": null,
+      "relationship_tier": null,
+      "updated_at": "2026-09-01T00:00:00Z"
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000010",
+      "emails": [
+        "a.b+tag@example.test"
+      ],
+      "review_status": "kept",
+      "merged_into": null,
+      "relationship_tier": 4,
+      "updated_at": "2026-09-01T00:00:00Z"
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000011",
+      "emails": [
+        "same-owner@example.test"
+      ],
+      "review_status": "merged",
+      "merged_into": "00000000-0000-0000-0000-000000000001",
+      "relationship_tier": null,
+      "updated_at": "2026-09-01T00:00:00Z"
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000012",
+      "emails": [
+        "known-support@example.test",
+        "support@known.test"
+      ],
+      "review_status": "deleted",
+      "merged_into": null,
+      "relationship_tier": null,
+      "updated_at": "2026-09-01T00:00:00Z"
+    }
+  ],
+  "cases": [
+    {
+      "name": "known_kept",
+      "email": " keep@EXAMPLE.test ",
+      "action": "reuse",
+      "contact_id": "00000000-0000-0000-0000-000000000001",
+      "reason": null
+    },
+    {
+      "name": "known_deleted",
+      "email": "deleted@example.test",
+      "action": "reuse",
+      "contact_id": "00000000-0000-0000-0000-000000000002",
+      "reason": null
+    },
+    {
+      "name": "email_alias",
+      "email": "alias@example.test",
+      "action": "reuse",
+      "contact_id": "00000000-0000-0000-0000-000000000001",
+      "reason": null
+    },
+    {
+      "name": "redirect",
+      "email": "old@example.test",
+      "action": "reuse",
+      "contact_id": "00000000-0000-0000-0000-000000000001",
+      "reason": null
+    },
+    {
+      "name": "cycle",
+      "email": "cycle@example.test",
+      "action": "hold",
+      "contact_id": null,
+      "reason": "broken_redirect"
+    },
+    {
+      "name": "missing",
+      "email": "missing@example.test",
+      "action": "hold",
+      "contact_id": null,
+      "reason": "broken_redirect"
+    },
+    {
+      "name": "ambiguous",
+      "email": "ambiguous@example.test",
+      "action": "hold",
+      "contact_id": null,
+      "reason": "ambiguous_identity"
+    },
+    {
+      "name": "orphan",
+      "email": "orphan@example.test",
+      "action": "hold",
+      "contact_id": null,
+      "reason": "broken_redirect"
+    },
+    {
+      "name": "same_canonical",
+      "email": "same-owner@example.test",
+      "action": "reuse",
+      "contact_id": "00000000-0000-0000-0000-000000000001",
+      "reason": null
+    },
+    {
+      "name": "whitespace",
+      "email": "white@example.test",
+      "action": "reuse",
+      "contact_id": "00000000-0000-0000-0000-000000000001",
+      "reason": null
+    },
+    {
+      "name": "exact_plus_dot",
+      "email": "a.b+tag@example.test",
+      "action": "reuse",
+      "contact_id": "00000000-0000-0000-0000-000000000010",
+      "reason": null
+    },
+    {
+      "name": "no_dot_folding",
+      "email": "ab+tag@example.test",
+      "action": "create",
+      "contact_id": null,
+      "reason": null
+    },
+    {
+      "name": "no_plus_folding",
+      "email": "a.b@example.test",
+      "action": "create",
+      "contact_id": null,
+      "reason": null
+    },
+    {
+      "name": "new",
+      "email": "new@example.test",
+      "action": "create",
+      "contact_id": null,
+      "reason": null
+    },
+    {
+      "name": "shared_mailbox_new",
+      "email": "support@example.test",
+      "action": "hold",
+      "contact_id": null,
+      "reason": "shared_mailbox"
+    },
+    {
+      "name": "shared_mailbox_known",
+      "email": "support@known.test",
+      "action": "reuse",
+      "contact_id": "00000000-0000-0000-0000-000000000012",
+      "reason": null
+    },
+    {
+      "name": "invalid",
+      "email": "invalid-email",
+      "action": "hold",
+      "contact_id": null,
+      "reason": "invalid_email"
+    },
+    {
+      "name": "leading_v",
+      "email": "victor@example.test",
+      "action": "reuse",
+      "contact_id": "00000000-0000-0000-0000-000000000001",
+      "reason": null
+    },
+    {
+      "name": "trailing_v",
+      "email": "suffix@example.tv",
+      "action": "reuse",
+      "contact_id": "00000000-0000-0000-0000-000000000001",
+      "reason": null
+    },
+    {
+      "name": "vertical_tab",
+      "email": "vertical@example.test",
+      "action": "reuse",
+      "contact_id": "00000000-0000-0000-0000-000000000001",
+      "reason": null
+    },
+    {
+      "name": "no_v_stripping",
+      "email": "ictor@example.test",
+      "action": "create",
+      "contact_id": null,
+      "reason": null
+    },
+    {
+      "name": "unicode_whitespace",
+      "email": "unicode-white@example.test",
+      "action": "reuse",
+      "contact_id": "00000000-0000-0000-0000-000000000001",
+      "reason": null
+    }
+  ],
+  "conflict_responses": [
+    {
+      "statusCode": 400,
+      "body": {
+        "code": "CRM01",
+        "message": "crm_known_email_identity: resolve existing contact; no new review created"
+      }
+    },
+    {
+      "statusCode": 409,
+      "body": {
+        "code": "CRM01",
+        "message": "crm_known_email_identity: resolve existing contact; no new review created"
+      }
+    },
+    {
+      "statusCode": 500,
+      "body": {
+        "code": "CRM01",
+        "message": "crm_known_email_identity: resolve existing contact; no new review created"
+      }
+    }
+  ],
+  "unknown_responses": [
+    {
+      "error": {
+        "code": "ETIMEDOUT",
+        "message": "synthetic timeout"
+      }
+    },
+    {
+      "statusCode": 500,
+      "body": {
+        "message": "synthetic failure"
+      }
+    },
+    {
+      "statusCode": 201,
+      "body": null
+    }
+  ],
+  "message": {
+    "from_field": {
+      "address": " KEEP@example.test ",
+      "name": "Synthetic Known"
+    },
+    "to_fields": [
+      {
+        "address": "Alex@ahbadvisors.com"
+      },
+      {
+        "address": "new@example.test",
+        "name": "Synthetic New"
+      }
+    ],
+    "cc_fields": [
+      {
+        "address": "keep@example.test"
+      }
+    ],
+    "delivered_at": 1788211200,
+    "subject": "Synthetic capture test",
+    "attachments": [
+      {
+        "id": "synthetic-pdf",
+        "filename": "synthetic.pdf",
+        "media_type": "application",
+        "sub_type": "pdf",
+        "size": 25000,
+        "url": "https://example.test/synthetic.pdf"
+      }
+    ],
+    "bcc_fields": [
+      {
+        "address": "bcc-only@example.test",
+        "name": "Synthetic BCC"
+      }
+    ]
+  },
+  "input_isolation": {
+    "oversized_email": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@example.test",
+    "invalid_email": "invalid address@example.test",
+    "batch_limit": 1000,
+    "overflow_participants": 1002,
+    "bulk_domain": "bounded.example.test",
+    "nul_email": "bad\u0000@example.test",
+    "unpaired_surrogate_email": "bad\ud800@example.test"
+  },
+  "junction_receipt_shapes": [
+    {
+      "id": "synthetic-only-id"
+    },
+    {},
+    {
+      "data": [
+        {
+          "note_id": "synthetic-note",
+          "contact_id": "synthetic-contact"
+        }
+      ]
+    }
+  ]
+}

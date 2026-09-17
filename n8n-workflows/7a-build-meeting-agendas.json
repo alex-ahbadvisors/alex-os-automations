@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-03-10T02:59:25.488Z",
+  "updatedAt": "2026-08-09T22:28:33.739Z",
   "createdAt": "2026-03-03T21:59:06.760Z",
   "id": "FXErGwcUKWqJ0Wda",
   "name": "[7a] Build Meeting Agendas",
@@ -7,14 +7,6 @@
   "isArchived": false,
   "nodes": [
     {
-      "id": "b19897f5-140f-448f-995b-0bfbcc97b72c",
-      "name": "7 AM Weekday Trigger",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.2,
-      "position": [
-        0,
-        0
-      ],
       "parameters": {
         "rule": {
           "interval": [
@@ -23,30 +15,30 @@
             }
           ]
         }
-      }
+      },
+      "id": "97e4032b-3780-4f77-a722-a41ba51051a1",
+      "name": "7 AM Weekday Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        1520,
+        -288
+      ]
     },
     {
-      "id": "f3885a1d-a83d-40ae-aa62-e13b543401c0",
+      "parameters": {
+        "jsCode": "// Skip weekends\nconst now = new Date();\nconst dayName = now.toLocaleString('en-US', { timeZone: 'America/New_York', weekday: 'short' });\nif (['Sat', 'Sun'].includes(dayName)) return [];\nreturn { continue: true };"
+      },
+      "id": "29a77664-1d74-4bc2-9a0a-0c71e7b7590c",
       "name": "Weekday Guard",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        224,
-        0
-      ],
-      "parameters": {
-        "jsCode": "// Skip weekends\nconst now = new Date();\nconst dayName = now.toLocaleString('en-US', { timeZone: 'America/New_York', weekday: 'short' });\nif (['Sat', 'Sun'].includes(dayName)) return [];\nreturn { continue: true };"
-      }
+        1744,
+        -288
+      ]
     },
     {
-      "id": "550e1f56-f490-415b-ab83-4f3608f80cd3",
-      "name": "Get Agenda Tasks",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        448,
-        0
-      ],
       "parameters": {
         "url": "https://api.clickup.com/api/v2/list/901107582941/task",
         "authentication": "predefinedCredentialType",
@@ -100,37 +92,37 @@
           }
         }
       },
+      "id": "91c9bd5c-a67c-42ce-85d5-a244a2d2b819",
+      "name": "Get Agenda Tasks",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1968,
+        -288
+      ],
+      "alwaysOutputData": true,
       "credentials": {
         "clickUpOAuth2Api": {
           "id": "WiEsUqUCPM9Xds21",
           "name": "ClickUp Alex Oauth"
         }
       },
-      "alwaysOutputData": true,
       "onError": "continueRegularOutput"
     },
     {
-      "id": "9a4e7f79-a752-4222-8344-470ec762fab9",
+      "parameters": {
+        "jsCode": "  // Extract custom fields from each Relay-created agenda task                                                                                                                          \n  // Convert attendee emails to JSON array format for the Tool workflow\n  // Determine pass (day-before vs day-of) from meeting start time                                                                                                                      \n  const response = $input.first().json;                                                                                                                                                 \n  const tasks = response.tasks || [];\n\n  if (tasks.length === 0) return [];\n\n  // === TIMEZONE (fixed 2026-08-09 — P016) ===\n  // `new Date(); setHours(0,0,0,0)` is midnight in the n8n SERVER's zone.\n  // n8n Cloud runs UTC, so `tomorrowStart` was 8:00 PM ET TODAY — any meeting\n  // after 8 PM ET was classified `day-before` instead of `day-of`, and its\n  // agenda got built on the wrong pass. Day boundaries must be Alex's.\n  const ZONE = 'America/New_York';\n  const nowET = DateTime.now().setZone(ZONE);\n  const todayStart = new Date(nowET.startOf('day').toMillis());\n  const tomorrowStart = new Date(nowET.plus({ days: 1 }).startOf('day').toMillis());\n\n  const results = [];\n\n  for (const task of tasks) {\n    const cf = {};\n    for (const field of (task.custom_fields || [])) {\n      cf[field.name] = field.value || '';\n    }\n\n    const gCalId = cf['gCal ID'] || cf['gCal Id'] || '';\n    const attendeeEmailsRaw = cf['Attendee Emails'] || cf['Attendee emails'] || '';\n    const attendeeDomains = cf['Attendee email domains'] || cf['Attendee Email Domains'] || '';\n\n    // Convert comma-separated emails to JSON array\n    const attendees = attendeeEmailsRaw\n      .split(',')\n      .map(e => e.trim())\n      .filter(e => e && e.includes('@'))\n      .map(e => ({ email: e.toLowerCase(), displayName: e.split('@')[0] }));\n\n    // Read meeting start time from custom field (populated by Relay)\n    const meetingStartRaw = cf['Meeting Date & Time'] || cf['Meeting Date &amp; Time'] || '';\n    let meetingDateStr = '';\n    if (meetingStartRaw) {\n      // ClickUp date custom fields store as Unix ms\n      const ms = typeof meetingStartRaw === 'number' ? meetingStartRaw : parseInt(meetingStartRaw);\n      meetingDateStr = new Date(ms).toISOString();\n    } else {\n      // Fallback: derive from due_date + 1 day (no time info)\n      const dueDate = task.due_date ? parseInt(task.due_date) : 0;\n      meetingDateStr = new Date(dueDate + 24 * 60 * 60 * 1000).toISOString();\n    }\n\n    const meetingDate = new Date(meetingDateStr);\n    let pass = 'day-before';\n    if (meetingDate < tomorrowStart) {\n      pass = 'day-of'; // Meeting is today\n    }\n\n    // Extract meeting title: strip date prefix like \"[2026-03-04] \"\n    const rawName = task.name || 'Untitled Meeting';\n    const meetingTitle = rawName.replace(/^\\[\\d{4}-\\d{2}-\\d{2}\\]\\s*/, '');\n\n    results.push({\n      eventId: gCalId || task.id,\n      existingAgendaTaskId: task.id,\n      meetingTitle: meetingTitle,\n      meetingTime: meetingDateStr,\n      attendees: JSON.stringify(attendees),\n      attendeeCount: attendees.length,\n      pass: pass,\n      agendaTaskName: task.name\n    });\n  }\n\n  return results;"
+      },
+      "id": "7e9a90cb-ec5d-482e-bf80-3e4703fedf18",
       "name": "Extract Task Data",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        672,
-        0
-      ],
-      "parameters": {
-        "jsCode": "  // Extract custom fields from each Relay-created agenda task                                                                                                                          \n  // Convert attendee emails to JSON array format for the Tool workflow\n  // Determine pass (day-before vs day-of) from meeting start time                                                                                                                      \n  const response = $input.first().json;                                                                                                                                                 \n  const tasks = response.tasks || [];\n\n  if (tasks.length === 0) return [];\n\n  const now = new Date();\n  const todayStart = new Date(now);\n  todayStart.setHours(0, 0, 0, 0);\n  const tomorrowStart = new Date(todayStart);\n  tomorrowStart.setDate(tomorrowStart.getDate() + 1);\n\n  const results = [];\n\n  for (const task of tasks) {\n    const cf = {};\n    for (const field of (task.custom_fields || [])) {\n      cf[field.name] = field.value || '';\n    }\n\n    const gCalId = cf['gCal ID'] || cf['gCal Id'] || '';\n    const attendeeEmailsRaw = cf['Attendee Emails'] || cf['Attendee emails'] || '';\n    const attendeeDomains = cf['Attendee email domains'] || cf['Attendee Email Domains'] || '';\n\n    // Convert comma-separated emails to JSON array\n    const attendees = attendeeEmailsRaw\n      .split(',')\n      .map(e => e.trim())\n      .filter(e => e && e.includes('@'))\n      .map(e => ({ email: e.toLowerCase(), displayName: e.split('@')[0] }));\n\n    // Read meeting start time from custom field (populated by Relay)\n    const meetingStartRaw = cf['Meeting Date & Time'] || cf['Meeting Date &amp; Time'] || '';\n    let meetingDateStr = '';\n    if (meetingStartRaw) {\n      // ClickUp date custom fields store as Unix ms\n      const ms = typeof meetingStartRaw === 'number' ? meetingStartRaw : parseInt(meetingStartRaw);\n      meetingDateStr = new Date(ms).toISOString();\n    } else {\n      // Fallback: derive from due_date + 1 day (no time info)\n      const dueDate = task.due_date ? parseInt(task.due_date) : 0;\n      meetingDateStr = new Date(dueDate + 24 * 60 * 60 * 1000).toISOString();\n    }\n\n    const meetingDate = new Date(meetingDateStr);\n    let pass = 'day-before';\n    if (meetingDate < tomorrowStart) {\n      pass = 'day-of'; // Meeting is today\n    }\n\n    // Extract meeting title: strip date prefix like \"[2026-03-04] \"\n    const rawName = task.name || 'Untitled Meeting';\n    const meetingTitle = rawName.replace(/^\\[\\d{4}-\\d{2}-\\d{2}\\]\\s*/, '');\n\n    results.push({\n      eventId: gCalId || task.id,\n      existingAgendaTaskId: task.id,\n      meetingTitle: meetingTitle,\n      meetingTime: meetingDateStr,\n      attendees: JSON.stringify(attendees),\n      attendeeCount: attendees.length,\n      pass: pass,\n      agendaTaskName: task.name\n    });\n  }\n\n  return results;"
-      }
+        2192,
+        -288
+      ]
     },
     {
-      "id": "7cfd9ae5-d4e0-453d-bd9b-7ef285e07731",
-      "name": "Fetch Existing Description",
-      "type": "n8n-nodes-base.clickUp",
-      "typeVersion": 1,
-      "position": [
-        896,
-        0
-      ],
       "parameters": {
         "authentication": "oAuth2",
         "team": "9011763462",
@@ -140,6 +132,14 @@
         "name": "={{ $json.agendaTaskName }}",
         "additionalFields": {}
       },
+      "id": "f7b14917-2012-4352-bbab-e4073a82cb9c",
+      "name": "Fetch Existing Description",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        2416,
+        -288
+      ],
       "credentials": {
         "clickUpOAuth2Api": {
           "id": "WiEsUqUCPM9Xds21",
@@ -148,27 +148,19 @@
       }
     },
     {
-      "id": "35614c7c-16e7-4d14-ac01-70542ddf2f8f",
+      "parameters": {
+        "jsCode": "  // Prepare input for the Tool workflow\n  // Uses index-based matching to combine task data with fetched description\n  const allTasks = $('Extract Task Data').all();\n  const allExisting = $input.all();\n  const results = [];\n\n  for (let i = 0; i < allExisting.length; i++) {\n    const task = allTasks[i]?.json || {};\n    const existing = allExisting[i]?.json || {};\n\n    results.push({\n      eventId: task.eventId,\n      meetingTitle: task.meetingTitle,\n      meetingTime: task.meetingTime,\n      attendees: task.attendees,\n      pass: task.pass,\n      existingAgendaTaskId: task.existingAgendaTaskId,\n      existingDescription: existing.description || existing.content || '',\n      clientName: ''\n    });\n  }\n\n  return results;"
+      },
+      "id": "1ec8b2e4-2367-49f5-b259-af27269979ad",
       "name": "Prep Input",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1120,
-        0
-      ],
-      "parameters": {
-        "jsCode": "  // Prepare input for the Tool workflow\n  // Uses index-based matching to combine task data with fetched description\n  const allTasks = $('Extract Task Data').all();\n  const allExisting = $input.all();\n  const results = [];\n\n  for (let i = 0; i < allExisting.length; i++) {\n    const task = allTasks[i]?.json || {};\n    const existing = allExisting[i]?.json || {};\n\n    results.push({\n      eventId: task.eventId,\n      meetingTitle: task.meetingTitle,\n      meetingTime: task.meetingTime,\n      attendees: task.attendees,\n      pass: task.pass,\n      existingAgendaTaskId: task.existingAgendaTaskId,\n      existingDescription: existing.description || existing.content || '',\n      clientName: ''\n    });\n  }\n\n  return results;"
-      }
+        2640,
+        -288
+      ]
     },
     {
-      "id": "6c839f8e-3d8f-413c-85fc-1dbb15805290",
-      "name": "Call: Assemble Agenda",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.2,
-      "position": [
-        1344,
-        0
-      ],
       "parameters": {
         "workflowId": {
           "__rl": true,
@@ -275,17 +267,17 @@
           "convertFieldsToString": true
         },
         "options": {}
-      }
+      },
+      "id": "d5676404-5251-4dfa-b6f3-a894d2aa5103",
+      "name": "Call: Assemble Agenda",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        2864,
+        -288
+      ]
     },
     {
-      "id": "97be1e95-8983-4453-993b-20d21befcef4",
-      "name": "Track in DataTable",
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1,
-      "position": [
-        1568,
-        0
-      ],
       "parameters": {
         "operation": "upsert",
         "dataTableId": {
@@ -483,17 +475,17 @@
           "convertFieldsToString": false
         },
         "options": {}
-      }
+      },
+      "id": "ff73bd41-3f5a-453a-a703-46763f441052",
+      "name": "Track in DataTable",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        3088,
+        -288
+      ]
     },
     {
-      "id": "33e94820-aaf1-4657-ab6c-99bdfbec098d",
-      "name": "Slack Notify",
-      "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.3,
-      "position": [
-        1792,
-        0
-      ],
       "parameters": {
         "select": "channel",
         "channelId": {
@@ -509,13 +501,21 @@
           "unfurl_media": false
         }
       },
+      "id": "f3b1bdfe-2d23-40c7-9e8f-c6b867025412",
+      "name": "Slack Notify",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        3312,
+        -288
+      ],
+      "webhookId": "8568db40-fe61-4b1e-ad3e-3027d198dbd6",
       "credentials": {
         "slackApi": {
           "id": "DvovCyTPlCPUoL2k",
           "name": "Abel N8N Token"
         }
-      },
-      "webhookId": "8568db40-fe61-4b1e-ad3e-3027d198dbd6"
+      }
     }
   ],
   "connections": {
@@ -620,8 +620,8 @@
     }
   },
   "meta": null,
-  "versionId": "d3116fc4-2934-4490-b7de-b3668b724f8c",
-  "activeVersionId": "d3116fc4-2934-4490-b7de-b3668b724f8c",
+  "versionId": "9256de29-efc2-4941-95f0-fef493a82860",
+  "activeVersionId": "9256de29-efc2-4941-95f0-fef493a82860",
   "triggerCount": 1,
   "tags": [
     {

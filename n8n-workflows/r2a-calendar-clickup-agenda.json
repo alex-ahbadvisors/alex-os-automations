@@ -1,0 +1,580 @@
+{
+  "updatedAt": "2026-08-06T05:47:41.058Z",
+  "createdAt": "2026-08-05T02:14:31.620Z",
+  "id": "DgKB6EV9bLTFZ1qH",
+  "name": "[R2a] Calendar → ClickUp Agenda",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "calendarId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "alex@ahbadvisors.com",
+          "cachedResultName": "alex@ahbadvisors.com"
+        },
+        "triggerOn": "eventCreated",
+        "options": {}
+      },
+      "id": "2d4869c8-7101-40af-b94a-0dd2f865de86",
+      "name": "Calendar Event Created",
+      "type": "n8n-nodes-base.googleCalendarTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "NWVOUqg1ysw03vVr",
+          "name": "AHB Advisors Calendar"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "calendarId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "alex@ahbadvisors.com",
+          "cachedResultName": "alex@ahbadvisors.com"
+        },
+        "triggerOn": "eventUpdated",
+        "options": {}
+      },
+      "id": "665f8a53-452e-4226-b884-0a5a2d23c6d7",
+      "name": "Calendar Event Updated",
+      "type": "n8n-nodes-base.googleCalendarTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        240
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "NWVOUqg1ysw03vVr",
+          "name": "AHB Advisors Calendar"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "eaa74c87-90e2-4315-8978-15e1d8a2e8cc",
+      "name": "Merge Triggers",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        240,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f0000000-0000-4000-8000-000000000001",
+              "leftValue": "={{ $json.description || '' }}",
+              "rightValue": "Only you can see this Task event",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000002",
+              "leftValue": "={{ $json.description || '' }}",
+              "rightValue": "Alexander is traveling at this time",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000003",
+              "leftValue": "={{ $json.description || '' }}",
+              "rightValue": "Reclaim has blocked this time off",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000004",
+              "leftValue": "={{ $json.description || '' }}",
+              "rightValue": "Alexander needs a break to decompress",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000005",
+              "leftValue": "={{ $json.summary || '' }}",
+              "rightValue": "Reading",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000006",
+              "leftValue": "={{ $json.summary || '' }}",
+              "rightValue": "Pilates",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000007",
+              "leftValue": "={{ $json.summary || '' }}",
+              "rightValue": "Acupuncture",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000008",
+              "leftValue": "={{ $json.summary || '' }}",
+              "rightValue": "Decompress",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000009",
+              "leftValue": "={{ $json.summary || '' }}",
+              "rightValue": "Exercise",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000010",
+              "leftValue": "={{ $json.summary || '' }}",
+              "rightValue": "Travel",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000011",
+              "leftValue": "={{ $json.summary || '' }}",
+              "rightValue": "HOLD",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000012",
+              "leftValue": "={{ $json.summary || '' }}",
+              "rightValue": "Flight",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000013",
+              "leftValue": "={{ $json.summary || '' }}",
+              "rightValue": "Focus Time",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000014",
+              "leftValue": "={{ new Date($json.start?.dateTime || $json.start?.date).getTime() }}",
+              "rightValue": "={{ $now.plus({ days: 7 }).toMillis() }}",
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "0d62389f-c6f8-4500-87e3-4f4f1fb24c66",
+      "name": "Is Real Meeting",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        128
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "5df360c7-ec98-4c74-bbd9-660dac6548e4",
+      "name": "Skip Non-Meeting",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        720,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// DETERMINISTIC extract + positive \"real meeting\" classifier. Zero LLM.\n// Runs after the keyword denylist (Is Real Meeting IF). It:\n//   1. Re-derives attendee emails + UNIQUE domains from the ACTUAL Google\n//      Calendar attendees array (fixes Relay's empty-domains bug: Relay mapped\n//      key \"email domains\" but read input.emails -> domains were always blank).\n//   2. Computes a POSITIVE real-meeting signal that the keyword denylist misses\n//      (solo doctor/flight/focus blocks): otherAttendeeCount + hasVideoLink.\n//   3. Emits the normalized fields + booleans for the downstream If.\n// Convergence-safe: the event arrives on $input; no cross-node $() needed here,\n// but we still guard every lookup.\nconst SELF_EMAIL = 'alex@ahbadvisors.com';\nlet ev = {};\ntry { ev = $input.item.json || {}; } catch (e) { ev = {}; }\n\nconst attendees = Array.isArray(ev.attendees) ? ev.attendees : [];\n\n// All guest emails (for the Attendee Emails field).\nconst allEmails = attendees\n  .map(a => (a && a.email ? String(a.email).trim() : ''))\n  .filter(Boolean);\n\n// \"Other\" attendees = real humans who are not Alex, not the calendar owner\n// (self), and not a resource (room/equipment).\nconst otherAttendees = attendees.filter(a => {\n  if (!a) return false;\n  if (a.self === true) return false;\n  if (a.resource === true) return false;\n  const em = a.email ? String(a.email).trim().toLowerCase() : '';\n  if (!em) return false;\n  if (em === SELF_EMAIL.toLowerCase()) return false;\n  return true;\n});\nconst otherAttendeeCount = otherAttendees.length;\n\n// Unique email domains (deterministic dedup) — the bug Relay never fixed.\nconst attendeeDomains = [...new Set(\n  allEmails\n    .map(e => (e.split('@')[1] || '').toLowerCase())\n    .filter(Boolean)\n)];\n\n// Video / conference link: hangoutLink, then conferenceData entry points,\n// then a URL sniffed from location/description.\nlet meetingLink = ev.hangoutLink || '';\nif (!meetingLink && ev.conferenceData && Array.isArray(ev.conferenceData.entryPoints)) {\n  const video = ev.conferenceData.entryPoints.find(p => p && p.entryPointType === 'video');\n  meetingLink = (video && video.uri) || (ev.conferenceData.entryPoints[0] && ev.conferenceData.entryPoints[0].uri) || '';\n}\nconst VIDEO_RE = /(zoom\\.us|meet\\.google\\.com|teams\\.microsoft\\.com|teams\\.live\\.com|webex\\.com|whereby\\.com|meet\\.jit\\.si|hangouts\\.google\\.com)/i;\nlet sniffedLink = '';\nconst blob = String((ev.location || '') + ' ' + (ev.description || ''));\nconst m = blob.match(/https?:\\/\\/\\S+/g);\nif (m) { const hit = m.find(u => VIDEO_RE.test(u)); if (hit) sniffedLink = hit.replace(/[)>\\].,]+$/, ''); }\nif (!meetingLink && sniffedLink) meetingLink = sniffedLink;\n\nconst hasVideoLink = Boolean(\n  ev.hangoutLink ||\n  (ev.conferenceData && ((ev.conferenceData.entryPoints && ev.conferenceData.entryPoints.length) || ev.conferenceData.conferenceId)) ||\n  meetingLink ||\n  VIDEO_RE.test(blob)\n);\n\n// POSITIVE gate: a real meeting has at least one other human OR a video link.\nconst isRealMeeting = (otherAttendeeCount >= 1) || hasVideoLink;\n\nconst startRaw = (ev.start && (ev.start.dateTime || ev.start.date)) || '';\nconst startDate = startRaw ? String(startRaw).slice(0, 10) : '';\nlet startMs = 0;\nif (startRaw) { const d = new Date(startRaw); if (!isNaN(d.getTime())) startMs = d.getTime(); }\nconst dueMs = startMs ? startMs - 24 * 60 * 60 * 1000 : 0;\n\nreturn {\n  json: {\n    gcalId: ev.id || '',\n    gcalLink: ev.htmlLink || '',\n    meetingLink,\n    title: ev.summary || '(no title)',\n    startRaw,\n    startDate,\n    startMs,\n    dueMs,\n    attendeeEmails: allEmails.join(', '),\n    attendeeDomains: attendeeDomains.join(', '),\n    otherAttendeeCount,\n    hasVideoLink,\n    isRealMeeting\n  }\n};"
+      },
+      "id": "1f761ecd-7166-40df-95a6-e775640290c9",
+      "name": "Extract + Classify",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        128
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e1000000-0000-4000-8000-000000000001",
+              "leftValue": "={{ $json.isRealMeeting }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ad9bb57c-1517-49ee-92ac-0b652fc4f08a",
+      "name": "Has Attendee or Video",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        128
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "47618426-1b0c-4e9f-93a0-fc439cf17956",
+      "name": "Skip Solo Block",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.clickup.com/api/v2/list/901107582941/task?custom_fields={{ encodeURIComponent(JSON.stringify([{ field_id: 'f776c228-cef3-4405-aad5-0b279e2dcb8f', operator: '=', value: $json.gcalId }])) }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "clickUpOAuth2Api",
+        "options": {}
+      },
+      "id": "9fa742cf-ba32-4e30-89bf-bbe4f6986249",
+      "name": "Lookup Existing Task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1200,
+        128
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse the ClickUp list-task lookup response. Deterministic; no LLM.\n// The GET returns { tasks: [...] }. We treat the FIRST match on the gCal ID\n// custom field as the existing agenda task (idempotency + reschedule key).\n// Convergence-safe: guard the upstream $() ref in try/catch.\nlet ctx = {};\ntry { ctx = $('Extract + Classify').item.json || {}; } catch (e) { ctx = {}; }\n\nlet resp = {};\ntry { resp = $input.item.json || {}; } catch (e) { resp = {}; }\n\nlet tasks = [];\nif (Array.isArray(resp.tasks)) tasks = resp.tasks;\nelse if ((resp.body && Array.isArray(resp.body.tasks))) tasks = resp.body.tasks;\n\nconst found = tasks.length > 0;\nconst existingTaskId = found ? (tasks[0].id || '') : '';\n\nreturn {\n  json: Object.assign({}, ctx, {\n    found,\n    existingTaskId\n  })\n};"
+      },
+      "id": "f42f4d5b-ba16-4d9a-b49b-27f4aadf2504",
+      "name": "Parse Lookup",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        128
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e2000000-0000-4000-8000-000000000001",
+              "leftValue": "={{ $json.found }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "73252f65-92de-4711-b5b6-55e7965de303",
+      "name": "Task Exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1680,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "team": "9011763462",
+        "space": "90113618058",
+        "folderless": true,
+        "list": "901107582941",
+        "name": "=[{{ $json.startDate }}] {{ $json.title }}",
+        "additionalFields": {
+          "customFieldsJson": "={{ JSON.stringify([{ id: 'f776c228-cef3-4405-aad5-0b279e2dcb8f', value: $json.gcalId },{ id: 'de270253-33e9-44c8-9322-de0baf774739', value: $json.gcalLink },{ id: '5e3c1457-fa3b-4af3-aa41-6f934e4c65cc', value: $json.meetingLink },{ id: '5f1cc2d5-fc74-4308-a3e6-73ff81b53e8d', value: $json.startMs },{ id: '730aaee0-d56f-442f-a82c-78c9bb49073f', value: $json.attendeeEmails },{ id: 'bedcf156-51a5-407c-a0e3-3f1589042c44', value: $json.attendeeDomains }]) }}",
+          "content": "=**Meeting Agenda**\n\n- **Meeting Date & Time:** {{ $json.startRaw }}\n- **gCal ID:** {{ $json.gcalId }}\n- **gCal Link:** {{ $json.gcalLink }}\n- **Meeting Link:** {{ $json.meetingLink || 'n/a' }}\n- **Attendee Emails:** {{ $json.attendeeEmails || 'none' }}\n- **Attendee Email Domains:** {{ $json.attendeeDomains || 'none' }}\n\n---\n\n## Agenda\n- \n\n## Notes\n- \n\n## Follow-ups\n- ",
+          "dueDate": "={{ $json.dueMs }}",
+          "markdownContent": true
+        }
+      },
+      "id": "9d754b85-1b90-4138-bb29-a436a9018e43",
+      "name": "Create Agenda Task",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        240
+      ],
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "update",
+        "id": "={{ $json.existingTaskId }}",
+        "updateFields": {
+          "dueDate": "={{ $json.dueMs }}",
+          "name": "=[{{ $json.startDate }}] {{ $json.title }}"
+        }
+      },
+      "id": "a224b648-b586-4d74-bd80-727d4ddb1846",
+      "name": "Update Agenda Task",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        0
+      ],
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Calendar Event Created": {
+      "main": [
+        [
+          {
+            "node": "Merge Triggers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calendar Event Updated": {
+      "main": [
+        [
+          {
+            "node": "Merge Triggers",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Triggers": {
+      "main": [
+        [
+          {
+            "node": "Is Real Meeting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Real Meeting": {
+      "main": [
+        [
+          {
+            "node": "Extract + Classify",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip Non-Meeting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract + Classify": {
+      "main": [
+        [
+          {
+            "node": "Has Attendee or Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Attendee or Video": {
+      "main": [
+        [
+          {
+            "node": "Lookup Existing Task",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip Solo Block",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Existing Task": {
+      "main": [
+        [
+          {
+            "node": "Parse Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Lookup": {
+      "main": [
+        [
+          {
+            "node": "Task Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Task Exists?": {
+      "main": [
+        [
+          {
+            "node": "Update Agenda Task",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Agenda Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": {
+    "node:Calendar Event Created": {
+      "lastTimeChecked": "2026-08-09T04:15:19Z"
+    },
+    "node:Calendar Event Updated": {
+      "lastTimeChecked": "2026-08-09T04:15:28Z"
+    }
+  },
+  "meta": null,
+  "versionId": "74e7219c-3788-4f9b-852f-2c0ba3745511",
+  "activeVersionId": "74e7219c-3788-4f9b-852f-2c0ba3745511",
+  "triggerCount": 2,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    }
+  ]
+}

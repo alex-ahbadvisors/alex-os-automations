@@ -1,0 +1,199 @@
+{
+  "updatedAt": "2026-08-05T16:43:38.270Z",
+  "createdAt": "2026-08-05T16:43:24.869Z",
+  "id": "z2f2FWBM8GVCMSzW",
+  "name": "[R6] Package Delivery → ClickUp",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "c3d2e1f0-pkg1-4d8a-9e6c-refpackages001",
+        "options": {}
+      },
+      "id": "04ec0719-fa6d-444f-a02d-c4c296dc7698",
+      "name": "Missive Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "c3d2e1f0-pkg1-4d8a-9e6c-refpackages001"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "p1",
+              "name": "conversationId",
+              "value": "={{ $json.body.conversation.id }}",
+              "type": "string"
+            },
+            {
+              "id": "p2",
+              "name": "subject",
+              "value": "={{ $json.body.conversation.subject || $json.body.conversation.latest_message_subject }}",
+              "type": "string"
+            },
+            {
+              "id": "p3",
+              "name": "conversationUrl",
+              "value": "={{ $json.body.conversation.web_url || $json.body.conversation.app_url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f69f8d44-a6b7-4f49-9e1b-01540071b620",
+      "name": "Set Trigger Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://public.missiveapp.com/v1/conversations/{{ $json.conversationId }}/messages?limit=1",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "id": "01760739-75ce-4f21-b391-9ada10c25178",
+      "name": "Missive Get First Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        448,
+        0
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "naMGpImlvunQE8Zi",
+          "name": "Missive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1",
+              "name": "fromField",
+              "value": "={{ ($json.messages || [])[0]?.from_field?.name || ($json.messages || [])[0]?.from_field?.address || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2be806fc-fd79-47df-a113-5dd6128d8005",
+      "name": "Set From",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        672,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "team": "9011763462",
+        "space": "90113618058",
+        "folderless": true,
+        "list": "901112996098",
+        "name": "=[{{ $now.format('yyyy-MM-dd') }}] Package Delivered: {{ $('Set Trigger Context').item.json.subject }}",
+        "additionalFields": {
+          "content": "=**Delivery Details**\n\nSubject: {{ $('Set Trigger Context').item.json.subject }}\nFrom: {{ $json.fromField }}\n\n**Email Link**: {{ $('Set Trigger Context').item.json.conversationUrl }}",
+          "markdownContent": true
+        }
+      },
+      "id": "3a1432d8-1d0f-4475-b566-de48e36369cb",
+      "name": "Create Package Task",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        896,
+        0
+      ],
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Missive Webhook": {
+      "main": [
+        [
+          {
+            "node": "Set Trigger Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Trigger Context": {
+      "main": [
+        [
+          {
+            "node": "Missive Get First Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Missive Get First Message": {
+      "main": [
+        [
+          {
+            "node": "Set From",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set From": {
+      "main": [
+        [
+          {
+            "node": "Create Package Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": true
+  },
+  "staticData": null,
+  "meta": null,
+  "versionId": "d17a1d65-931f-41aa-856d-155422eb7ef2",
+  "activeVersionId": "d17a1d65-931f-41aa-856d-155422eb7ef2",
+  "triggerCount": 1,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    }
+  ]
+}

@@ -1,0 +1,416 @@
+{
+  "updatedAt": "2026-08-05T22:34:24.129Z",
+  "createdAt": "2026-08-05T22:33:30.446Z",
+  "id": "YKpd3w8Q7usT90mH",
+  "name": "[R6] AR — QuickBooks Invoice → ClickUp",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "b2e1d4c3-ar01-4c9f-8d7b-qbinvoicecreat",
+        "options": {}
+      },
+      "id": "2e49229d-759b-4e59-b302-1affd123f2be",
+      "name": "QuickBooks Invoice Created (Webhook)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1248,
+        96
+      ],
+      "webhookId": "b2e1d4c3-ar01-4c9f-8d7b-qbinvoicecreat"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "q1",
+              "name": "customer",
+              "value": "={{ $json.body.Customer || $json.body.CustomerRef?.name }}",
+              "type": "string"
+            },
+            {
+              "id": "q2",
+              "name": "balance",
+              "value": "={{ $json.body.Balance }}",
+              "type": "string"
+            },
+            {
+              "id": "q3",
+              "name": "dueDate",
+              "value": "={{ $json.body['Due date'] || $json.body.DueDate }}",
+              "type": "string"
+            },
+            {
+              "id": "q4",
+              "name": "invoiceLink",
+              "value": "={{ $json.body['Invoice Link'] || $json.body.InvoiceLink }}",
+              "type": "string"
+            },
+            {
+              "id": "q5",
+              "name": "invoiceNumber",
+              "value": "={{ $json.body['Invoice Number'] || $json.body.DocNumber }}",
+              "type": "string"
+            },
+            {
+              "id": "q6",
+              "name": "transactionDate",
+              "value": "={{ $json.body['Transaction date'] || $json.body.TxnDate }}",
+              "type": "string"
+            },
+            {
+              "id": "q7",
+              "name": "firstAccountName",
+              "value": "={{ ($json.body['Sales items'] || $json.body.Line || [])[0]?.Account?.Name || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d322da5c-b5fb-4a60-bc5a-33193b8ab9d7",
+      "name": "Set Invoice Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1024,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filter out the wiring-instructions PDF (correct filename; fixes Relay's .pdfff typo).\nconst WIRING = 'AHB Advisors - Incoming Wiring Instructions.pdf';\nlet atts = [];\ntry { atts = $json.body.Attachments || $json.body.attachments || []; } catch (e) { atts = []; }\nconst kept = atts.filter(a => {\n  const fn = a.fileName || a.filename || a.name || '';\n  return fn.indexOf(WIRING) === -1;\n});\n// Build a comma-joined string of the kept filenames for the task name.\nconst names = kept.map(a => a.fileName || a.filename || a.name || '').join(',');\nreturn [{ json: { keptAttachments: kept, keptNames: names } }];"
+      },
+      "id": "7ded9085-f900-45d7-a129-c4fb91fbbda3",
+      "name": "Filter Out Wiring PDF",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -800,
+        96
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "team": "9011763462",
+        "space": "90113618058",
+        "folderless": true,
+        "list": "901112285837",
+        "name": "=[{{ $('Set Invoice Context').item.json.transactionDate }}] - {{ $('Set Invoice Context').item.json.invoiceNumber }} - {{ $json.keptNames }}",
+        "additionalFields": {
+          "customFieldsJson": "=[{\"id\":\"FILL_IN_AMOUNT_DUE_FIELD_ID\",\"value\":{{ $('Set Invoice Context').item.json.balance }}},{\"id\":\"FILL_IN_CLIENT_NAME_FIELD_ID\",\"value\":\"{{ $('Set Invoice Context').item.json.customer }}\"},{\"id\":\"FILL_IN_DUE_DATE_FIELD_ID\",\"value\":\"{{ $('Set Invoice Context').item.json.dueDate }}\"},{\"id\":\"FILL_IN_INVOICE_LINK_FIELD_ID\",\"value\":\"{{ $('Set Invoice Context').item.json.invoiceLink }}\"},{\"id\":\"FILL_IN_INVOICE_NUMBER_FIELD_ID\",\"value\":\"{{ $('Set Invoice Context').item.json.invoiceNumber }}\"},{\"id\":\"FILL_IN_INVOICE_STATUS_FIELD_ID\",\"value\":\"Invoice Sent\"}]",
+          "content": "=Invoice for {{ $('Set Invoice Context').item.json.customer }}\nAmount due: {{ $('Set Invoice Context').item.json.balance }}\nDue date: {{ $('Set Invoice Context').item.json.dueDate }}\n[View invoice]({{ $('Set Invoice Context').item.json.invoiceLink }})",
+          "markdownContent": true,
+          "startDate": "={{ $now }}"
+        }
+      },
+      "id": "418eab47-0232-4c70-bb71-3434c4d67311",
+      "name": "Create AR Task",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        -576,
+        96
+      ],
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "if1",
+              "leftValue": "={{ $('Set Invoice Context').item.json.firstAccountName }}",
+              "rightValue": "Reimbursable",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b2404b43-adf6-4e1e-a42e-03c6043b89ea",
+      "name": "Is Reimbursable?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -352,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "update",
+        "id": "={{ $('Create AR Task').item.json.id }}",
+        "updateFields": {}
+      },
+      "id": "c4c4c989-36f7-49f0-90d8-3e5cf2955cf4",
+      "name": "Set Receivable Type Reimbursable",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        0
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "update",
+        "id": "={{ $('Create AR Task').item.json.id }}",
+        "updateFields": {}
+      },
+      "id": "c477cb77-4701-4a67-b8af-a9064c281f6d",
+      "name": "Set Receivable Type Fee",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        192
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// One item per non-wiring attachment for upload to the task.\nlet kept = [];\ntry { kept = $('Filter Out Wiring PDF').first().json.keptAttachments || []; } catch (e) { kept = []; }\nconst out = [];\nfor (const a of kept) {\n  const url = a.download_url || a.url || a.TempDownloadUri;\n  if (!url) continue;\n  out.push({ json: { attachmentUrl: url, fileName: a.fileName || a.filename || a.name || 'attachment.pdf' } });\n}\nreturn out;"
+      },
+      "id": "c29b1edd-d0fa-4ebe-9b70-cd407daf1bcc",
+      "name": "Split Kept Attachments",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        320,
+        96
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.attachmentUrl }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "309a961b-71cb-4825-a0e5-88eba3f7210b",
+      "name": "Download AR Attachment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        544,
+        96
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "taskAttachment"
+      },
+      "id": "2f633980-9c96-49b6-84fb-3fb6a02fbd1d",
+      "name": "Attach AR File",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        768,
+        96
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "d0b4792c-9e4c-42be-926f-e0d3c8ae7e04",
+      "name": "Merge Type Branches",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        96,
+        96
+      ]
+    }
+  ],
+  "connections": {
+    "QuickBooks Invoice Created (Webhook)": {
+      "main": [
+        [
+          {
+            "node": "Set Invoice Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Invoice Context": {
+      "main": [
+        [
+          {
+            "node": "Filter Out Wiring PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Out Wiring PDF": {
+      "main": [
+        [
+          {
+            "node": "Create AR Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create AR Task": {
+      "main": [
+        [
+          {
+            "node": "Is Reimbursable?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Reimbursable?": {
+      "main": [
+        [
+          {
+            "node": "Set Receivable Type Reimbursable",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Receivable Type Fee",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Receivable Type Reimbursable": {
+      "main": [
+        [
+          {
+            "node": "Merge Type Branches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Receivable Type Fee": {
+      "main": [
+        [
+          {
+            "node": "Merge Type Branches",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Split Kept Attachments": {
+      "main": [
+        [
+          {
+            "node": "Download AR Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download AR Attachment": {
+      "main": [
+        [
+          {
+            "node": "Attach AR File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Type Branches": {
+      "main": [
+        [
+          {
+            "node": "Split Kept Attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": true
+  },
+  "staticData": null,
+  "meta": null,
+  "versionId": "23e6ecf5-bbc8-4e37-9477-557cfde5ea5f",
+  "activeVersionId": "23e6ecf5-bbc8-4e37-9477-557cfde5ea5f",
+  "triggerCount": 1,
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T00:11:31.515Z",
+      "createdAt": "2026-03-10T00:11:31.515Z",
+      "id": "L1wo431MCPrwlBMG",
+      "name": "export"
+    }
+  ]
+}
