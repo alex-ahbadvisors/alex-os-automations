@@ -1,5 +1,10 @@
 {
+  "updatedAt": "2026-09-14T00:58:53.464Z",
+  "createdAt": "2026-03-06T15:50:39.580Z",
+  "id": "wxxNioSdxeaUMCGe",
   "name": "[8] Daily Brief",
+  "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {
@@ -1073,7 +1078,6 @@
       "alwaysOutputData": true
     }
   ],
-  "pinData": {},
   "connections": {
     "7:45 AM Weekday Trigger": {
       "main": [
@@ -1466,19 +1470,23 @@
       ]
     }
   },
-  "active": true,
   "settings": {
     "executionOrder": "v1",
     "errorWorkflow": "Ka01FqAuhDXin0Kn",
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   },
-  "versionId": "ee0aee3d-8db1-41ec-b797-a77a8d98e808",
-  "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "69b353989b2e2524b2186ce2c707a5fca1ffefa89656be27d70fffcaf2744be4"
+  "staticData": {
+    "node:7:45 AM Weekday Trigger": {
+      "recurrenceRules": []
+    }
   },
-  "id": "wxxNioSdxeaUMCGe",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "versionId": "ee0aee3d-8db1-41ec-b797-a77a8d98e808",
+  "activeVersionId": "ee0aee3d-8db1-41ec-b797-a77a8d98e808",
+  "triggerCount": 1,
   "tags": [
     {
       "updatedAt": "2026-03-10T00:11:31.515Z",
