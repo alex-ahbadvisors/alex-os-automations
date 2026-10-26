@@ -13,6 +13,7 @@
 - **Category**: convergence
 - **Description**: When multiple parallel branches converge on a single downstream node, any branch that produces no output will cause `$('Node Name')` references to throw "hasn't been executed" errors. Every node in a parallel branch needs `alwaysOutputData: true`.
 - **Detection**: Find nodes that have 2+ inputs (convergence points). Trace upstream branches. Flag any node in those branches missing `"alwaysOutputData": true` in its options or top-level properties.
+- **Not flagged (2026-10-26)**: sources on mutually exclusive branches (opposite outputs of one IF/Switch, or separate triggers), and a source that every path to its sibling runs through (if it emits nothing, the sibling never runs either). **Never add `alwaysOutputData` to an IF or Switch node**: when nothing goes to output 0, n8n injects an empty item there and fires that branch.
 - **Fix**: Add `"alwaysOutputData": true` to node options for every node in parallel branches.
 - **Discovered**: 2026-03-05, Daily Brief [8] debugging
 - **Times caught**: 0
@@ -41,6 +42,7 @@
 - **Category**: wiring
 - **Description**: n8n fires a downstream node once per arriving input, not after all inputs arrive. Wiring 2+ nodes into the same input causes race conditions and "hasn't been executed" errors. Must wire sequentially or use a Merge/Wait node.
 - **Detection**: Find nodes that receive connections from 2+ different source nodes on the same input index. Flag as parallel convergence risk.
+- **Not flagged (2026-10-26)**: sources on mutually exclusive branches feeding a per-item node, separate triggers, and loop-back edges (a retry `Wait` wired back into an earlier node). These fire one at a time by design; a Wait-for-All Merge there never completes. Still flagged when the target aggregates across items (Aggregate, Summarize, all-items Code, Limit, Sort and similar): an IF that splits a batch runs both branches in one execution, so the target runs once per branch.
 - **Fix**: Wire sequentially, or use a Merge node (mode: "Wait for All") before the downstream node.
 - **Discovered**: 2026-03-03, E2 Meeting Agenda Builder
 - **Times caught**: 0
