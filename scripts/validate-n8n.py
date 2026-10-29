@@ -101,9 +101,145 @@ def get_node_by_name(nodes, name):
     return None
 
 
+# ---------------------------------------------------------------------------
+# Branch topology. P001 and P003 are about PARALLEL branches. Two sources that
+# can never both emit for the same item (opposite IF/Switch outputs, or
+# separate triggers) are mutually exclusive, not parallel. Flagging them points
+# the reader at fixes that break the workflow: alwaysOutputData on an IF node
+# injects an empty item on output 0 and fires that branch, and a Wait-for-All
+# Merge on exclusive branches never completes. Both checks skip that wiring.
+# ---------------------------------------------------------------------------
+
+BRANCHING_NODE_TYPES = {"n8n-nodes-base.if", "n8n-nodes-base.switch"}
+
+# Nodes that act on all input items at once. When an IF/Switch splits a batch,
+# both branches run in the same execution and these run once per branch, so
+# P003 still applies to them (Code nodes are checked by mode in aggregates()).
+AGGREGATING_NODE_TYPES = {
+    "n8n-nodes-base.aggregate",
+    "n8n-nodes-base.summarize",
+    "n8n-nodes-base.itemLists",
+    "n8n-nodes-base.function",
+    "n8n-nodes-base.limit",
+    "n8n-nodes-base.sort",
+    "n8n-nodes-base.removeDuplicates",
+    "n8n-nodes-base.compareDatasets",
+    "n8n-nodes-base.splitInBatches",
+}
+
+
+class BranchTopology:
+    """Output-index-aware view of the 'main' connections."""
+
+    def __init__(self, workflow, nodes):
+        self.nodes = {n.get("name"): n for n in nodes}
+        self.types = {n.get("name"): n.get("type", "") for n in nodes}
+        self.edges = []  # (source, output_index, target)
+        for source, outputs in workflow.get("connections", {}).items():
+            if not isinstance(outputs, dict):
+                continue
+            for out_idx, conns in enumerate(outputs.get("main", []) or []):
+                for conn in conns or []:
+                    self.edges.append((source, out_idx, conn.get("node", "")))
+        has_input = {t for _, _, t in self.edges}
+        self.roots = [n for n in self.types if n not in has_input]
+        self._cache = {}
+
+    def _walk(self, starts, skip_node=None, skip_output=None):
+        adj = defaultdict(list)
+        for s, o, t in self.edges:
+            if s == skip_node and (skip_output is None or o == skip_output):
+                continue
+            adj[s].append(t)
+        seen, stack = set(), list(starts)
+        while stack:
+            n = stack.pop()
+            if n in seen:
+                continue
+            seen.add(n)
+            stack.extend(adj[n])
+        return seen
+
+    def _reachable(self, removed_node=None, removed_output=None):
+        """Nodes reachable from the roots with one node (or one of its outputs) cut."""
+        key = (removed_node, removed_output)
+        if key not in self._cache:
+            starts = [r for r in self.roots if not (r == removed_node and removed_output is None)]
+            seen = self._walk(starts, removed_node, removed_output)
+            if removed_output is None:
+                seen.discard(removed_node)
+            self._cache[key] = seen
+        return self._cache[key]
+
+    def roots_of(self, name):
+        key = ("roots_of", name)
+        if key not in self._cache:
+            self._cache[key] = {r for r in self.roots if name in self._walk([r])}
+        return self._cache[key]
+
+    def _gated_by(self, name, branch_node, out_idx):
+        """True if every path from a root to `name` leaves `branch_node` on output `out_idx`."""
+        return name in self._reachable() and name not in self._reachable(branch_node, out_idx)
+
+    def _feeds_via(self, source, target, branch_node, out_idx):
+        """True if everything `source` sends to `target` has left `branch_node` on `out_idx`."""
+        if source == branch_node:
+            outs = {o for s, o, t in self.edges if s == source and t == target}
+            return outs == {out_idx}
+        return self._gated_by(source, branch_node, out_idx)
+
+    def aggregates(self, name):
+        """True if `name` acts on all its input items at once (so one run per arriving branch splits the batch)."""
+        node = self.nodes.get(name, {})
+        node_type = node.get("type", "")
+        if node_type in ("n8n-nodes-base.code",):
+            return node.get("parameters", {}).get("mode", "runOnceForAllItems") != "runOnceForEachItem"
+        return node_type in AGGREGATING_NODE_TYPES
+
+    def exclusive(self, a, b, target, per_item=True):
+        """True if sources `a` and `b` can never both reach `target` for the same item.
+
+        With per_item=False, only exclusivity that holds for a whole execution
+        counts (separate triggers, a loop-back edge). An IF/Switch sends
+        different items down different outputs in the same execution.
+        """
+        if a == b:
+            return False
+        if not (self.roots_of(a) & self.roots_of(b)):
+            return True  # separate triggers = separate executions
+        if self.dominates(target, a) or self.dominates(target, b):
+            return True  # a loop-back edge arrives after the target has already run
+        if not per_item:
+            return False
+        outputs = defaultdict(set)
+        for s, o, _ in self.edges:
+            if self.types.get(s) in BRANCHING_NODE_TYPES:
+                outputs[s].add(o)
+        for x, outs in outputs.items():
+            for i in outs:
+                if not self._feeds_via(a, target, x, i):
+                    continue
+                for j in outs:
+                    if j != i and self._feeds_via(b, target, x, j):
+                        return True
+        return False
+
+    def dominates(self, a, b):
+        """True if every path from a root to `b` runs through `a`."""
+        return b in self._reachable() and b not in self._reachable(a)
+
+
 def check_p001_missing_always_output_data(workflow, nodes, forward, reverse):
-    """P001: Missing alwaysOutputData on branch nodes feeding convergence points."""
+    """P001: Missing alwaysOutputData on branch nodes feeding convergence points.
+
+    A source needs alwaysOutputData only when a sibling source of the same
+    convergence point can still emit while it emits nothing. Skipped: siblings
+    on mutually exclusive branches (opposite IF/Switch outputs, separate
+    triggers), and a source that every path to the sibling runs through (if it
+    emits nothing, the sibling never runs and the merge never fires).
+    """
     issues = []
+    topo = BranchTopology(workflow, nodes)
     # Find convergence points: nodes with 2+ distinct source nodes
     for target, sources in reverse.items():
         unique_sources = set(s[0] for s in sources)
@@ -111,8 +247,15 @@ def check_p001_missing_always_output_data(workflow, nodes, forward, reverse):
             # Skip langchain agent wiring — multiple inputs by design
             if is_agent_wiring(target, unique_sources, nodes):
                 continue
-            # Trace upstream from each source — check all nodes in those branches
-            for source_name, _ in sources:
+            for source_name in sorted(unique_sources):
+                parallel_siblings = [
+                    other for other in unique_sources
+                    if other != source_name
+                    and not topo.exclusive(source_name, other, target)
+                    and not topo.dominates(source_name, other)
+                ]
+                if not parallel_siblings:
+                    continue
                 node = get_node_by_name(nodes, source_name)
                 if node:
                     has_aod = (
@@ -156,6 +299,7 @@ def check_p002_clickup_create_default(workflow, nodes, forward, reverse):
 def check_p003_parallel_convergence(workflow, nodes, forward, reverse):
     """P003: Multiple nodes wired into the same downstream node input."""
     issues = []
+    topo = BranchTopology(workflow, nodes)
     # Group by (target, input_index)
     target_inputs = defaultdict(list)
     for target, sources in reverse.items():
@@ -171,6 +315,13 @@ def check_p003_parallel_convergence(workflow, nodes, forward, reverse):
                 continue
             # Langchain agent nodes expect multiple inputs — skip them
             if is_agent_wiring(target, sources, nodes):
+                continue
+            # Mutually exclusive branches fire one at a time by design; running
+            # once per arriving input is the intended behavior, not a race.
+            # Aggregating targets only count whole-execution exclusivity.
+            unique = sorted(set(sources))
+            per_item = not topo.aggregates(target)
+            if all(topo.exclusive(a, b, target, per_item) for a in unique for b in unique if a < b):
                 continue
             issues.append({
                 "pattern": "P003",
@@ -356,7 +507,7 @@ def check_p010_gmail_simple_false_fields(workflow, nodes, forward, reverse):
                     bad_patterns.append("capitalized 'To' (use to.text)")
                 if re.search(r'item\.json\.Subject\b', code):
                     bad_patterns.append("capitalized 'Subject' (use lowercase subject)")
-                if 'payload.headers' in code or 'payload\.headers' in code:
+                if 'payload.headers' in code or r'payload\.headers' in code:
                     bad_patterns.append("payload.headers (doesn't exist with simple:false)")
                 if 'internalDate' in code and 'item.json.date' not in code:
                     bad_patterns.append("internalDate (use date as ISO string)")

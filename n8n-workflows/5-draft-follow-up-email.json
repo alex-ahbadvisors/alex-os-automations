@@ -181,7 +181,7 @@
         "text": "=<ORGANIZED_BY_ALEX>{{ $('Meeting Note').item.json.organizedByAlex }}</ORGANIZED_BY_ALEX>\n{{ $('Start').item.json.hitlResponse ? '<HITL_RESPONSE>User already provided a HITL response: '+$('Start').item.json.hitlResponse+'</HITL_RESPONSE>' : '' }}\n<BUCKET>\n{{ $('Meeting Note').item.json.bucket }}\n</BUCKET>\n<MEETING_NOTES>\n{{ $('Get a task').item.json.description }}\n</MEETING_NOTES>\n<SOP>\n{{ $json.markdown_description }}\n</SOP>",
         "hasOutputParser": true,
         "options": {
-          "systemMessage": "=Use the embedded SOP (replace `<SOP/>` with the current SOP content) to decide whether this meeting needs an email follow-up and which email template to use. Review meeting notes and meeting type/bucket. Do **not** hardcode SOP rules — read and apply the SOP text provided in `<SOP/>`.\n\nOutput **only one JSON object**.\n\nTASK — produce this exact JSON object:\n\n```json\n{\n  \"needs_follow_up\": true|false,\n  \"reason_for_follow_up\": \"string|null\",\n  \"hitl_needed\": true|false,\n  \"hitl_message\": \"markdown string|null\",\n  \"email_template_name\": \"string|null\",\n  \"email_template_clickup_link\": \"string|null\"\n}\n```\n\nINSTRUCTIONS\n\n1. Read the embedded SOP (`<SOP/>`) first and use it as the authoritative source for deciding follow-up rules, HITL rules, and template mappings. Do not hardcode rules — derive them from `<SOP/>`.\n2. Determine `needs_follow_up` by applying the SOP to the meeting content and classification. If the SOP is ambiguous for this case, prefer conservative behavior (set `needs_follow_up = true` when external communication is plausible and significant actions/decisions exist).\n3. For `reason_for_follow_up` provide a short plain-text rationale derived from the SOP and the notes (1 sentence). If `needs_follow_up = false`, set `reason_for_follow_up = null`.\n4. Determine `hitl_needed` by applying the SOP. If the SOP gives no explicit HITL criteria, use this fallback: require human check (`\"yes\"`) when the host of the meeting is not Alex, the notes contain sensitive content, or the decision to send is ambiguous. Otherwise set `false`.\n5. If `hitl_needed = true`, populate `hitl_message` with concise, specific questions or action items for Alex (or the user) that explain what the agent needs clarified/approved to proceed (include brief context: which decision/action in the notes triggered the question, and a pointer like “decision X”). If there are no questions to ask despite `hitl_needed = true`, set `hitl_message` to a short instruction for the human (e.g., “Please confirm whether to send external summary for Client X”). If `hitl_needed = \"no\"`, set `hitl_message = null`.\n6. Find the best matching email template name and ClickUp URL in the SOP. Set `email_template_name` and `email_template_clickup_link` from the SOP. If the SOP indicates no template or the matching template is not implemented, set both to `null`.\n7. If you decide a follow-up is required but the SOP prescribes human approval before sending, still set `needs_follow_up = true` and set `hitl_needed = \"yes\"`.\n8. Keep `reason_for_follow_up` concise and SOP-driven (e.g., “Client kickoff with external next steps” — but phrase based on SOP wording).\n\nVALIDATION CHECKLIST (must pass before returning JSON)\n\n* Output exactly one JSON object and nothing else.\n* `needs_follow_up` is boolean.\n* If `needs_follow_up = true`, `reason_for_follow_up` is a non-empty string; otherwise `null`.\n* `hitl_needed` is `\"yes\"` or `\"no\"` and follows SOP (or the fallback rule).\n* If `hitl_needed = \"yes\"`, `hitl_message` is a concise actionable message for Alex; otherwise `null`.\n* `email_template_name` is taken from the SOP or `null`.\n* `email_template_clickup_link` is a URL string from the SOP or `null`.\n"
+          "systemMessage": "=Use the embedded SOP (replace `<SOP/>` with the current SOP content) to decide whether this meeting needs an email follow-up and which email template to use. Review meeting notes and meeting type/bucket. Do **not** hardcode SOP rules — read and apply the SOP text provided in `<SOP/>`.\n\nOutput **only one JSON object**.\n\nTASK — produce this exact JSON object:\n\n```json\n{\n  \"needs_follow_up\": true|false,\n  \"reason_for_follow_up\": \"string|null\",\n  \"hitl_needed\": true|false,\n  \"hitl_message\": \"markdown string|null\",\n  \"email_template_name\": \"string|null\",\n  \"email_template_clickup_link\": \"string|null\"\n}\n```\n\nINSTRUCTIONS\n\n1. Read the embedded SOP (`<SOP/>`) first and use it as the authoritative source for deciding follow-up rules, HITL rules, and template mappings. Do not hardcode rules — derive them from `<SOP/>`.\n2. Determine `needs_follow_up` by applying the SOP to the meeting content and classification. If the SOP is ambiguous for this case, prefer conservative behavior (set `needs_follow_up = true` when external communication is plausible and significant actions/decisions exist).\n3. For `reason_for_follow_up` provide a short plain-text rationale derived from the SOP and the notes (1 sentence). If `needs_follow_up = false`, set `reason_for_follow_up = null`.\n4. Determine `hitl_needed` by applying the SOP. If the SOP gives no explicit HITL criteria, use this fallback: require human check (`true`) when the host of the meeting is not Alex, the notes contain sensitive content, or the decision to send is ambiguous. Otherwise set `false`.\n5. If `hitl_needed = true`, populate `hitl_message` with concise, specific questions or action items for Alex (or the user) that explain what the agent needs clarified/approved to proceed (include brief context: which decision/action in the notes triggered the question, and a pointer like “decision X”). If there are no questions to ask despite `hitl_needed = true`, set `hitl_message` to a short instruction for the human (e.g., “Please confirm whether to send external summary for Client X”). If `hitl_needed = false`, set `hitl_message = null`.\n6. Find the best matching email template name and ClickUp URL in the SOP. Set `email_template_name` and `email_template_clickup_link` from the SOP. If the SOP indicates no template or the matching template is not implemented, set both to `null`.\n7. If you decide a follow-up is required but the SOP prescribes human approval before sending, still set `needs_follow_up = true` and set `hitl_needed = true`.\n8. Keep `reason_for_follow_up` concise and SOP-driven (e.g., “Client kickoff with external next steps” — but phrase based on SOP wording).\n\nVALIDATION CHECKLIST (must pass before returning JSON)\n\n* Output exactly one JSON object and nothing else.\n* `needs_follow_up` is boolean.\n* If `needs_follow_up = true`, `reason_for_follow_up` is a non-empty string; otherwise `null`.\n* `hitl_needed` is boolean (`true` or `false`) and follows SOP (or the fallback rule).\n* If `hitl_needed = true`, `hitl_message` is a concise actionable message for Alex; otherwise `null`.\n* `email_template_name` is taken from the SOP or `null`.\n* `email_template_clickup_link` is a URL string from the SOP or `null`.\n"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -212,7 +212,7 @@
     {
       "parameters": {
         "schemaType": "manual",
-        "inputSchema": "{\n  \"type\": \"object\",\n  \"title\": \"MeetingFollowUpDecision\",\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"needs_follow_up\": {\n      \"type\": \"boolean\",\n      \"description\": \"True if the SOP indicates an email follow-up is required for this meeting; otherwise false.\"\n    },\n    \"reason_for_follow_up\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"description\": \"Short rationale for why a follow-up is needed, derived from the SOP and meeting notes; null if no follow-up is needed.\"\n    },\n    \"hitl_needed\": {\n      \"type\": \"boolean\",\n      \"description\": \"Whether a human-in-the-loop review is required before sending any follow-up, based on the SOP or the fallback rule.\"\n    },\n    \"hitl_message\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"description\": \"Concise message with questions or instructions for the human reviewer when hitl_needed = 'yes'; otherwise null.\"\n    },\n    \"email_template_name\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"description\": \"Name of the selected email template from the SOP; null if no template applies or is not implemented.\"\n    },\n    \"email_template_clickup_link\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"description\": \"ClickUp URL of the selected email template from the SOP; null if no template applies or is not implemented.\",\n      \"format\": \"uri\"\n    }\n  },\n  \"required\": [\n    \"needs_follow_up\",\n    \"reason_for_follow_up\",\n    \"hitl_needed\",\n    \"hitl_message\",\n    \"email_template_name\",\n    \"email_template_clickup_link\"\n  ]\n}"
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"title\": \"MeetingFollowUpDecision\",\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"needs_follow_up\": {\n      \"type\": \"boolean\",\n      \"description\": \"True if the SOP indicates an email follow-up is required for this meeting; otherwise false.\"\n    },\n    \"reason_for_follow_up\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"description\": \"Short rationale for why a follow-up is needed, derived from the SOP and meeting notes; null if no follow-up is needed.\"\n    },\n    \"hitl_needed\": {\n      \"type\": \"boolean\",\n      \"description\": \"Whether a human-in-the-loop review is required before sending any follow-up, based on the SOP or the fallback rule.\"\n    },\n    \"hitl_message\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"description\": \"Concise message with questions or instructions for the human reviewer when hitl_needed is true; otherwise null.\"\n    },\n    \"email_template_name\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"description\": \"Name of the selected email template from the SOP; null if no template applies or is not implemented.\"\n    },\n    \"email_template_clickup_link\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"description\": \"ClickUp URL of the selected email template from the SOP; null if no template applies or is not implemented.\",\n      \"format\": \"uri\"\n    }\n  },\n  \"required\": [\n    \"needs_follow_up\",\n    \"reason_for_follow_up\",\n    \"hitl_needed\",\n    \"hitl_message\",\n    \"email_template_name\",\n    \"email_template_clickup_link\"\n  ]\n}"
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
@@ -353,7 +353,7 @@
       "parameters": {
         "authentication": "oAuth2",
         "operation": "get",
-        "id": "={{ $('Draft Context').item.json.output.email_template_clickup_link.split('/t/').last() }}",
+        "id": "={{ (String($('Draft Context').item.json.output.email_template_clickup_link || '').match(/(?<![a-z0-9])868[a-z0-9]{6}(?![a-z0-9])/) || [''])[0] }}",
         "includeMarkdownDescription": true
       },
       "type": "n8n-nodes-base.clickUp",
@@ -456,7 +456,8 @@
           "name": "Abel N8N Token"
         }
       },
-      "onError": "continueRegularOutput"
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
     },
     {
       "parameters": {
@@ -499,7 +500,8 @@
         -608
       ],
       "id": "43b156e9-bdd4-4651-91d4-af1eec4e1b79",
-      "name": "Merge1"
+      "name": "Merge1",
+      "alwaysOutputData": true
     },
     {
       "parameters": {
@@ -1022,7 +1024,8 @@
         -800
       ],
       "id": "e6a73132-a59d-4062-a6b4-130a0adf4048",
-      "name": "Set Organized By Alex"
+      "name": "Set Organized By Alex",
+      "alwaysOutputData": true
     },
     {
       "parameters": {
@@ -1214,7 +1217,8 @@
         -512
       ],
       "id": "e206f4d0-cecf-4433-bea9-e6cf334fc76b",
-      "name": "Capture HITL Response"
+      "name": "Capture HITL Response",
+      "alwaysOutputData": true
     },
     {
       "parameters": {

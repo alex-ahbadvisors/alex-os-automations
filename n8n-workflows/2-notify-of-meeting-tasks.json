@@ -137,7 +137,8 @@
         -144
       ],
       "id": "3be07c41-e225-449c-8916-b2dd0d5f7e3b",
-      "name": "Tasks"
+      "name": "Tasks",
+      "alwaysOutputData": true
     },
     {
       "parameters": {
@@ -358,7 +359,8 @@
         -384
       ],
       "id": "fbfc80b8-a8e7-4632-ab01-c4605ab2784f",
-      "name": "with Slack Buttons"
+      "name": "with Slack Buttons",
+      "alwaysOutputData": true
     },
     {
       "parameters": {
@@ -551,7 +553,8 @@
           "id": "DvovCyTPlCPUoL2k",
           "name": "Abel N8N Token"
         }
-      }
+      },
+      "alwaysOutputData": true
     },
     {
       "parameters": {
@@ -564,7 +567,8 @@
         -576
       ],
       "id": "01d1f371-6378-44a7-82bb-5396aa1d9b41",
-      "name": "List Accessory"
+      "name": "List Accessory",
+      "alwaysOutputData": true
     },
     {
       "parameters": {

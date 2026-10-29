@@ -279,7 +279,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=<MEETING TYPES>\n{{ $json.markdown_description }}\n</MEETING TYPES>\n\n<LIST OF CLIENTS & PROSPECTS>\nFrom clients data table, which has current live clients, prospects, and former clients\n</LIST OF CLIENTS & PROSPECTS>\n\n<TRANSCRIPT>\n{{ $('Transcript').item.json.toJsonString() }}\n</TRANSCRIPT>",
+        "text": "=<MEETING TYPES>\n{{ $json.markdown_description }}\n</MEETING TYPES>\n\n<LIST OF CLIENTS & PROSPECTS>\nAlex's companies and contacts by relationship (ClickUp BD Pipeline), with deal stage. Use it to identify the counterparty: a company under Client is a signed client; Prospect is not yet a client. The meeting-type definitions above still decide the bucket.\n\n{{ $json.client_list }}\n</LIST OF CLIENTS & PROSPECTS>\n\n<TRANSCRIPT>\n{{ $('Transcript').item.json.toJsonString() }}\n</TRANSCRIPT>",
         "hasOutputParser": true,
         "options": {
           "systemMessage": "You are a precise meeting classifier. Read the meeting type reference and the transcript, then output STRICT JSON (no markdown, no commentary) with exactly this schema:\n\n{\n  \"topLevelBucket\": \"string\",\n  \"categories\": [\"string\"]\n}\n\nINSTRUCTIONS\n1) Parse `meetingTypes` to determine:\n   a) The valid top-level buckets (e.g., \"Internal\", \"Client\", \"Vendor / Partner\", \"Personal\", \"Other External\") — treat whatever appears in meetingTypes as authoritative.\n   b) For each bucket, its allowed subcategory labels (category names only; ignore definitions except for meaning).\n\n2) Choose exactly ONE `topLevelBucket` that best fits the transcript based on:\n   - Attendee composition (internal-only vs client/vendor/external).\n   - Meeting purpose (status, sales, delivery, demo, interview, networking, personal, etc.).\n   If multiple buckets seem plausible, select the single most likely based on strongest textual evidence (attendees > purpose > agenda keywords).\n\n3) `categories` must include ONLY subcategories that belong to the chosen `topLevelBucket`. \n   - Include 1–3 subcategories that best match the transcript. \n   - If none clearly match, return an empty array: [].\n\n4) Do not invent category names. Use exact strings from `meetingTypes`. Prefer precise matches; if synonyms appear in transcript, map them to the closest defined subcategory.\n\n5) If the transcript is fragmentary or ambiguous, still pick the most likely top-level bucket using available cues; keep `categories` minimal and accurate.\n\nOUTPUT RULES\n- Output a single JSON object only, no extra text.\n- Keys must be exactly: \"topLevelBucket\", \"categories\".\n- Use double quotes for all strings. No trailing commas."
@@ -368,7 +368,8 @@
           "id": "WiEsUqUCPM9Xds21",
           "name": "ClickUp Alex Oauth"
         }
-      }
+      },
+      "alwaysOutputData": true
     },
     {
       "parameters": {
@@ -949,7 +950,8 @@
       "position": [
         3968,
         -256
-      ]
+      ],
+      "alwaysOutputData": true
     },
     {
       "parameters": {
@@ -1472,7 +1474,8 @@
           "id": "WiEsUqUCPM9Xds21",
           "name": "ClickUp Alex Oauth"
         }
-      }
+      },
+      "alwaysOutputData": true
     },
     {
       "parameters": {
@@ -1911,6 +1914,53 @@
           "name": "Supabase alex-os-information"
         }
       }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "getAll",
+        "team": "9011763462",
+        "space": "90112775651",
+        "folder": "90118040038",
+        "list": "901113925326",
+        "returnAll": true,
+        "filters": {
+          "includeClosed": true,
+          "subtasks": false
+        }
+      },
+      "id": "422bed1a-5854-42f6-9cda-6fcc778be88c",
+      "name": "BD Pipeline",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        1904,
+        -560
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "clickUpOAuth2Api": {
+          "id": "WiEsUqUCPM9Xds21",
+          "name": "ClickUp Alex Oauth"
+        }
+      },
+      "notes": "Client & prospect list for the Categorization Agent. Names, Category and Stage only."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Builds the <LIST OF CLIENTS & PROSPECTS> block for the Categorization Agent\n// from the ClickUp BD Pipeline list (901113925326). Names, category and stage\n// only: descriptions and contacts never leave ClickUp.\nconst CATEGORY_FIELD = '5a623c67-06b5-499a-b35b-a03ff52ed326'; // 🏷️ Category (labels)\nconst STAGE_FIELD = '797e8072-df53-457f-aa22-1f9802da933d'; // 🎢 Stage (drop-down)\nconst ORDER = ['Client', 'Prospect', 'Referrer', 'Collaborator', 'Influencer', 'Startup', 'Former', '3CV-Legacy'];\n\nfunction field(task, id) {\n  return (task.custom_fields || []).find(f => f.id === id);\n}\nfunction labels(f) {\n  if (!f || !Array.isArray(f.value)) return [];\n  const opts = (f.type_config && f.type_config.options) || [];\n  return f.value.map(v => {\n    const id = typeof v === 'object' && v !== null ? v.id : v;\n    const o = opts.find(x => x.id === id);\n    return o ? o.label : null;\n  }).filter(Boolean);\n}\nfunction dropdown(f) {\n  if (!f || f.value === null || f.value === undefined || f.value === '') return null;\n  const opts = (f.type_config && f.type_config.options) || [];\n  const o = opts.find(x => x.orderindex === Number(f.value) || x.id === f.value);\n  return o ? o.name : null;\n}\n\nconst groups = {};\nfor (const item of $input.all()) {\n  const t = item.json;\n  if (!t || !t.name || t.error) continue;\n  const cats = labels(field(t, CATEGORY_FIELD));\n  if (!cats.length) continue; // scheduling tasks and other non-relationship rows\n  const stage = dropdown(field(t, STAGE_FIELD));\n  const closed = t.status && String(t.status.type || t.status.status || '').toLowerCase() === 'closed';\n  const detail = [stage, closed ? 'record closed' : null].filter(Boolean).join('; ');\n  const primary = ORDER.find(c => cats.includes(c)) || cats[0];\n  const others = cats.filter(c => c !== primary);\n  const line = `- ${t.name}${others.length ? ` [also ${others.join(', ')}]` : ''}${detail ? ` — ${detail}` : ''}`;\n  (groups[primary] = groups[primary] || []).push(line);\n}\n\nconst sections = [...ORDER, ...Object.keys(groups).filter(c => !ORDER.includes(c))]\n  .filter(c => groups[c])\n  .map(c => `${c}:\\n${groups[c].sort((a, b) => a.localeCompare(b)).join('\\n')}`);\n\nconst client_list = sections.length\n  ? sections.join('\\n\\n')\n  : '(Client list unavailable: the BD Pipeline lookup returned nothing. Classify from the transcript.)';\n\nreturn [{\n  json: { ...$('Meeting Types').first().json, client_list },\n  pairedItem: { item: 0 },\n}];\n"
+      },
+      "id": "a16d940a-a455-4f31-a6d9-9af190fc3005",
+      "name": "Client List",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2016,
+        -560
+      ]
     }
   ],
   "connections": {
@@ -1918,7 +1968,7 @@
       "main": [
         [
           {
-            "node": "Categorization Agent",
+            "node": "BD Pipeline",
             "type": "main",
             "index": 0
           }
@@ -2413,6 +2463,28 @@
           {
             "node": "Meeting Note Agent",
             "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BD Pipeline": {
+      "main": [
+        [
+          {
+            "node": "Client List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client List": {
+      "main": [
+        [
+          {
+            "node": "Categorization Agent",
+            "type": "main",
             "index": 0
           }
         ]
