@@ -111,3 +111,12 @@
 - **Rollback**: re-import the pre-change JSON from git (`git show <parent-of-merge>:n8n-workflows/<file>.json`); revert `scripts/validate-n8n.py` in the same commit range.
 - **Data issues found, not fixed (ClickUp, owner's call)**: BD Pipeline has MCM as Closed with Stage Proposal (should be Won and open while live), Tequila Syndicate still labeled Client, and no rows for SyncWords or Bauer Media. The classifier sees exactly what the list says.
 - **Debug rounds**: not imported yet. After the first live meeting, check the `Categorization Agent` input shows the list and the bucket is right.
+
+## [3] Create Tasks from Slack Email To-Do, [4] Create Tasks from Slack — verbatim titles — 2026-10-29 (prepared, not imported)
+
+- **Bug**: a Slack-approved "Waiting on Pete Crofut: …" was created in ClickUp as "Follow up with Pete … (Kendra Fidlin)" (868mpmaaz). Two causes: the `Create Task` name expression appended ` (assignee)`, and the Task Generator Agent's rule only said "use Abel's title if present", so the model paraphrased it. Athena's waiting-on pass keys on the `Waiting on ` prefix.
+- **Fix (both workflows)**: name expression is now `{{ String($json.task.name ?? '').trim() }}`; owner stays in `assignees` only. Generator rule: copy the approved title verbatim (Abel's, or a human's replacement from the thread), keep prefixes, never rephrase into "Follow up with …", never add the owner; generate a title only when none exists.
+- **Validator**: 9 high on each file before and after (pre-existing P001/P003 findings, unchanged by this edit; not in scope).
+- **Tests**: `scripts/tests/test_abel_task_titles.py` (shipped expression under `node`; prompt rule present in both).
+- **Rollback**: re-import the pre-change JSON from git.
+- **After import**: approve one Abel task list in Slack containing a `Waiting on …` item; confirm the ClickUp title matches the Slack text exactly and the owner shows only as assignee.
