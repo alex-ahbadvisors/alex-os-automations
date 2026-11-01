@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-08-09T22:28:33.739Z",
+  "updatedAt": "2026-10-28T10:53:26.000Z",
   "createdAt": "2026-03-03T21:59:06.760Z",
   "id": "FXErGwcUKWqJ0Wda",
   "name": "[7a] Build Meeting Agendas",
-  "active": true,
+  "active": false,
   "isArchived": false,
   "nodes": [
     {
@@ -610,7 +610,7 @@
   },
   "settings": {
     "executionOrder": "v1",
-    "availableInMCP": true,
+    "availableInMCP": false,
     "errorWorkflow": "Ka01FqAuhDXin0Kn",
     "callerPolicy": "workflowsFromSameOwner"
   },
@@ -621,7 +621,7 @@
   },
   "meta": null,
   "versionId": "9256de29-efc2-4941-95f0-fef493a82860",
-  "activeVersionId": "9256de29-efc2-4941-95f0-fef493a82860",
+  "activeVersionId": null,
   "triggerCount": 1,
   "tags": [
     {
