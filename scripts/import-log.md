@@ -130,3 +130,15 @@
 - **Tests**: `scripts/tests/test_abel_meeting_pipeline.py` `DraftReviewedByKendra` (body renders to valid JSON, Kendra in both fields).
 - **Rollback**: re-import the pre-change JSON from git.
 - **After import**: on the next Abel draft, Kendra sees it in her Missive Inbox, assigned to her; the draft opens for her.
+
+## [5] Draft Follow-Up Email — template-first drafting + Draft Check + one redraft — 2026-11-02 (prepared, not imported)
+
+- **Problem (Alex)**: the first post-fix draft (Brian Ring, Networking Thank You) read as AI: 126 words, restated Alex's positioning, "sounding board", "I really like", "feels like". The template (868kwth55) was right; the drafting prompt pulled against it ("polished client-facing", "professional, and warm", "enough context… key decisions and next steps", "Do not ask follow-up questions") and nothing enforced the HARD RULES.
+- **Prompt (Follow Email Draft Agent)**: HARD RULES are limits that override every other instruction; write plain and short, match the examples' length; never restate Alex's positioning or summarize unless the template asks; filler/effusive words banned; if the template needs a moment the notes lack, leave a bracketed note for Alex instead of inventing one; 3CV sender address removed.
+- **New nodes**: `Draft Check` (Code: template sentence limit, ≤18 words per allowed sentence, no sentence over 30 words, dashes, semicolons, template + scrub-list banned phrases, placeholders) → `Redraft?` → `Redraft Agent` (same prompt + previous draft + violations; own model and parser nodes) → `Draft Check 2` → `Split Internal & External Recipients`. Clean drafts skip the redraft.
+- **Missive note**: Abel's note now ends with "Passed the template check (N words)" or "⚠️ Needs a human pass (after N drafts): …".
+- **Offline proof** (Claude Sonnet as a proxy for gpt-5.1, Brian's notes): new prompt → 84 words, 2 violations ("just", one long sentence) → redraft → 65 words, 0 violations. The old live draft fails the check on 6 counts; the template's own example passes.
+- **Validator**: 0 high, 2 medium (pre-existing P004, P006).
+- **Tests**: `scripts/tests/test_abel_meeting_pipeline.py` `DraftVoiceCheck` (shipped check code under `node`).
+- **Rollback**: re-import the pre-change JSON from git.
+- **After import**: next follow-up draft, read Abel's Missive note for the check line; open the n8n run to see whether `Redraft Agent` ran.
