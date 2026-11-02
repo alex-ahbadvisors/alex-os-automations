@@ -143,6 +143,27 @@ class ClientListInjection(unittest.TestCase):
         self.assertNotIn("From clients data table", text)
 
 
+class DraftReviewedByKendra(unittest.TestCase):
+    KENDRA = "2bb2e9c3-4618-4a70-8d41-b7b5b50cd489"
+
+    def test_draft_body_assigns_kendra(self):
+        body = node(load("5-draft-follow-up-email.json"), "Draft in Missive")["parameters"]["jsonBody"]
+        rendered = body[1:]
+        for expr, value in {
+            "{{ $json.output.subject.toJsonString() }}": '"Subject"',
+            "{{ $json.html.toJsonString() }}": '"<p>Body</p>"',
+            "{{$json.missive.from_field.toJsonString() }}": '{"address": "alex@ahbadvisors.com"}',
+            "{{$json.missive.to_fields.toJsonString() }}": "[]",
+            "{{$json.missive.cc_fields.toJsonString() }}": "[]",
+        }.items():
+            self.assertIn(expr, rendered)
+            rendered = rendered.replace(expr, value)
+        draft = json.loads(rendered)["drafts"]
+        self.assertEqual(draft["add_users"], [self.KENDRA])
+        self.assertEqual(draft["add_assignees"], [self.KENDRA])
+        self.assertTrue(draft["organization"])
+
+
 class DeciderBoolean(unittest.TestCase):
     def test_one_source_of_truth(self):
         wf = load("5-draft-follow-up-email.json")

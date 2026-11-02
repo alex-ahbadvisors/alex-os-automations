@@ -120,3 +120,13 @@
 - **Tests**: `scripts/tests/test_abel_task_titles.py` (shipped expression under `node`; prompt rule present in both).
 - **Rollback**: re-import the pre-change JSON from git.
 - **After import**: approve one Abel task list in Slack containing a `Waiting on …` item; confirm the ClickUp title matches the Slack text exactly and the owner shows only as assignee.
+
+## [5] Draft Follow-Up Email — Kendra reviews every Abel draft — 2026-11-02 (prepared, not imported)
+
+- **Ask (Alex)**: Kendra reads Abel's drafts before Alex does, and at least has visibility. Missive's API has no @mention for integration posts, so the route is assignment.
+- **Change**: `Draft in Missive` now sends `add_users` + `add_assignees` = Kendra (`2bb2e9c3-4618-4a70-8d41-b7b5b50cd489`, `docs/tech-stack-profiles.md` in alex-os). Access lets her open drafts on Alex's from-address; assignment puts each draft in her Inbox with a notification.
+- **Not changed**: Abel's Slack confirmation and Missive notification post still reach Alex at once. Holding them until Kendra signs off is a separate change.
+- **Validator**: 0 high, 2 medium (pre-existing P004, P006).
+- **Tests**: `scripts/tests/test_abel_meeting_pipeline.py` `DraftReviewedByKendra` (body renders to valid JSON, Kendra in both fields).
+- **Rollback**: re-import the pre-change JSON from git.
+- **After import**: on the next Abel draft, Kendra sees it in her Missive Inbox, assigned to her; the draft opens for her.

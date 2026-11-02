@@ -511,7 +511,7 @@
         "genericAuthType": "httpBearerAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"drafts\": {\n    \"organization\": \"c7be17b4-c416-4d3a-b20d-62a89a261016\",\n    \"subject\": {{ $json.output.subject.toJsonString() }},\n    \"body\": {{ $json.html.toJsonString() }},\n    \"from_field\": {{$json.missive.from_field.toJsonString() }},\n    \"to_fields\": {{$json.missive.to_fields.toJsonString() }},\n    \"cc_fields\": {{$json.missive.cc_fields.toJsonString() }},\n    \"add_shared_labels\": [\"5dc4d84f-4c03-4503-8608-8f0f56ea474b\"]\n  }\n} ",
+        "jsonBody": "={\n  \"drafts\": {\n    \"organization\": \"c7be17b4-c416-4d3a-b20d-62a89a261016\",\n    \"subject\": {{ $json.output.subject.toJsonString() }},\n    \"body\": {{ $json.html.toJsonString() }},\n    \"from_field\": {{$json.missive.from_field.toJsonString() }},\n    \"to_fields\": {{$json.missive.to_fields.toJsonString() }},\n    \"cc_fields\": {{$json.missive.cc_fields.toJsonString() }},\n    \"add_shared_labels\": [\"5dc4d84f-4c03-4503-8608-8f0f56ea474b\"],\n    \"add_users\": [\"2bb2e9c3-4618-4a70-8d41-b7b5b50cd489\"],\n    \"add_assignees\": [\"2bb2e9c3-4618-4a70-8d41-b7b5b50cd489\"]\n  }\n} ",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
