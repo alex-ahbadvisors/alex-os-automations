@@ -164,6 +164,72 @@ class DraftReviewedByKendra(unittest.TestCase):
         self.assertTrue(draft["organization"])
 
 
+class DraftVoiceCheck(unittest.TestCase):
+    """The shipped Draft Check node enforces the template's HARD RULES (2026-11-02)."""
+
+    TEMPLATE = (
+        "## HARD RULES\n* Three to five sentences. No headers.\n"
+        "* Scrub before send. No em-dashes, no semicolons. Banned: \"I hope this finds you well,\" "
+        "\"wanted to reach out,\" \"circle back,\" \"it was great connecting.\"\n"
+    )
+    BAD = (
+        "Jordan,\n\nYour line about trying to keep your network live in ad tech while you lean into the CTV/FAST "
+        "and ad robot experiments stuck with me. If it is useful, I am glad to be a sounding board on strategy and "
+        "finance angles with CTV clients or investors as you keep pressure-testing those ideas. I really like the way "
+        "your measurement work lines up with my more strategy and capital-markets view of where CTV and the pipes are "
+        "heading, and it feels like a good basis for future collaboration. No real ask now. I am glad we left it that "
+        "we will keep a light recurring check in on the calendar and try for a coffee when you are in New York.\n\nAlex"
+    )
+    GOOD = (
+        "Priya,\n\nThanks for making the time. The way you described the first ninety days at Acme, rebuilding "
+        "measurement ahead of the agency review, explains why the sequencing matters more than the selection.\n\n"
+        "You asked how other retail media teams staffed that. I put the question to two people who have done it and "
+        "will come back if either has something useful.\n\nNo ask here. Glad we connected.\n\nAlex"
+    )
+
+    def run_check(self, content, node_name="Draft Check"):
+        code = node(load("5-draft-follow-up-email.json"), node_name)["parameters"]["jsCode"]
+        js = (f"const $json = {{ output: {{ content: {json.dumps(content)} }} }};\n"
+              f"const $ = () => ({{ item: {{ json: {{ markdown_description: {json.dumps(self.TEMPLATE)} }} }} }});\n"
+              f"const out = (function() {{\n{code}\n}})();\nprocess.stdout.write(JSON.stringify(out.json.check));")
+        res = subprocess.run(["node", "-e", js], capture_output=True, text=True, check=True)
+        return json.loads(res.stdout)
+
+    def test_bad_draft_fails(self):
+        check = self.run_check(self.BAD)
+        joined = " | ".join(check["violations"])
+        self.assertIn("keep it under 90", joined)
+        self.assertIn('"sounding board"', joined)
+        self.assertIn('"feels like"', joined)
+        self.assertEqual(check["attempt"], 1)
+
+    def test_template_example_passes(self):
+        self.assertEqual(self.run_check(self.GOOD)["violations"], [])
+        self.assertEqual(self.run_check(self.GOOD, "Draft Check 2")["attempt"], 2)
+
+    def test_dash_semicolon_placeholder(self):
+        check = self.run_check("Sam,\n\nGood to meet — truly; [Alex: add the line].\n\nAlex")
+        self.assertIn("uses a dash (— or –)", check["violations"])
+        self.assertIn("uses a semicolon", check["violations"])
+        self.assertTrue(check["needs_input"])
+
+    def test_wiring_and_prompt(self):
+        wf = load("5-draft-follow-up-email.json")
+        c = wf["connections"]
+        self.assertEqual(c["Follow Email Draft Agent"]["main"][0][0]["node"], "Draft Check")
+        self.assertEqual(c["Redraft?"]["main"][0][0]["node"], "Redraft Agent")
+        self.assertEqual(c["Redraft?"]["main"][1][0]["node"], "Split Internal & External Recipients")
+        self.assertEqual(c["Draft Check 2"]["main"][0][0]["node"], "Split Internal & External Recipients")
+        for name in ("Follow Email Draft Agent", "Redraft Agent"):
+            sm = node(wf, name)["parameters"]["options"]["systemMessage"]
+            self.assertIn("HARD RULES are limits", sm)
+            self.assertNotIn("3cventures", sm)
+            self.assertNotIn("professional, and warm", sm)
+        self.assertIn("<VIOLATIONS>", node(wf, "Redraft Agent")["parameters"]["text"])
+        conf = node(wf, "Missive Confirmation")["parameters"]["assignments"]["assignments"][0]["value"]
+        self.assertIn("Needs a human pass", conf)
+
+
 class DeciderBoolean(unittest.TestCase):
     def test_one_source_of_truth(self):
         wf = load("5-draft-follow-up-email.json")

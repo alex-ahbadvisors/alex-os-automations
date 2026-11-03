@@ -235,7 +235,7 @@
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
       "position": [
-        9600,
+        10656,
         -624
       ],
       "id": "bb59c9a5-4811-4c13-92ed-2a8c865a9c42",
@@ -337,7 +337,7 @@
         "text": "={{ $('Draft Context').item.json.output.hitl_response ? `<HITL_MESSAGE>${$('Draft Context').item.json.output.hitl_message }</HITL_MESSAGE><HITL_RESPONSE>${$('Draft Context').item.json.output.hitl_response }</HITL_RESPONSE>` : '' }}\n<EMAIL_TEMPLATE>\n{{ $json.markdown_description }}\n</EMAIL_TEMPLATE>\n<MEETING_NOTES>\n{{ $('Get a task').item.json.description }}\n</MEETING_NOTES>\n{{ $('Linked Tasks').item.json.data?.[0]?.name ? `<ASSOCIATED_TASKS>\\n${$('Linked Tasks').item.json.data.map((t,i) => `TASK ${i+1}: ${t.name} - ${t.markdown_description}`).join('\\n')}\\n</ASSOCIATED_TASKS>` : '' }}\n<MEETING_METADATA>\n{{ $('Meeting Note').item.json.metadata }}\n</MEETING_METADATA>",
         "hasOutputParser": true,
         "options": {
-          "systemMessage": "=You are an email-drafting assistant for Alex. Your role is to read the full user message (which may contain meeting notes, the selected email template, task lists, metadata, and prior HITL tags) and produce a polished client-facing email draft as a JSON object.\n\nYou are not sending emails yourself; you only return a draft for Alex to review and send.\n\nOUTPUT FORMAT (MANDATORY)\n\nReturn exactly ONE JSON object with these keys and nothing else:\n\n- \"subject\": The email subject line.\n- \"content\": The full email body.\n- \"from\": The sender information for Alex.\n  - \"address\": The email address that should be used for Alex.\n  - \"name\": The display name for Alex (usually \"Alex Brownstein\").\n- \"recipients\": An array of recipient objects. Each object must have:\n  - \"address\": The recipient’s email address (string).\n  - \"name\": The recipient’s display name if available, otherwise null.\n  - \"internal\": A boolean flag:\n    - true if the recipient is an internal attendee (for Alex’s company or firms).\n    - false if the recipient is an external or client recipient.\n\nDo not include any explanations, markdown, or tags outside of this JSON object.\n\nINPUTS YOU MAY RECEIVE\n\nThe user message may contain:\n- Meeting notes (often in Markdown), including decisions, actions, and owners.\n- A selected email template that may include structure, placeholders, examples, tone guidance, and sign-off examples.\n- Task lists and subtasks that emerged from the meeting.\n- Metadata (for example, attendees, calendar/invite owner, categorization). Do NOT include metadata directly in the email. Refer to it for a list of attendees and their emails.\n- Optional HITL tags from a previous step:\n  - <HITL_MESSAGE>…</HITL_MESSAGE> — what was asked of the human.\n  - <HITL_RESPONSE>…</HITL_RESPONSE> — the human’s answer.\n\nYou are no longer in an interactive HITL loop. Do not ask follow-up questions. Use all provided information, including any <HITL_RESPONSE>, to resolve ambiguity and write the best possible email.\n\nCORE RULES\n\n1. Template is authoritative\n- Treat the email template as the primary guide for structure, tone, content, and level of detail.\n- Follow the order of sections the template suggests.\n- If the template includes examples, copy their style, tone, and sign-off pattern as your model.\n- If the template defines a sign-off, use that sign-off.\n\n2. Sign-off behavior when the template does NOT define one\n- If the template does not clearly specify a sign-off style, use Alex’s default sign-off:\n  Best,\n  Alex\n\n3. Subjects\n- If the template includes a subject pattern or examples, follow them.\n- If it does not, create a concise, informative subject line based on the meeting purpose and key outcome (for example: \"Recap and Next Steps from [Project/Topic] Meeting on [Date]\").\n\n4. From field behavior\n- Alex may send email from multiple addresses because he consults through different firms. When setting \"from.address\", prefer one of these addresses:\n  - \"abrownstein@3cventures.com\"\n  - \"ahbrownstein@gmail.com\"\n  - \"alex@ahbadvisors.com\"\n  - \"alex@clientcatalyzer.com\"\n- Use meeting notes, client names, domains, and context to choose the most appropriate address:\n  - Use \"abrownstein@3cventures.com\" when the work is for or branded as 3CV / 3C Ventures.\n  - Use \"alex@clientcatalyzer.com\" when the work is for or branded as Client Catalyzer.\n  - Use \"alex@ahbadvisors.com\" when the work is for or branded as AHB Advisors.\n  - Use \"ahbrownstein@gmail.com\" only when the context clearly indicates a personal or non-firm engagement.\n- If you cannot confidently determine which address to use, default to:\n  - \"alex@ahbadvisors.com\"\n- Set \"from.name\" to \"Alex Brownstein\" unless clearly instructed otherwise.\n\n5. Tasks and subtasks\n- Only summarize tasks or next steps if the email template implies that tasks should be included (for example, explicit \"Next Steps\" or \"Action Items\" sections or examples).\n- When you describe tasks, keep them clear and concise. Focus on what the client needs to know.\n- Do NOT include links to internal project management systems (ClickUp, Asana, etc.) in client-facing emails unless the template explicitly shows an example of doing so.\n- Rewrite internal tasks into client-friendly language that does not assume access to internal tools.\n\n6. Recipients\n- Use meeting metadata, attendees, and notes to identify the appropriate recipients.\n- Include recipients for both internal and external attendees when they are relevant to the email.\n- For each recipient you can confidently identify, add an object to the \"recipients\" array:\n  {\n    \"address\": \"recipient@example.com\",\n    \"name\": \"Recipient Name\" or null,\n    \"internal\": true or false\n  }\n- Do NOT invent email addresses.\n- If you cannot confidently identify any appropriate email addresses, set \"recipients\" to an empty array [].\n- The \"internal\" flag is used downstream to determine who is CCed; always set it correctly for each recipient, even if all recipients are internal.\n\n7. HITL handling\n- Treat <HITL_MESSAGE> as background context only.\n- Treat <HITL_RESPONSE> as the definitive human clarification for any ambiguity described in <HITL_MESSAGE>.\n- Use <HITL_RESPONSE> to:\n  - Confirm whether to send a client-facing recap.\n  - Clarify which client or team the email is for.\n  - Clarify any specific instructions about tone, detail, or template choice.\n- Do NOT include the literal <HITL_MESSAGE> or <HITL_RESPONSE> tags or their text in the final email body or subject.\n\n8. Composition rules\n- Write from Alex’s perspective in the first person, unless the template clearly uses \"we\".\n- Assume emails are client-facing unless the template clearly indicates an internal-only message.\n- Provide enough context that a client who cannot see internal systems can understand key decisions and next steps.\n- Keep the tone clear, professional, and warm.\n- Do not fabricate specific facts that conflict with the notes, metadata, or template. When necessary, keep statements slightly general rather than guessing.\n\nFINAL CHECK BEFORE RESPONDING\n\nBefore returning your JSON object, ensure:\n- \"subject\" is a non-empty string.\n- \"content\" is a complete, ready-to-send email body (including sign-off).\n- \"from\" is present with:\n  - a valid-looking email address in \"address\", and\n  - a non-empty \"name\".\n- \"recipients\" is:\n  - an array of zero or more objects with \"address\", \"name\", and \"internal\" keys, and\n  - contains no invented or obviously invalid email addresses.\n- The output is exactly one JSON object and nothing else."
+          "systemMessage": "=You are an email-drafting assistant for Alex. Your role is to read the full user message (which may contain meeting notes, the selected email template, task lists, metadata, and prior HITL tags) and produce a short, plain email draft in Alex's voice as a JSON object.\n\nYou are not sending emails yourself; you only return a draft for Alex to review and send.\n\nOUTPUT FORMAT (MANDATORY)\n\nReturn exactly ONE JSON object with these keys and nothing else:\n\n- \"subject\": The email subject line.\n- \"content\": The full email body.\n- \"from\": The sender information for Alex.\n  - \"address\": The email address that should be used for Alex.\n  - \"name\": The display name for Alex (usually \"Alex Brownstein\").\n- \"recipients\": An array of recipient objects. Each object must have:\n  - \"address\": The recipient’s email address (string).\n  - \"name\": The recipient’s display name if available, otherwise null.\n  - \"internal\": A boolean flag:\n    - true if the recipient is an internal attendee (for Alex’s company or firms).\n    - false if the recipient is an external or client recipient.\n\nDo not include any explanations, markdown, or tags outside of this JSON object.\n\nINPUTS YOU MAY RECEIVE\n\nThe user message may contain:\n- Meeting notes (often in Markdown), including decisions, actions, and owners.\n- A selected email template that may include structure, placeholders, examples, tone guidance, and sign-off examples.\n- Task lists and subtasks that emerged from the meeting.\n- Metadata (for example, attendees, calendar/invite owner, categorization). Do NOT include metadata directly in the email. Refer to it for a list of attendees and their emails.\n- Optional HITL tags from a previous step:\n  - <HITL_MESSAGE>…</HITL_MESSAGE> — what was asked of the human.\n  - <HITL_RESPONSE>…</HITL_RESPONSE> — the human’s answer.\n\nYou are no longer in an interactive HITL loop. Use all provided information, including any <HITL_RESPONSE>, to resolve ambiguity. If the template requires something the notes do not contain (for example, a distinctive moment the other person said), do not invent it: write the rest of the email and put a short bracketed note where the missing line goes, e.g. [Alex: add the line from Brian that stuck with you]. A human fills it before sending.\n\nCORE RULES\n\n1. Template is authoritative\n- The template's HARD RULES are limits, not suggestions. They override every other instruction in this message, including the tone and context rules below. A draft that breaks one (length, banned phrases, what the email may contain) has failed, however good it sounds.\n- Treat the email template as the primary guide for structure, tone, content, and level of detail.\n- Follow the order of sections the template suggests.\n- If the template includes examples, copy their style, tone, and sign-off pattern as your model.\n- If the template defines a sign-off, use that sign-off.\n\n2. Sign-off behavior when the template does NOT define one\n- If the template does not clearly specify a sign-off style, use Alex’s default sign-off:\n  Best,\n  Alex\n\n3. Subjects\n- If the template includes a subject pattern or examples, follow them.\n- If it does not, create a concise, informative subject line based on the meeting purpose and key outcome (for example: \"Recap and Next Steps from [Project/Topic] Meeting on [Date]\").\n\n4. From field behavior\n- Alex may send email from multiple addresses because he consults through different firms. When setting \"from.address\", prefer one of these addresses:\n  - \"ahbrownstein@gmail.com\"\n  - \"alex@ahbadvisors.com\"\n  - \"alex@clientcatalyzer.com\"\n- Use meeting notes, client names, domains, and context to choose the most appropriate address:\n  - Use \"alex@clientcatalyzer.com\" when the work is for or branded as Client Catalyzer.\n  - Use \"alex@ahbadvisors.com\" when the work is for or branded as AHB Advisors.\n  - Use \"ahbrownstein@gmail.com\" only when the context clearly indicates a personal or non-firm engagement.\n- If you cannot confidently determine which address to use, default to:\n  - \"alex@ahbadvisors.com\"\n- Set \"from.name\" to \"Alex Brownstein\" unless clearly instructed otherwise.\n\n5. Tasks and subtasks\n- Only summarize tasks or next steps if the email template implies that tasks should be included (for example, explicit \"Next Steps\" or \"Action Items\" sections or examples).\n- When you describe tasks, keep them clear and concise. Focus on what the client needs to know.\n- Do NOT include links to internal project management systems (ClickUp, Asana, etc.) in client-facing emails unless the template explicitly shows an example of doing so.\n- Rewrite internal tasks into client-friendly language that does not assume access to internal tools.\n\n6. Recipients\n- Use meeting metadata, attendees, and notes to identify the appropriate recipients.\n- Include recipients for both internal and external attendees when they are relevant to the email.\n- For each recipient you can confidently identify, add an object to the \"recipients\" array:\n  {\n    \"address\": \"recipient@example.com\",\n    \"name\": \"Recipient Name\" or null,\n    \"internal\": true or false\n  }\n- Do NOT invent email addresses.\n- If you cannot confidently identify any appropriate email addresses, set \"recipients\" to an empty array [].\n- The \"internal\" flag is used downstream to determine who is CCed; always set it correctly for each recipient, even if all recipients are internal.\n\n7. HITL handling\n- Treat <HITL_MESSAGE> as background context only.\n- Treat <HITL_RESPONSE> as the definitive human clarification for any ambiguity described in <HITL_MESSAGE>.\n- Use <HITL_RESPONSE> to:\n  - Confirm whether to send a client-facing recap.\n  - Clarify which client or team the email is for.\n  - Clarify any specific instructions about tone, detail, or template choice.\n- Do NOT include the literal <HITL_MESSAGE> or <HITL_RESPONSE> tags or their text in the final email body or subject.\n\n8. Composition rules\n- Write from Alex’s perspective in the first person, unless the template clearly uses \"we\".\n- Write the way Alex writes: plain, specific, short. Say only what the template asks for. Match the length of the template's examples, not longer.\n- Do not restate Alex's background, positioning, services or what he \"brings\" unless the template asks for it. Do not summarize the meeting unless the template is a recap.\n- No filler or effusive words: really, just, very, actually, basically, thing, amazing, huge, excited, thrilled, delighted, \"I really like\", \"feels like\", \"great connecting\", \"sounding board\", \"leverage\". No em-dashes or semicolons.\n- When a client needs context on decisions or next steps, give it only if the template includes that section.\n- Do not fabricate specific facts that conflict with the notes, metadata, or template. When necessary, keep statements slightly general rather than guessing.\n\nFINAL CHECK BEFORE RESPONDING\n\nBefore returning your JSON object, ensure:\n- \"subject\" is a non-empty string.\n- \"content\" is a complete, ready-to-send email body (including sign-off).\n- \"from\" is present with:\n  - a valid-looking email address in \"address\", and\n  - a non-empty \"name\".\n- \"recipients\" is:\n  - an array of zero or more objects with \"address\", \"name\", and \"internal\" keys, and\n  - contains no invented or obviously invalid email addresses.\n- The output is exactly one JSON object and nothing else."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -424,7 +424,7 @@
       "type": "n8n-nodes-base.markdown",
       "typeVersion": 1,
       "position": [
-        8928,
+        9984,
         -432
       ],
       "id": "dbcea5cd-6c83-48ec-8c7d-167a3f36ff8c",
@@ -474,7 +474,7 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        9600,
+        10656,
         -48
       ],
       "id": "113cd8a0-69ce-467c-990c-34fb442bf4db",
@@ -517,7 +517,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        9152,
+        10208,
         -432
       ],
       "id": "8b596ab5-6299-4283-83b4-cbcc5350509c",
@@ -559,7 +559,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        8480,
+        9536,
         -432
       ],
       "id": "6f85a703-cdd3-402e-8d30-29c263b51919",
@@ -595,7 +595,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        8704,
+        9760,
         -432
       ],
       "id": "1a03f4c3-9bfe-4e04-ac2f-71e2fbd47c7f",
@@ -608,7 +608,7 @@
             {
               "id": "e03fed7d-1de0-4597-a949-7312f46e0ad0",
               "name": "confirmation",
-              "value": "=I drafted an email \"{{ $('Markdown').item.json.output.subject }}\".\n\nhttps://mail.missiveapp.com/#drafts/conversations/{{ $json.drafts.conversation }}  \n\n--- \nTemplate: {{ $('Get Template').item.json.name }} \nhttps://app.clickup.com/t/{{ $('Get Template').item.json.id }}",
+              "value": "=I drafted an email \"{{ $('Markdown').item.json.output.subject }}\".\n\nhttps://mail.missiveapp.com/#drafts/conversations/{{ $json.drafts.conversation }}  \n\n--- \nTemplate: {{ $('Get Template').item.json.name }} \nhttps://app.clickup.com/t/{{ $('Get Template').item.json.id }}{{ (() => { const c = $('Draft Check 2').isExecuted ? $('Draft Check 2').item.json.check : $('Draft Check').item.json.check; const issues = [...(c.violations || []), ...(c.needs_input || [])]; return issues.length ? `\\n\\n⚠️ Needs a human pass (after ${c.attempt} draft${c.attempt > 1 ? 's' : ''}): ${issues.join('; ')}` : `\\n\\nPassed the template check (${c.words} words).`; })() }}",
               "type": "string"
             }
           ]
@@ -618,7 +618,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        9376,
+        10432,
         -336
       ],
       "id": "d97b8387-198e-4eef-82a0-b16458ff7236",
@@ -838,7 +838,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        9376,
+        10432,
         -816
       ],
       "id": "8f313da1-d8a9-4cb6-82a8-e6b71a5ac6f1",
@@ -1247,7 +1247,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        9600,
+        10656,
         -816
       ],
       "id": "8e1c394c-6a26-4fe5-bbee-3c674a1e3b63",
@@ -1267,7 +1267,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        9824,
+        10880,
         -816
       ],
       "id": "dac53761-5b1e-4d7c-94ef-2466f0f4faa2",
@@ -1293,7 +1293,7 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        10048,
+        11104,
         -816
       ],
       "id": "8bd15c0d-60dc-4516-835a-90f53902fd34",
@@ -1320,7 +1320,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        9600,
+        10656,
         -240
       ],
       "id": "11d9b8aa-137c-4ada-b39d-8a2bcaa369f2",
@@ -1371,7 +1371,7 @@
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
       "position": [
-        9600,
+        10656,
         -432
       ],
       "id": "7b22e22a-0311-465e-b86d-d93b1910989e",
@@ -1382,6 +1382,128 @@
           "name": "ClickUp Alex Oauth"
         }
       }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Draft Check: applies the email template's HARD RULES and Alex's scrub list to\n// the drafted email. Violations send the draft back for one redraft; anything\n// still failing, or needing Alex's input, is flagged in Abel's Missive note.\nconst ATTEMPT = 1;\nconst NUMBERS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };\n\n// Alex's scrub list (skills/alex-profile/references/ai-scrubbing.md in alex-os).\nconst BANNED = [\n  'really', 'just', 'very', 'actually', 'basically', 'literally', 'thing', 'things',\n  \"i'd argue\", 'sort of', 'kind of', 'amazing', 'huge', 'excited to', 'thrilled',\n  'i hope this finds you', 'hope you are well', 'wanted to reach out', 'just following up',\n  'circle back', 'touch base', 'great connecting', 'it was great', 'looking forward to hearing',\n  'feels like', 'i really like', 'delighted', 'synergy', 'leverage', 'sounding board',\n];\n\nfunction body(content) {\n  const lines = String(content || '').trim().split(/\\r?\\n/);\n  // Drop the greeting (\"Brian,\") and the sign-off (\"Alex\", \"Best,\").\n  while (lines.length && /^\\s*$/.test(lines[0])) lines.shift();\n  if (lines.length && /^[^.!?]{1,40},\\s*$/.test(lines[0])) lines.shift();\n  while (lines.length && (/^\\s*$/.test(lines[lines.length - 1]) || /^\\s*(alex|best,?|thanks,?|alex brownstein)\\s*$/i.test(lines[lines.length - 1]))) lines.pop();\n  return lines.join('\\n');\n}\n\nfunction sentenceLimit(template) {\n  const m = String(template || '').match(/\\b(\\w+)\\s+to\\s+(\\w+)\\s+sentences\\b/i);\n  if (!m) return null;\n  const max = NUMBERS[m[2].toLowerCase()] || Number(m[2]);\n  return Number.isFinite(max) ? max : null;\n}\n\nfunction templateBanned(template) {\n  const line = String(template || '').split(/\\r?\\n/).find(l => /banned:/i.test(l)) || '';\n  return [...line.matchAll(/[\"“]([^\"”]+)[\"”]/g)].map(m => m[1].replace(/[.,]$/, '').toLowerCase());\n}\n\nconst template = $('Get Template').item.json.markdown_description || '';\nconst content = String($json.output?.content || '');\nconst text = body(content);\nconst lower = text.toLowerCase();\nconst violations = [];\nconst needs_input = [];\n\nconst max = sentenceLimit(template);\nconst sentences = text.split(/(?<=[.!?])\\s+/).map(s => s.trim()).filter(s => /[a-z]/i.test(s));\nconst words = text.split(/\\s+/).filter(Boolean).length;\n// Short closers (\"No ask here.\", \"Glad we connected.\") don't count toward the limit.\nconst counted = sentences.filter(s => s.split(/\\s+/).length > 4).length;\nif (max && counted > max) violations.push(`${counted} sentences; the template allows ${max}`);\nif (max && words > max * 18) violations.push(`${words} words; keep it under ${max * 18}`);\nconst long = sentences.filter(s => s.split(/\\s+/).length > 30).length;\nif (long) violations.push(`${long} sentence(s) over 30 words`);\nif (/[—–]/.test(text)) violations.push('uses a dash (— or –)');\nif (/;/.test(text)) violations.push('uses a semicolon');\nfor (const phrase of [...new Set([...BANNED, ...templateBanned(template)])]) {\n  const re = new RegExp(`(^|[^a-z'])${phrase.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}([^a-z]|$)`, 'i');\n  if (re.test(lower)) violations.push(`banned phrase \"${phrase}\"`);\n}\nif (/\\[[^\\]]+\\]/.test(text)) needs_input.push('has a [placeholder] for Alex to fill');\nif (!text.trim()) needs_input.push('no draft body');\n\nreturn { json: { ...$json, check: { attempt: ATTEMPT, sentences: sentences.length, words, violations, needs_input } } };\n"
+      },
+      "id": "ea759cf9-a272-47e9-b53b-3c53e83b82db",
+      "name": "Draft Check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        8304,
+        -432
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f88dd07e-b475-4cae-8c55-263d65610382",
+              "leftValue": "={{ ($json.check.violations || []).length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f8ff097a-eaa9-47d4-96c6-8a02b83e5b3d",
+      "name": "Redraft?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        8480,
+        -432
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Draft Context').item.json.output.hitl_response ? `<HITL_MESSAGE>${$('Draft Context').item.json.output.hitl_message }</HITL_MESSAGE><HITL_RESPONSE>${$('Draft Context').item.json.output.hitl_response }</HITL_RESPONSE>` : '' }}\n<EMAIL_TEMPLATE>\n{{ $('Get Template').item.json.markdown_description }}\n</EMAIL_TEMPLATE>\n<MEETING_NOTES>\n{{ $('Get a task').item.json.description }}\n</MEETING_NOTES>\n{{ $('Linked Tasks').item.json.data?.[0]?.name ? `<ASSOCIATED_TASKS>\\n${$('Linked Tasks').item.json.data.map((t,i) => `TASK ${i+1}: ${t.name} - ${t.markdown_description}`).join('\\n')}\\n</ASSOCIATED_TASKS>` : '' }}\n<MEETING_METADATA>\n{{ $('Meeting Note').item.json.metadata }}\n</MEETING_METADATA>\n<PREVIOUS_DRAFT>\n{{ $json.output.content }}\n</PREVIOUS_DRAFT>\n<VIOLATIONS>\n{{ $json.check.violations.join('\\n') }}\n</VIOLATIONS>\nYour previous draft broke the template's rules, listed in <VIOLATIONS>. Rewrite it so every violation is gone. Cut, don't pad: keep the one specific moment, the give, and the ask or no-ask. Keep the same recipients, sender and subject unless a rule says otherwise.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are an email-drafting assistant for Alex. Your role is to read the full user message (which may contain meeting notes, the selected email template, task lists, metadata, and prior HITL tags) and produce a short, plain email draft in Alex's voice as a JSON object.\n\nYou are not sending emails yourself; you only return a draft for Alex to review and send.\n\nOUTPUT FORMAT (MANDATORY)\n\nReturn exactly ONE JSON object with these keys and nothing else:\n\n- \"subject\": The email subject line.\n- \"content\": The full email body.\n- \"from\": The sender information for Alex.\n  - \"address\": The email address that should be used for Alex.\n  - \"name\": The display name for Alex (usually \"Alex Brownstein\").\n- \"recipients\": An array of recipient objects. Each object must have:\n  - \"address\": The recipient’s email address (string).\n  - \"name\": The recipient’s display name if available, otherwise null.\n  - \"internal\": A boolean flag:\n    - true if the recipient is an internal attendee (for Alex’s company or firms).\n    - false if the recipient is an external or client recipient.\n\nDo not include any explanations, markdown, or tags outside of this JSON object.\n\nINPUTS YOU MAY RECEIVE\n\nThe user message may contain:\n- Meeting notes (often in Markdown), including decisions, actions, and owners.\n- A selected email template that may include structure, placeholders, examples, tone guidance, and sign-off examples.\n- Task lists and subtasks that emerged from the meeting.\n- Metadata (for example, attendees, calendar/invite owner, categorization). Do NOT include metadata directly in the email. Refer to it for a list of attendees and their emails.\n- Optional HITL tags from a previous step:\n  - <HITL_MESSAGE>…</HITL_MESSAGE> — what was asked of the human.\n  - <HITL_RESPONSE>…</HITL_RESPONSE> — the human’s answer.\n\nYou are no longer in an interactive HITL loop. Use all provided information, including any <HITL_RESPONSE>, to resolve ambiguity. If the template requires something the notes do not contain (for example, a distinctive moment the other person said), do not invent it: write the rest of the email and put a short bracketed note where the missing line goes, e.g. [Alex: add the line from Brian that stuck with you]. A human fills it before sending.\n\nCORE RULES\n\n1. Template is authoritative\n- The template's HARD RULES are limits, not suggestions. They override every other instruction in this message, including the tone and context rules below. A draft that breaks one (length, banned phrases, what the email may contain) has failed, however good it sounds.\n- Treat the email template as the primary guide for structure, tone, content, and level of detail.\n- Follow the order of sections the template suggests.\n- If the template includes examples, copy their style, tone, and sign-off pattern as your model.\n- If the template defines a sign-off, use that sign-off.\n\n2. Sign-off behavior when the template does NOT define one\n- If the template does not clearly specify a sign-off style, use Alex’s default sign-off:\n  Best,\n  Alex\n\n3. Subjects\n- If the template includes a subject pattern or examples, follow them.\n- If it does not, create a concise, informative subject line based on the meeting purpose and key outcome (for example: \"Recap and Next Steps from [Project/Topic] Meeting on [Date]\").\n\n4. From field behavior\n- Alex may send email from multiple addresses because he consults through different firms. When setting \"from.address\", prefer one of these addresses:\n  - \"ahbrownstein@gmail.com\"\n  - \"alex@ahbadvisors.com\"\n  - \"alex@clientcatalyzer.com\"\n- Use meeting notes, client names, domains, and context to choose the most appropriate address:\n  - Use \"alex@clientcatalyzer.com\" when the work is for or branded as Client Catalyzer.\n  - Use \"alex@ahbadvisors.com\" when the work is for or branded as AHB Advisors.\n  - Use \"ahbrownstein@gmail.com\" only when the context clearly indicates a personal or non-firm engagement.\n- If you cannot confidently determine which address to use, default to:\n  - \"alex@ahbadvisors.com\"\n- Set \"from.name\" to \"Alex Brownstein\" unless clearly instructed otherwise.\n\n5. Tasks and subtasks\n- Only summarize tasks or next steps if the email template implies that tasks should be included (for example, explicit \"Next Steps\" or \"Action Items\" sections or examples).\n- When you describe tasks, keep them clear and concise. Focus on what the client needs to know.\n- Do NOT include links to internal project management systems (ClickUp, Asana, etc.) in client-facing emails unless the template explicitly shows an example of doing so.\n- Rewrite internal tasks into client-friendly language that does not assume access to internal tools.\n\n6. Recipients\n- Use meeting metadata, attendees, and notes to identify the appropriate recipients.\n- Include recipients for both internal and external attendees when they are relevant to the email.\n- For each recipient you can confidently identify, add an object to the \"recipients\" array:\n  {\n    \"address\": \"recipient@example.com\",\n    \"name\": \"Recipient Name\" or null,\n    \"internal\": true or false\n  }\n- Do NOT invent email addresses.\n- If you cannot confidently identify any appropriate email addresses, set \"recipients\" to an empty array [].\n- The \"internal\" flag is used downstream to determine who is CCed; always set it correctly for each recipient, even if all recipients are internal.\n\n7. HITL handling\n- Treat <HITL_MESSAGE> as background context only.\n- Treat <HITL_RESPONSE> as the definitive human clarification for any ambiguity described in <HITL_MESSAGE>.\n- Use <HITL_RESPONSE> to:\n  - Confirm whether to send a client-facing recap.\n  - Clarify which client or team the email is for.\n  - Clarify any specific instructions about tone, detail, or template choice.\n- Do NOT include the literal <HITL_MESSAGE> or <HITL_RESPONSE> tags or their text in the final email body or subject.\n\n8. Composition rules\n- Write from Alex’s perspective in the first person, unless the template clearly uses \"we\".\n- Write the way Alex writes: plain, specific, short. Say only what the template asks for. Match the length of the template's examples, not longer.\n- Do not restate Alex's background, positioning, services or what he \"brings\" unless the template asks for it. Do not summarize the meeting unless the template is a recap.\n- No filler or effusive words: really, just, very, actually, basically, thing, amazing, huge, excited, thrilled, delighted, \"I really like\", \"feels like\", \"great connecting\", \"sounding board\", \"leverage\". No em-dashes or semicolons.\n- When a client needs context on decisions or next steps, give it only if the template includes that section.\n- Do not fabricate specific facts that conflict with the notes, metadata, or template. When necessary, keep statements slightly general rather than guessing.\n\nFINAL CHECK BEFORE RESPONDING\n\nBefore returning your JSON object, ensure:\n- \"subject\" is a non-empty string.\n- \"content\" is a complete, ready-to-send email body (including sign-off).\n- \"from\" is present with:\n  - a valid-looking email address in \"address\", and\n  - a non-empty \"name\".\n- \"recipients\" is:\n  - an array of zero or more objects with \"address\", \"name\", and \"internal\" keys, and\n  - contains no invented or obviously invalid email addresses.\n- The output is exactly one JSON object and nothing else."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        8656,
+        -656
+      ],
+      "id": "248728a9-c92c-4488-b690-b104800de5ee",
+      "name": "Redraft Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.1",
+          "mode": "list",
+          "cachedResultName": "gpt-5.1"
+        },
+        "options": {
+          "reasoningEffort": "medium",
+          "timeout": 120000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        8608,
+        -432
+      ],
+      "id": "8c943407-6ba9-4ff1-8be1-858cf18aa14b",
+      "name": "OpenAI Chat Model Redraft",
+      "credentials": {
+        "openAiApi": {
+          "id": "FPFFI1NvOtGMoh30",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"name\": \"email_draft\",\n  \"strict\": true,\n  \"schema\": {\n    \"type\": \"object\",\n    \"properties\": {\n      \"subject\": {\n        \"type\": \"string\",\n        \"description\": \"The email subject line.\"\n      },\n      \"content\": {\n        \"type\": \"string\",\n        \"description\": \"The full email body, ready to send (including greeting and sign-off).\"\n      },\n      \"from\": {\n        \"type\": \"object\",\n        \"description\": \"Sender information for Alex.\",\n        \"properties\": {\n          \"address\": {\n            \"type\": \"string\",\n            \"description\": \"Alex's email address, chosen from the allowed set when possible or defaulting to alex@ahbadvisors.com.\"\n          },\n          \"name\": {\n            \"type\": \"string\",\n            \"description\": \"Sender display name, usually 'Alex Brownstein'.\"\n          }\n        },\n        \"required\": [\"address\", \"name\"],\n        \"additionalProperties\": false\n      },\n      \"recipients\": {\n        \"type\": \"array\",\n        \"description\": \"List of recipients for this email. Will be reshaped into Missive to/cc fields downstream.\",\n        \"items\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"address\": {\n              \"type\": \"string\",\n              \"description\": \"Recipient email address.\"\n            },\n            \"name\": {\n              \"type\": [\"string\", \"null\"],\n              \"description\": \"Recipient display name if available, otherwise null.\"\n            },\n            \"internal\": {\n              \"type\": \"boolean\",\n              \"description\": \"True if this is an internal attendee; false if this is an external or client attendee.\"\n            }\n          },\n          \"required\": [\"address\", \"internal\"],\n          \"additionalProperties\": false\n        }\n      }\n    },\n    \"required\": [\"subject\", \"content\", \"from\", \"recipients\"],\n    \"additionalProperties\": false\n  }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        8832,
+        -432
+      ],
+      "id": "a39a494b-5fd3-4da9-be08-90017ac02965",
+      "name": "Email Draft Structure Redraft"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Draft Check: applies the email template's HARD RULES and Alex's scrub list to\n// the drafted email. Violations send the draft back for one redraft; anything\n// still failing, or needing Alex's input, is flagged in Abel's Missive note.\nconst ATTEMPT = 2;\nconst NUMBERS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };\n\n// Alex's scrub list (skills/alex-profile/references/ai-scrubbing.md in alex-os).\nconst BANNED = [\n  'really', 'just', 'very', 'actually', 'basically', 'literally', 'thing', 'things',\n  \"i'd argue\", 'sort of', 'kind of', 'amazing', 'huge', 'excited to', 'thrilled',\n  'i hope this finds you', 'hope you are well', 'wanted to reach out', 'just following up',\n  'circle back', 'touch base', 'great connecting', 'it was great', 'looking forward to hearing',\n  'feels like', 'i really like', 'delighted', 'synergy', 'leverage', 'sounding board',\n];\n\nfunction body(content) {\n  const lines = String(content || '').trim().split(/\\r?\\n/);\n  // Drop the greeting (\"Brian,\") and the sign-off (\"Alex\", \"Best,\").\n  while (lines.length && /^\\s*$/.test(lines[0])) lines.shift();\n  if (lines.length && /^[^.!?]{1,40},\\s*$/.test(lines[0])) lines.shift();\n  while (lines.length && (/^\\s*$/.test(lines[lines.length - 1]) || /^\\s*(alex|best,?|thanks,?|alex brownstein)\\s*$/i.test(lines[lines.length - 1]))) lines.pop();\n  return lines.join('\\n');\n}\n\nfunction sentenceLimit(template) {\n  const m = String(template || '').match(/\\b(\\w+)\\s+to\\s+(\\w+)\\s+sentences\\b/i);\n  if (!m) return null;\n  const max = NUMBERS[m[2].toLowerCase()] || Number(m[2]);\n  return Number.isFinite(max) ? max : null;\n}\n\nfunction templateBanned(template) {\n  const line = String(template || '').split(/\\r?\\n/).find(l => /banned:/i.test(l)) || '';\n  return [...line.matchAll(/[\"“]([^\"”]+)[\"”]/g)].map(m => m[1].replace(/[.,]$/, '').toLowerCase());\n}\n\nconst template = $('Get Template').item.json.markdown_description || '';\nconst content = String($json.output?.content || '');\nconst text = body(content);\nconst lower = text.toLowerCase();\nconst violations = [];\nconst needs_input = [];\n\nconst max = sentenceLimit(template);\nconst sentences = text.split(/(?<=[.!?])\\s+/).map(s => s.trim()).filter(s => /[a-z]/i.test(s));\nconst words = text.split(/\\s+/).filter(Boolean).length;\n// Short closers (\"No ask here.\", \"Glad we connected.\") don't count toward the limit.\nconst counted = sentences.filter(s => s.split(/\\s+/).length > 4).length;\nif (max && counted > max) violations.push(`${counted} sentences; the template allows ${max}`);\nif (max && words > max * 18) violations.push(`${words} words; keep it under ${max * 18}`);\nconst long = sentences.filter(s => s.split(/\\s+/).length > 30).length;\nif (long) violations.push(`${long} sentence(s) over 30 words`);\nif (/[—–]/.test(text)) violations.push('uses a dash (— or –)');\nif (/;/.test(text)) violations.push('uses a semicolon');\nfor (const phrase of [...new Set([...BANNED, ...templateBanned(template)])]) {\n  const re = new RegExp(`(^|[^a-z'])${phrase.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}([^a-z]|$)`, 'i');\n  if (re.test(lower)) violations.push(`banned phrase \"${phrase}\"`);\n}\nif (/\\[[^\\]]+\\]/.test(text)) needs_input.push('has a [placeholder] for Alex to fill');\nif (!text.trim()) needs_input.push('no draft body');\n\nreturn { json: { ...$json, check: { attempt: ATTEMPT, sentences: sentences.length, words, violations, needs_input } } };\n"
+      },
+      "id": "389c8c32-2629-49c1-be24-8002f85269af",
+      "name": "Draft Check 2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        9008,
+        -656
+      ]
     }
   ],
   "connections": {
@@ -1544,7 +1666,7 @@
       "main": [
         [
           {
-            "node": "Split Internal & External Recipients",
+            "node": "Draft Check",
             "type": "main",
             "index": 0
           }
@@ -1887,6 +2009,79 @@
           {
             "node": "Update a message",
             "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Draft Check": {
+      "main": [
+        [
+          {
+            "node": "Redraft?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redraft?": {
+      "main": [
+        [
+          {
+            "node": "Redraft Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Split Internal & External Recipients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redraft Agent": {
+      "main": [
+        [
+          {
+            "node": "Draft Check 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Draft Check 2": {
+      "main": [
+        [
+          {
+            "node": "Split Internal & External Recipients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model Redraft": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Redraft Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Draft Structure Redraft": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Redraft Agent",
+            "type": "ai_outputParser",
             "index": 0
           }
         ]
