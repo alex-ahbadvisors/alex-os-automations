@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-03-10T00:20:44.758Z",
+  "updatedAt": "2026-11-03T00:12:23.625Z",
   "createdAt": "2025-10-24T15:26:09.968Z",
   "id": "b0qRdZcWL16KpRkW",
   "name": "[5] Draft Follow Up Email",
@@ -16,10 +16,10 @@
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
       "position": [
-        4416,
-        -464
+        13200,
+        -360
       ],
-      "id": "7af369dc-d0a8-4082-9545-779480ff9085",
+      "id": "376edd16-cf7e-4946-ba62-0141576b2e73",
       "name": "Follow Up Email SOP",
       "executeOnce": true,
       "retryOnFail": true,
@@ -47,10 +47,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        8080,
-        -208
+        16920,
+        -112
       ],
-      "id": "3d62b77b-1acc-4415-96ce-38c017926163",
+      "id": "cf14883c-b086-49f3-9536-4cd01c849352",
       "name": "OpenAI Chat Model3",
       "credentials": {
         "openAiApi": {
@@ -77,13 +77,13 @@
           ]
         }
       },
-      "id": "5480559d-fbc8-4be9-8588-973dd3eb1c95",
+      "id": "3034ce3a-d756-46e7-9fb5-807b8a45c66c",
       "typeVersion": 1.1,
       "name": "Start",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "position": [
-        2624,
-        -720
+        11408,
+        -624
       ]
     },
     {
@@ -95,10 +95,10 @@
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
       "position": [
-        3968,
-        -720
+        12752,
+        -624
       ],
-      "id": "a64af8ee-ae2a-4077-99e3-a2c0fa79af24",
+      "id": "28222c0e-fa8b-4784-b9b3-bce5bfcac309",
       "name": "Get a task",
       "credentials": {
         "clickUpOAuth2Api": {
@@ -117,10 +117,10 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        7232,
-        -432
+        16016,
+        -336
       ],
-      "id": "f04e794c-5345-4f1e-89ed-64c369ce510d",
+      "id": "ebd726d8-46ca-4458-8bb2-ce60557dc643",
       "name": "Split Out Linked Tasks"
     },
     {
@@ -133,10 +133,10 @@
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
       "position": [
-        7456,
-        -432
+        16240,
+        -336
       ],
-      "id": "d8254748-280e-464c-a754-2c4cd61a0e80",
+      "id": "80862bd9-6caa-4a82-ab92-a9b1634591b4",
       "name": "Get Linked Task",
       "retryOnFail": true,
       "maxTries": 2,
@@ -163,10 +163,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        4656,
-        -240
+        13432,
+        -136
       ],
-      "id": "53719367-5a57-46ca-9af4-2358f1b58a6e",
+      "id": "25f3b5af-9dfc-4cf2-a9f0-aa39b7b2b982",
       "name": "OpenAI Chat Model",
       "credentials": {
         "openAiApi": {
@@ -187,10 +187,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
       "position": [
-        4640,
-        -464
+        13424,
+        -360
       ],
-      "id": "3a4eca5d-23aa-4b0a-8c7e-17c1d21a7629",
+      "id": "5b06c617-2329-4e39-9413-16557235c577",
       "name": "Decider"
     },
     {
@@ -203,10 +203,10 @@
       "type": "n8n-nodes-base.aggregate",
       "typeVersion": 1,
       "position": [
-        7680,
-        -432
+        16464,
+        -336
       ],
-      "id": "ec8b672f-4194-41f5-9e89-1727a43e5c24",
+      "id": "6a89e8c9-5169-489b-8883-05a0c34de8dd",
       "name": "Linked Tasks"
     },
     {
@@ -217,10 +217,10 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        4784,
-        -240
+        13560,
+        -136
       ],
-      "id": "40d58eaa-9304-4080-9d2d-d31e695ad773",
+      "id": "4b650085-87ac-4ed7-83a9-042564d78cb7",
       "name": "Structured Output Parser"
     },
     {
@@ -235,10 +235,10 @@
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
       "position": [
-        10656,
-        -624
+        19408,
+        -528
       ],
-      "id": "bb59c9a5-4811-4c13-92ed-2a8c865a9c42",
+      "id": "6a57a61a-c8d4-49d2-8c64-357c1da8a9a0",
       "name": "Create a comment",
       "credentials": {
         "clickUpOAuth2Api": {
@@ -276,10 +276,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        5216,
-        -464
+        14000,
+        -360
       ],
-      "id": "ace89ba9-4fac-4690-bc86-82f82e6ea26e",
+      "id": "3f7c349e-6ebf-4160-ad88-6c8ac8181b12",
       "name": "If HITL?"
     },
     {
@@ -307,10 +307,10 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        5440,
-        -608
+        14224,
+        -504
       ],
-      "id": "ea56f122-30bc-42ee-8a1c-a811646c509a",
+      "id": "e2a390b3-3e0d-40a6-83ad-ed3ef697d33f",
       "name": "Send a message",
       "webhookId": "fc55568e-4ab6-45d2-a42c-9701e64aa104",
       "credentials": {
@@ -325,10 +325,10 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        6560,
-        -432
+        15344,
+        -336
       ],
-      "id": "6a7221b5-f569-4b7b-9880-f10f3f42240b",
+      "id": "104ea50d-a658-4594-b7c7-17b63885ba8d",
       "name": "Draft Context"
     },
     {
@@ -343,10 +343,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
       "position": [
-        8128,
-        -432
+        16912,
+        -336
       ],
-      "id": "65b3052b-160c-4e87-9930-bcf8d79caa98",
+      "id": "0c0a9e30-5ae2-4905-b2c2-9c787c34c614",
       "name": "Follow Email Draft Agent"
     },
     {
@@ -359,10 +359,10 @@
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
       "position": [
-        7904,
-        -432
+        16688,
+        -336
       ],
-      "id": "f774f52f-ad64-43ef-992c-246e4f32d55d",
+      "id": "cb96c52d-a422-417a-85e6-225a292cc511",
       "name": "Get Template",
       "credentials": {
         "clickUpOAuth2Api": {
@@ -388,10 +388,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        7008,
-        -432
+        15792,
+        -336
       ],
-      "id": "3f83914a-7597-4aa3-8468-01148c5df79e",
+      "id": "d4384756-4b68-46c6-8b36-55e0cbdbb6f4",
       "name": "Linked Task Ids"
     },
     {
@@ -402,10 +402,10 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        8304,
-        -208
+        17048,
+        -112
       ],
-      "id": "43d77479-4a20-4951-b782-835be47657fd",
+      "id": "86929c3d-e1f1-4b6e-b4f0-763213940301",
       "name": "Email Draft Structure"
     },
     {
@@ -424,10 +424,10 @@
       "type": "n8n-nodes-base.markdown",
       "typeVersion": 1,
       "position": [
-        9984,
-        -432
+        18736,
+        -336
       ],
-      "id": "dbcea5cd-6c83-48ec-8c7d-167a3f36ff8c",
+      "id": "e39d0795-c05f-4217-92c1-50d63ad2c4b2",
       "name": "Markdown"
     },
     {
@@ -444,20 +444,20 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        5888,
-        -704
+        14672,
+        -600
       ],
-      "id": "5605a65d-f86d-491c-9608-83133a38b19f",
+      "id": "056aceb1-07da-428a-b080-599c746e9adb",
       "name": "Remove form",
       "webhookId": "fc55568e-4ab6-45d2-a42c-9701e64aa104",
+      "alwaysOutputData": true,
       "credentials": {
         "slackApi": {
           "id": "DvovCyTPlCPUoL2k",
           "name": "Abel N8N Token"
         }
       },
-      "onError": "continueRegularOutput",
-      "alwaysOutputData": true
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -474,10 +474,10 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        10656,
-        -48
+        19408,
+        48
       ],
-      "id": "113cd8a0-69ce-467c-990c-34fb442bf4db",
+      "id": "8301e678-2cf7-499c-ae34-e532de2f8d36",
       "name": "Add Inbox Icon",
       "webhookId": "fc55568e-4ab6-45d2-a42c-9701e64aa104",
       "credentials": {
@@ -496,10 +496,10 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        6112,
-        -608
+        14896,
+        -504
       ],
-      "id": "43b156e9-bdd4-4651-91d4-af1eec4e1b79",
+      "id": "fafd5ed0-d2f2-4c7d-88a7-b9574a435dce",
       "name": "Merge1",
       "alwaysOutputData": true
     },
@@ -517,10 +517,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        10208,
-        -432
+        18960,
+        -336
       ],
-      "id": "8b596ab5-6299-4283-83b4-cbcc5350509c",
+      "id": "8a19f56e-ea9e-42e3-a68e-1e509725c9ab",
       "name": "Draft in Missive",
       "credentials": {
         "httpBearerAuth": {
@@ -559,10 +559,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        9536,
-        -432
+        18288,
+        -336
       ],
-      "id": "6f85a703-cdd3-402e-8d30-29c263b51919",
+      "id": "c2bc4d1e-99d4-48aa-b84e-dab4d0703652",
       "name": "Split Internal & External Recipients"
     },
     {
@@ -595,10 +595,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        9760,
-        -432
+        18512,
+        -336
       ],
-      "id": "1a03f4c3-9bfe-4e04-ac2f-71e2fbd47c7f",
+      "id": "4379bc28-fb4e-4745-b0aa-ed7764051806",
       "name": "Set Missive Recipients"
     },
     {
@@ -618,10 +618,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        10432,
-        -336
+        19184,
+        -240
       ],
-      "id": "d97b8387-198e-4eef-82a0-b16458ff7236",
+      "id": "63403811-9244-42b2-81bb-faab16cd9824",
       "name": "Missive Confirmation"
     },
     {
@@ -838,10 +838,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        10432,
-        -816
+        19184,
+        -720
       ],
-      "id": "8f313da1-d8a9-4cb6-82a8-e6b71a5ac6f1",
+      "id": "30f62508-c520-4563-a628-00851318a335",
       "name": "Save Followup Draft Id"
     },
     {
@@ -862,10 +862,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        6336,
-        -224
+        15120,
+        -120
       ],
-      "id": "3042690c-890e-4044-b738-1fbe9390d3dc",
+      "id": "a0d1f068-06ec-41b3-98f1-f35c5c561705",
       "name": "Edit Fields1"
     },
     {
@@ -905,10 +905,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        4192,
-        -800
+        12976,
+        -696
       ],
-      "id": "4a2b94b6-ec0b-47d0-9037-7672c2daa0df",
+      "id": "9409a190-178e-4eeb-89d7-6b4e77b7d7be",
       "name": "If"
     },
     {
@@ -918,10 +918,10 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        4416,
-        -720
+        13200,
+        -624
       ],
-      "id": "eb1cac91-072d-4604-8f7f-72b49b06d090",
+      "id": "0d13582b-5d3a-4bb1-b886-129f42ed9b68",
       "name": "Wait1",
       "webhookId": "83ae7805-751b-48d7-bae3-60e8ca65800d"
     },
@@ -953,10 +953,10 @@
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2.2,
       "position": [
-        4992,
-        -464
+        13776,
+        -360
       ],
-      "id": "e693b808-9ebe-42bb-8a34-598e773b1cc5",
+      "id": "23ad1351-1d76-4888-af36-d4ecfad65cfd",
       "name": "Is Follow Up Needed?"
     },
     {
@@ -996,10 +996,10 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        3296,
-        -864
+        12080,
+        -768
       ],
-      "id": "1a6e22f4-9a2a-4a46-b1a3-ccf6cc6bf799",
+      "id": "e7340987-39cc-433c-b762-9de2c80cf84b",
       "name": "Find Calendar Events Across Calendars",
       "alwaysOutputData": true
     },
@@ -1020,10 +1020,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        3520,
-        -800
+        12304,
+        -696
       ],
-      "id": "e6a73132-a59d-4062-a6b4-130a0adf4048",
+      "id": "4565042a-6ff9-414f-87ba-896279b01068",
       "name": "Set Organized By Alex",
       "alwaysOutputData": true
     },
@@ -1055,10 +1055,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        3072,
-        -800
+        11856,
+        -696
       ],
-      "id": "6f369b57-a407-4895-a48c-4d70c72f8289",
+      "id": "7b00de59-6321-4747-be3a-e9efea7690a6",
       "name": "HasCalendarEventUid"
     },
     {
@@ -1070,10 +1070,10 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        3744,
-        -720
+        12528,
+        -624
       ],
-      "id": "4256c7b9-7ad4-45e2-868c-fabc91607a86",
+      "id": "ea19cc03-f668-4150-a2ba-6ea3111854e8",
       "name": "Meeting Note"
     },
     {
@@ -1099,10 +1099,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        2848,
-        -720
+        11632,
+        -624
       ],
-      "id": "4bd921fa-7829-4b24-81cc-7362d01b27e0",
+      "id": "30941b9e-cdcf-4713-be63-42556a414ba9",
       "name": "Find Meeting Note"
     },
     {
@@ -1117,10 +1117,10 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        5664,
-        -608
+        14448,
+        -504
       ],
-      "id": "52c5ff2f-d227-41cb-b7e8-f813bd5d2767",
+      "id": "090c899d-e97f-4f67-82f3-e8779749aad0",
       "name": "Wait For Response",
       "webhookId": "b7c37f30-3015-4c64-88b8-217c24485b9c",
       "credentials": {
@@ -1157,10 +1157,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        6784,
-        -432
+        15568,
+        -336
       ],
-      "id": "ee7bd969-1e20-44ae-be77-6f12d4be5664",
+      "id": "7f72628e-955a-46d3-b63d-d917e7fee713",
       "name": "Should Create Draft"
     },
     {
@@ -1172,10 +1172,10 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        6336,
-        -528
+        15120,
+        -432
       ],
-      "id": "3847dc5c-b296-42a6-bace-088cc7d61b8b",
+      "id": "f7b47c3b-bca0-486b-a1f9-da05bc8b7656",
       "name": "Merge"
     },
     {
@@ -1213,10 +1213,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        5888,
-        -512
+        14672,
+        -408
       ],
-      "id": "e206f4d0-cecf-4433-bea9-e6cf334fc76b",
+      "id": "fb66de3e-dba3-4da8-9772-a0cf7d77f7d3",
       "name": "Capture HITL Response",
       "alwaysOutputData": true
     },
@@ -1247,10 +1247,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        10656,
-        -816
+        19408,
+        -720
       ],
-      "id": "8e1c394c-6a26-4fe5-bbee-3c674a1e3b63",
+      "id": "e2a9df30-9e1f-46c3-bf30-194479e71fff",
       "name": "Slack Msgs",
       "credentials": {
         "slackApi": {
@@ -1267,10 +1267,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        10880,
-        -816
+        19632,
+        -720
       ],
-      "id": "dac53761-5b1e-4d7c-94ef-2466f0f4faa2",
+      "id": "2b12daac-ed78-4264-bfda-4326a5bdc193",
       "name": "Add Missive Button"
     },
     {
@@ -1293,10 +1293,10 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        11104,
-        -816
+        19856,
+        -720
       ],
-      "id": "8bd15c0d-60dc-4516-835a-90f53902fd34",
+      "id": "6eee6293-114a-4560-9a1f-04e95f802cc3",
       "name": "Update a message",
       "webhookId": "c36706a4-a105-489a-bd52-b5c2c34fe6a9",
       "credentials": {
@@ -1320,10 +1320,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        10656,
-        -240
+        19408,
+        -144
       ],
-      "id": "11d9b8aa-137c-4ada-b39d-8a2bcaa369f2",
+      "id": "983a23ad-15c3-4c1a-944f-6b4a06384008",
       "name": "Missive Notification",
       "credentials": {
         "httpBearerAuth": {
@@ -1342,10 +1342,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        2624,
-        176
+        11408,
+        272
       ],
-      "id": "ddb84a87-bc01-4550-97fb-ab004c0fdf14",
+      "id": "ed603657-2c4a-43fa-824c-5b6788ae63d8",
       "name": "Missive Labels",
       "credentials": {
         "httpBearerAuth": {
@@ -1371,10 +1371,10 @@
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
       "position": [
-        10656,
-        -432
+        19408,
+        -336
       ],
-      "id": "7b22e22a-0311-465e-b86d-d93b1910989e",
+      "id": "634c0930-198f-4145-9944-a73091f34a44",
       "name": "Create a reminder task",
       "credentials": {
         "clickUpOAuth2Api": {
@@ -1388,13 +1388,13 @@
         "mode": "runOnceForEachItem",
         "jsCode": "// Draft Check: applies the email template's HARD RULES and Alex's scrub list to\n// the drafted email. Violations send the draft back for one redraft; anything\n// still failing, or needing Alex's input, is flagged in Abel's Missive note.\nconst ATTEMPT = 1;\nconst NUMBERS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };\n\n// Alex's scrub list (skills/alex-profile/references/ai-scrubbing.md in alex-os).\nconst BANNED = [\n  'really', 'just', 'very', 'actually', 'basically', 'literally', 'thing', 'things',\n  \"i'd argue\", 'sort of', 'kind of', 'amazing', 'huge', 'excited to', 'thrilled',\n  'i hope this finds you', 'hope you are well', 'wanted to reach out', 'just following up',\n  'circle back', 'touch base', 'great connecting', 'it was great', 'looking forward to hearing',\n  'feels like', 'i really like', 'delighted', 'synergy', 'leverage', 'sounding board',\n];\n\nfunction body(content) {\n  const lines = String(content || '').trim().split(/\\r?\\n/);\n  // Drop the greeting (\"Brian,\") and the sign-off (\"Alex\", \"Best,\").\n  while (lines.length && /^\\s*$/.test(lines[0])) lines.shift();\n  if (lines.length && /^[^.!?]{1,40},\\s*$/.test(lines[0])) lines.shift();\n  while (lines.length && (/^\\s*$/.test(lines[lines.length - 1]) || /^\\s*(alex|best,?|thanks,?|alex brownstein)\\s*$/i.test(lines[lines.length - 1]))) lines.pop();\n  return lines.join('\\n');\n}\n\nfunction sentenceLimit(template) {\n  const m = String(template || '').match(/\\b(\\w+)\\s+to\\s+(\\w+)\\s+sentences\\b/i);\n  if (!m) return null;\n  const max = NUMBERS[m[2].toLowerCase()] || Number(m[2]);\n  return Number.isFinite(max) ? max : null;\n}\n\nfunction templateBanned(template) {\n  const line = String(template || '').split(/\\r?\\n/).find(l => /banned:/i.test(l)) || '';\n  return [...line.matchAll(/[\"“]([^\"”]+)[\"”]/g)].map(m => m[1].replace(/[.,]$/, '').toLowerCase());\n}\n\nconst template = $('Get Template').item.json.markdown_description || '';\nconst content = String($json.output?.content || '');\nconst text = body(content);\nconst lower = text.toLowerCase();\nconst violations = [];\nconst needs_input = [];\n\nconst max = sentenceLimit(template);\nconst sentences = text.split(/(?<=[.!?])\\s+/).map(s => s.trim()).filter(s => /[a-z]/i.test(s));\nconst words = text.split(/\\s+/).filter(Boolean).length;\n// Short closers (\"No ask here.\", \"Glad we connected.\") don't count toward the limit.\nconst counted = sentences.filter(s => s.split(/\\s+/).length > 4).length;\nif (max && counted > max) violations.push(`${counted} sentences; the template allows ${max}`);\nif (max && words > max * 18) violations.push(`${words} words; keep it under ${max * 18}`);\nconst long = sentences.filter(s => s.split(/\\s+/).length > 30).length;\nif (long) violations.push(`${long} sentence(s) over 30 words`);\nif (/[—–]/.test(text)) violations.push('uses a dash (— or –)');\nif (/;/.test(text)) violations.push('uses a semicolon');\nfor (const phrase of [...new Set([...BANNED, ...templateBanned(template)])]) {\n  const re = new RegExp(`(^|[^a-z'])${phrase.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}([^a-z]|$)`, 'i');\n  if (re.test(lower)) violations.push(`banned phrase \"${phrase}\"`);\n}\nif (/\\[[^\\]]+\\]/.test(text)) needs_input.push('has a [placeholder] for Alex to fill');\nif (!text.trim()) needs_input.push('no draft body');\n\nreturn { json: { ...$json, check: { attempt: ATTEMPT, sentences: sentences.length, words, violations, needs_input } } };\n"
       },
-      "id": "ea759cf9-a272-47e9-b53b-3c53e83b82db",
+      "id": "a44076c3-d364-47df-a44a-b3df61efa82e",
       "name": "Draft Check",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        8304,
-        -432
+        17264,
+        -336
       ]
     },
     {
@@ -1422,13 +1422,13 @@
         },
         "options": {}
       },
-      "id": "f8ff097a-eaa9-47d4-96c6-8a02b83e5b3d",
+      "id": "84c5f1ab-179a-4910-8a45-b9fb472f1a40",
       "name": "Redraft?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        8480,
-        -432
+        17488,
+        -336
       ]
     },
     {
@@ -1443,10 +1443,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
       "position": [
-        8656,
-        -656
+        17712,
+        -460
       ],
-      "id": "248728a9-c92c-4488-b690-b104800de5ee",
+      "id": "18e55c46-0459-4cb3-9277-9632670ebc6c",
       "name": "Redraft Agent"
     },
     {
@@ -1465,10 +1465,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        8608,
-        -432
+        17720,
+        -236
       ],
-      "id": "8c943407-6ba9-4ff1-8be1-858cf18aa14b",
+      "id": "3cc50583-da50-4c01-a4db-1cbb372a73eb",
       "name": "OpenAI Chat Model Redraft",
       "credentials": {
         "openAiApi": {
@@ -1485,10 +1485,10 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        8832,
-        -432
+        17848,
+        -236
       ],
-      "id": "a39a494b-5fd3-4da9-be08-90017ac02965",
+      "id": "3a4c60d5-e62c-429a-9fdc-a2f8a4266676",
       "name": "Email Draft Structure Redraft"
     },
     {
@@ -1496,13 +1496,13 @@
         "mode": "runOnceForEachItem",
         "jsCode": "// Draft Check: applies the email template's HARD RULES and Alex's scrub list to\n// the drafted email. Violations send the draft back for one redraft; anything\n// still failing, or needing Alex's input, is flagged in Abel's Missive note.\nconst ATTEMPT = 2;\nconst NUMBERS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };\n\n// Alex's scrub list (skills/alex-profile/references/ai-scrubbing.md in alex-os).\nconst BANNED = [\n  'really', 'just', 'very', 'actually', 'basically', 'literally', 'thing', 'things',\n  \"i'd argue\", 'sort of', 'kind of', 'amazing', 'huge', 'excited to', 'thrilled',\n  'i hope this finds you', 'hope you are well', 'wanted to reach out', 'just following up',\n  'circle back', 'touch base', 'great connecting', 'it was great', 'looking forward to hearing',\n  'feels like', 'i really like', 'delighted', 'synergy', 'leverage', 'sounding board',\n];\n\nfunction body(content) {\n  const lines = String(content || '').trim().split(/\\r?\\n/);\n  // Drop the greeting (\"Brian,\") and the sign-off (\"Alex\", \"Best,\").\n  while (lines.length && /^\\s*$/.test(lines[0])) lines.shift();\n  if (lines.length && /^[^.!?]{1,40},\\s*$/.test(lines[0])) lines.shift();\n  while (lines.length && (/^\\s*$/.test(lines[lines.length - 1]) || /^\\s*(alex|best,?|thanks,?|alex brownstein)\\s*$/i.test(lines[lines.length - 1]))) lines.pop();\n  return lines.join('\\n');\n}\n\nfunction sentenceLimit(template) {\n  const m = String(template || '').match(/\\b(\\w+)\\s+to\\s+(\\w+)\\s+sentences\\b/i);\n  if (!m) return null;\n  const max = NUMBERS[m[2].toLowerCase()] || Number(m[2]);\n  return Number.isFinite(max) ? max : null;\n}\n\nfunction templateBanned(template) {\n  const line = String(template || '').split(/\\r?\\n/).find(l => /banned:/i.test(l)) || '';\n  return [...line.matchAll(/[\"“]([^\"”]+)[\"”]/g)].map(m => m[1].replace(/[.,]$/, '').toLowerCase());\n}\n\nconst template = $('Get Template').item.json.markdown_description || '';\nconst content = String($json.output?.content || '');\nconst text = body(content);\nconst lower = text.toLowerCase();\nconst violations = [];\nconst needs_input = [];\n\nconst max = sentenceLimit(template);\nconst sentences = text.split(/(?<=[.!?])\\s+/).map(s => s.trim()).filter(s => /[a-z]/i.test(s));\nconst words = text.split(/\\s+/).filter(Boolean).length;\n// Short closers (\"No ask here.\", \"Glad we connected.\") don't count toward the limit.\nconst counted = sentences.filter(s => s.split(/\\s+/).length > 4).length;\nif (max && counted > max) violations.push(`${counted} sentences; the template allows ${max}`);\nif (max && words > max * 18) violations.push(`${words} words; keep it under ${max * 18}`);\nconst long = sentences.filter(s => s.split(/\\s+/).length > 30).length;\nif (long) violations.push(`${long} sentence(s) over 30 words`);\nif (/[—–]/.test(text)) violations.push('uses a dash (— or –)');\nif (/;/.test(text)) violations.push('uses a semicolon');\nfor (const phrase of [...new Set([...BANNED, ...templateBanned(template)])]) {\n  const re = new RegExp(`(^|[^a-z'])${phrase.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}([^a-z]|$)`, 'i');\n  if (re.test(lower)) violations.push(`banned phrase \"${phrase}\"`);\n}\nif (/\\[[^\\]]+\\]/.test(text)) needs_input.push('has a [placeholder] for Alex to fill');\nif (!text.trim()) needs_input.push('no draft body');\n\nreturn { json: { ...$json, check: { attempt: ATTEMPT, sentences: sentences.length, words, violations, needs_input } } };\n"
       },
-      "id": "389c8c32-2629-49c1-be24-8002f85269af",
+      "id": "add10c91-7421-41c1-baac-6daa0e0f0e3a",
       "name": "Draft Check 2",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        9008,
-        -656
+        18064,
+        -460
       ]
     }
   ],
@@ -1739,11 +1739,6 @@
         ]
       ]
     },
-    "Add Inbox Icon": {
-      "main": [
-        []
-      ]
-    },
     "Draft in Missive": {
       "main": [
         [
@@ -1950,8 +1945,7 @@
             "type": "main",
             "index": 0
           }
-        ],
-        []
+        ]
       ]
     },
     "Merge": {
@@ -1985,11 +1979,6 @@
             "index": 0
           }
         ]
-      ]
-    },
-    "Create a comment": {
-      "main": [
-        []
       ]
     },
     "Slack Msgs": {
@@ -2098,7 +2087,7 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "versionId": "0fd51eb4-921f-42f8-bf69-1f1ea532985c",
+  "versionId": "009e5420-2d13-47c0-a1e0-1204b290eb6b",
   "activeVersionId": null,
   "triggerCount": 0,
   "tags": [
