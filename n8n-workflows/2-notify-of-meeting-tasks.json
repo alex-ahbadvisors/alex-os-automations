@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-03-10T00:21:07.882Z",
+  "updatedAt": "2026-11-02T20:41:29.681Z",
   "createdAt": "2025-10-24T15:25:22.886Z",
   "id": "cz9cNXAGAdJqGlS3",
   "name": "[2] Notify of Meeting Tasks",
@@ -16,10 +16,10 @@
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
       "position": [
-        3712,
-        -144
+        5776,
+        180
       ],
-      "id": "c9b9f6d4-fa4f-43f4-b2ac-b8b7951a6dfd",
+      "id": "19ef33e8-19cc-47aa-9291-7d2828b83e45",
       "name": "Tasks Prompt",
       "executeOnce": true,
       "retryOnFail": true,
@@ -42,13 +42,13 @@
           ]
         }
       },
-      "id": "921488e8-34ca-47fb-8cea-359a10f8dedd",
+      "id": "729f4a84-345c-46e1-b156-c22234fd6454",
       "typeVersion": 1.1,
       "name": "Start",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "position": [
-        3040,
-        -480
+        5104,
+        -160
       ]
     },
     {
@@ -73,10 +73,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        3264,
-        -480
+        5328,
+        -160
       ],
-      "id": "3b92e783-b2eb-43fb-9fdf-cde2daec7883",
+      "id": "4f77ef46-f20d-47d7-9727-9ab2f503caa6",
       "name": "Meeting Note"
     },
     {
@@ -95,10 +95,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        3872,
-        80
+        6072,
+        404
       ],
-      "id": "33b4ad6e-ec05-462f-baed-437abf480fd6",
+      "id": "f597940e-97d0-4c02-a454-44908b4b4a4e",
       "name": "OpenAI Chat Model",
       "credentials": {
         "openAiApi": {
@@ -118,10 +118,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
       "position": [
-        3936,
-        -144
+        6000,
+        180
       ],
-      "id": "49be9809-8f76-4b09-90b1-5dcc1242ffc1",
+      "id": "8db949c8-df91-464b-bfbb-d94292dc8e36",
       "name": "Task Extractor Agent"
     },
     {
@@ -133,10 +133,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        4288,
-        -144
+        6352,
+        180
       ],
-      "id": "3be07c41-e225-449c-8916-b2dd0d5f7e3b",
+      "id": "d4d40d42-6811-4f4f-b725-83199b8be9dd",
       "name": "Tasks",
       "alwaysOutputData": true
     },
@@ -294,10 +294,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        4512,
-        -528
+        6576,
+        -208
       ],
-      "id": "750c85a7-3d0e-416d-aad7-df908219a387",
+      "id": "66595f86-ecdc-44c9-b094-b6d42ed8099a",
       "name": "Update Meeting Note with Slack Thread"
     },
     {
@@ -324,10 +324,10 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        4736,
-        -192
+        6800,
+        132
       ],
-      "id": "c1351c24-8294-4453-9606-f29050493f3e",
+      "id": "e69aff91-b135-40d4-876a-be0a45f976c2",
       "name": "Review message",
       "webhookId": "82903145-c80e-4173-a754-68a1a0de7b33",
       "credentials": {
@@ -355,10 +355,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        3712,
-        -384
+        5776,
+        -64
       ],
-      "id": "fbfc80b8-a8e7-4632-ab01-c4605ab2784f",
+      "id": "6587fca8-2c14-41fd-8ca6-abce68558557",
       "name": "with Slack Buttons",
       "alwaysOutputData": true
     },
@@ -391,10 +391,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        3488,
-        -384
+        5552,
+        -64
       ],
-      "id": "839282c2-194f-411d-b5bd-4fe32287deaa",
+      "id": "35ecaaea-1ac6-4e5c-a13a-85e7f826ba34",
       "name": "Prep Buttons"
     },
     {
@@ -420,10 +420,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        3488,
-        -576
+        5552,
+        -256
       ],
-      "id": "5aa9b900-6e28-463f-8624-be537ff96ab9",
+      "id": "d67d7b77-58f7-4f0e-a49b-99dc7775b4bb",
       "name": "Available Lists",
       "executeOnce": true,
       "alwaysOutputData": false
@@ -437,10 +437,10 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        4000,
-        -480
+        6064,
+        -160
       ],
-      "id": "40f70788-c899-47f4-820d-fc3fc7fd9839",
+      "id": "5467894d-0d13-45ba-9b37-691a64f49d75",
       "name": "Merge"
     },
     {
@@ -453,10 +453,10 @@
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
       "position": [
-        3488,
-        -768
+        5552,
+        -448
       ],
-      "id": "e4b3a8fb-f177-4024-a8a7-6220a0259d31",
+      "id": "5256d486-1e66-4069-ba58-eaf7f5bc424d",
       "name": "Get a task",
       "credentials": {
         "clickUpOAuth2Api": {
@@ -492,10 +492,10 @@
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2.2,
       "position": [
-        3712,
-        -768
+        5776,
+        -448
       ],
-      "id": "1ce86990-cfa6-4911-bc80-da5528ab9a19",
+      "id": "9caa4c7f-b221-43be-8324-fd3ca4d3c65e",
       "name": "Filter"
     },
     {
@@ -511,10 +511,10 @@
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
       "position": [
-        4000,
-        -768
+        6064,
+        -448
       ],
-      "id": "038d807b-1f8a-4e49-9d6d-387fca610091",
+      "id": "f1cb2f3f-bfdd-4c0a-bbdb-76d0fd64fc61",
       "name": "Add transcript url to task",
       "credentials": {
         "clickUpOAuth2Api": {
@@ -542,19 +542,19 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        4288,
-        -480
+        6352,
+        -160
       ],
-      "id": "8d5d7b75-2b6f-407a-965a-5de4d118280e",
+      "id": "ec80d26f-f5ec-49a4-88cb-7f6dcbc9023a",
       "name": "Send a message",
       "webhookId": "82903145-c80e-4173-a754-68a1a0de7b33",
+      "alwaysOutputData": true,
       "credentials": {
         "slackApi": {
           "id": "DvovCyTPlCPUoL2k",
           "name": "Abel N8N Token"
         }
-      },
-      "alwaysOutputData": true
+      }
     },
     {
       "parameters": {
@@ -563,10 +563,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3712,
-        -576
+        5776,
+        -256
       ],
-      "id": "01d1f371-6378-44a7-82bb-5396aa1d9b41",
+      "id": "304c8ae4-b901-4170-93f0-f7b85ac0627a",
       "name": "List Accessory",
       "alwaysOutputData": true
     },
@@ -581,10 +581,10 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        4512,
-        -192
+        6576,
+        132
       ],
-      "id": "a2292890-c8ed-40e7-aa6e-da6e63552d65",
+      "id": "f754e4f2-a6b5-47f9-9e04-5b4bfd324316",
       "name": "Merge1"
     }
   ],
@@ -670,11 +670,6 @@
         ]
       ]
     },
-    "Update Meeting Note with Slack Thread": {
-      "main": [
-        []
-      ]
-    },
     "Prep Buttons": {
       "main": [
         [
@@ -706,11 +701,6 @@
             "index": 0
           }
         ]
-      ]
-    },
-    "Review message": {
-      "main": [
-        []
       ]
     },
     "Merge": {
@@ -792,7 +782,7 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "versionId": "bb6da30c-d5df-4ea6-b2f9-fb708d02a706",
+  "versionId": "f1a73727-2c6e-473b-bfcf-ecc30a8fc816",
   "activeVersionId": null,
   "triggerCount": 0,
   "tags": [
