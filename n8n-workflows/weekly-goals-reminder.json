@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-10-25T17:12:14.796Z",
+  "updatedAt": "2026-11-02T11:44:19.587Z",
   "createdAt": "2026-03-09T21:48:19.398Z",
   "id": "566ks5Nlg2F5rvzO",
   "name": "Weekly Goals Reminder",
-  "active": false,
+  "active": true,
   "isArchived": false,
   "nodes": [
     {
@@ -490,7 +490,7 @@
   },
   "meta": null,
   "versionId": "44aa10e9-4bc5-4cf6-bb13-20d764a1564e",
-  "activeVersionId": null,
+  "activeVersionId": "44aa10e9-4bc5-4cf6-bb13-20d764a1564e",
   "triggerCount": 1,
   "tags": [
     {
