@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-03-10T00:18:21.843Z",
+  "updatedAt": "2026-11-02T20:39:18.840Z",
   "createdAt": "2025-11-14T04:51:39.045Z",
   "id": "4vgkEkRpSIjG6BEi",
   "name": "[4] Create Tasks from Slack",
@@ -22,10 +22,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        2384,
-        448
+        5464,
+        456
       ],
-      "id": "5a33501e-2c8e-4278-8276-e1170694a91f",
+      "id": "e8e00dfc-0a85-44a3-b82c-ea8a27cb6f6b",
       "name": "OpenAI Chat Model",
       "credentials": {
         "openAiApi": {
@@ -64,10 +64,10 @@
       "type": "n8n-nodes-base.dataTableTool",
       "typeVersion": 1,
       "position": [
-        2512,
-        448
+        5592,
+        456
       ],
-      "id": "1abf71e3-e787-49c2-9855-2a16e4cf7d4a",
+      "id": "debb4b3d-3518-4731-b856-1bafcdafc60e",
       "name": "Find_ClickUp_User"
     },
     {
@@ -90,10 +90,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        4192,
-        336
+        7280,
+        348
       ],
-      "id": "b0b3ae3e-52bf-464f-8b46-d6eb5f042b21",
+      "id": "ece8aff0-13ed-4acb-ba42-331bdd183ff9",
       "name": "Link to meeting task",
       "credentials": {
         "clickUpOAuth2Api": {
@@ -118,10 +118,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        3024,
-        240
+        6104,
+        256
       ],
-      "id": "0b1d2f79-cf8b-42b8-bab5-e9709432938b",
+      "id": "770e5d72-ca56-4075-b84f-ab69f5a73ee7",
       "name": "OpenAI Chat Model1",
       "credentials": {
         "openAiApi": {
@@ -138,10 +138,10 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        4416,
-        240
+        7504,
+        252
       ],
-      "id": "ebafb5de-0b19-43c8-811e-dfeda7713ba0",
+      "id": "6aa41a9b-9ac6-4ee2-bda3-9cb782a8b711",
       "name": "Finish Link"
     },
     {
@@ -158,10 +158,10 @@
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
       "position": [
-        4192,
-        144
+        7280,
+        156
       ],
-      "id": "948eda84-c974-4b8c-83d8-69cf78fa8ffc",
+      "id": "3163372c-8ffc-4db2-a66e-82aa353e600b",
       "name": "Create a comment",
       "credentials": {
         "clickUpOAuth2Api": {
@@ -192,10 +192,10 @@
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
       "position": [
-        3936,
-        144
+        7056,
+        156
       ],
-      "id": "64c22f85-ea77-4ede-af18-c381469ccaf8",
+      "id": "cf742517-7218-4834-bd43-3518036948f0",
       "name": "Create Task",
       "credentials": {
         "clickUpOAuth2Api": {
@@ -246,10 +246,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        3744,
-        144
+        6832,
+        156
       ],
-      "id": "2bf82a6f-8822-47a0-bae8-13e17e8d0a46",
+      "id": "372e11ff-203c-4485-846d-269b403a4846",
       "name": "Set Task Defaults"
     },
     {
@@ -262,10 +262,10 @@
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
       "position": [
-        800,
-        784
+        3888,
+        796
       ],
-      "id": "e0bdac10-c4f6-48e5-8494-6484b7aaf846",
+      "id": "1d6cc035-733a-4617-9f87-c075fd2b57d0",
       "name": "Tasks Prompt",
       "executeOnce": true,
       "retryOnFail": true,
@@ -284,10 +284,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2144,
-        224
+        5232,
+        232
       ],
-      "id": "8e195c19-c407-4ef9-ba10-615fee973fae",
+      "id": "4ac16bbc-827b-44a1-884f-8a7b8f68fc83",
       "name": "Flatten messages"
     },
     {
@@ -301,10 +301,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
       "position": [
-        2368,
-        224
+        5456,
+        232
       ],
-      "id": "3eef1391-14e6-4c88-9e74-2d9dfa642676",
+      "id": "e410b39c-de86-4b1b-bfeb-620b6e0c7d96",
       "name": "Task Generator Agent",
       "retryOnFail": true,
       "maxTries": 2,
@@ -319,10 +319,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        3296,
-        16
+        6384,
+        32
       ],
-      "id": "e54a751b-7020-4ebf-ab5f-c7df0b38e9b5",
+      "id": "c4448859-d8d6-4e34-af67-0fa747d17d2d",
       "name": "Tasks"
     },
     {
@@ -360,10 +360,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1696,
-        176
+        4784,
+        180
       ],
-      "id": "ca7cdf17-0e10-4095-9d53-d7f3e9781c41",
+      "id": "31dc540d-be0d-4a39-bba0-2f2174dcfe0d",
       "name": "Slack Msgs",
       "credentials": {
         "slackApi": {
@@ -383,10 +383,10 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        3520,
-        16
+        6608,
+        32
       ],
-      "id": "aef87c7e-0f6f-45ca-9d92-6c7951e16048",
+      "id": "11f40ebf-c44b-4886-8b72-28c29be0400c",
       "name": "Task"
     },
     {
@@ -400,10 +400,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
       "position": [
-        2944,
-        16
+        6032,
+        32
       ],
-      "id": "28a05dbb-2ede-4d5e-b494-09570626385c",
+      "id": "805633e7-5bee-49a6-98f7-44d2a0dfb0d3",
       "name": "Task Assigner Agent",
       "retryOnFail": true,
       "maxTries": 2,
@@ -419,10 +419,10 @@
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
       "position": [
-        4864,
-        -32
+        7952,
+        -12
       ],
-      "id": "81387dbd-5288-480c-8214-4601d127240c",
+      "id": "6796d2fb-12c4-471d-a63a-cc5e172ba634",
       "name": "Get Parent Task",
       "credentials": {
         "clickUpOAuth2Api": {
@@ -444,10 +444,10 @@
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
       "position": [
-        5536,
-        -32
+        8624,
+        -12
       ],
-      "id": "6e5d1008-d154-44cf-9cef-c9418264b955",
+      "id": "3c9ffc89-26d8-4707-9ee9-8a63d72f2b59",
       "name": "Update Parent Task",
       "credentials": {
         "clickUpOAuth2Api": {
@@ -479,10 +479,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        5312,
-        -32
+        8400,
+        -12
       ],
-      "id": "9ad50576-343f-4efc-b223-c532d6d42d05",
+      "id": "f3f67b74-0987-469f-86e0-36a51c4ea287",
       "name": "Parent Task Updates"
     },
     {
@@ -506,10 +506,10 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        5760,
-        -32
+        8848,
+        -12
       ],
-      "id": "c3c95c2c-ffe1-45ed-9279-9c7331e9eee8",
+      "id": "f16c0a86-0ae9-4b73-8938-958a8aafc956",
       "name": "Send Confirmation Msg",
       "webhookId": "f157de3a-962b-44d6-b090-51b97a1c74b4",
       "credentials": {
@@ -526,10 +526,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        5088,
-        -32
+        8176,
+        -12
       ],
-      "id": "a5debac3-b85e-4f65-9848-81df2b632747",
+      "id": "118ea5d9-a6e6-42b7-b43e-8a3b4fbbe50a",
       "name": "Task List in MD"
     },
     {
@@ -546,10 +546,10 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        5984,
-        -32
+        9072,
+        -12
       ],
-      "id": "17a8fafa-f483-496f-8790-7dcaf2cde9ec",
+      "id": "055e5211-0ff0-45a8-8ed3-6a3e82bd9381",
       "name": "Add Checkmark",
       "webhookId": "f157de3a-962b-44d6-b090-51b97a1c74b4",
       "credentials": {
@@ -589,10 +589,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        4192,
-        -48
+        7280,
+        -36
       ],
-      "id": "8279ecd0-8a04-43d1-abbd-0b5134e5e4d2",
+      "id": "209432e3-1dea-44d4-bde9-53e3a6f47cbd",
       "name": "Edit Fields"
     },
     {
@@ -603,10 +603,10 @@
       "type": "n8n-nodes-base.aggregate",
       "typeVersion": 1,
       "position": [
-        4640,
-        -128
+        7728,
+        -108
       ],
-      "id": "0944de68-7d4c-4214-830f-e6ea6cb2f5ea",
+      "id": "30880e03-a05b-4a43-a27e-3313d082c812",
       "name": "Created Tasks"
     },
     {
@@ -618,10 +618,10 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        4416,
-        -128
+        7504,
+        -108
       ],
-      "id": "03c9b7e2-7d20-49b5-9043-9c69dad86d66",
+      "id": "dfba107e-71cc-4094-90a6-6b11ba6342c1",
       "name": "Merge1"
     },
     {
@@ -647,10 +647,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        1920,
-        -80
+        5008,
+        -64
       ],
-      "id": "452fa5f0-8566-4130-bec0-f444cdeec576",
+      "id": "29bb22d5-b9e8-4d8f-b881-20d118c6114c",
       "name": "Task Owners"
     },
     {
@@ -688,10 +688,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2144,
-        -80
+        5232,
+        -64
       ],
-      "id": "feb2e5ef-3e00-4af7-a2e3-43bdb7ec3b84",
+      "id": "78bde3da-80b1-4e1d-9730-f98c4be0a294",
       "name": "Task Owner Description"
     },
     {
@@ -703,10 +703,10 @@
       "type": "n8n-nodes-base.aggregate",
       "typeVersion": 1,
       "position": [
-        2432,
-        -80
+        5520,
+        -64
       ],
-      "id": "dad56696-e28c-4cc1-be9a-a9863184fb36",
+      "id": "be55bb47-a6da-448f-a09c-3a2887486914",
       "name": "All Owners"
     },
     {
@@ -883,10 +883,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        4864,
-        -224
+        7952,
+        -204
       ],
-      "id": "97f4daa7-6f69-4168-957d-ac6737afd85a",
+      "id": "adaa15db-012a-4d1b-a3d8-377824e62292",
       "name": "Update Meeting Note with Timestamp",
       "executeOnce": true
     },
@@ -897,10 +897,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        800,
-        560
+        3888,
+        572
       ],
-      "id": "1c9779c7-d07e-4bd7-baf1-d26edfa59925",
+      "id": "124edcc0-43dc-4538-8e86-c54438fb821c",
       "name": "Task Table in MD"
     },
     {
@@ -926,10 +926,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        1024,
-        -224
+        4112,
+        -204
       ],
-      "id": "1b30a0bb-47ac-44c3-83cf-d01e04553c51",
+      "id": "1edaf84d-a094-42e7-aab0-49a0f19a9e26",
       "name": "Clickup List"
     },
     {
@@ -955,10 +955,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        1248,
-        -32
+        4336,
+        -12
       ],
-      "id": "a606678c-59d2-4bf0-86fa-693bb288cb41",
+      "id": "67601018-8e60-4ffb-8bd3-3b8d7436af83",
       "name": "Meeting Note"
     },
     {
@@ -971,10 +971,10 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        2720,
-        0
+        5808,
+        16
       ],
-      "id": "96c88ff6-36e8-47a4-ae25-61e4e86214b7",
+      "id": "41c04d3a-d0a1-472f-8a97-f8318b84d2d3",
       "name": "Start"
     },
     {
@@ -999,13 +999,13 @@
           ]
         }
       },
-      "id": "4d5305cf-0468-4f00-bc0f-b1a823538637",
+      "id": "118394dd-0de5-4f63-8317-1120ee0f9f76",
       "typeVersion": 1.1,
       "name": "Input",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "position": [
-        800,
-        -32
+        3888,
+        -12
       ]
     },
     {
@@ -1018,10 +1018,10 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        1472,
-        64
+        4560,
+        68
       ],
-      "id": "6a426fa3-d322-4f4a-8bdc-35f2771f49cd",
+      "id": "918821b1-2790-430e-a820-73e2e8faef33",
       "name": "MeetingContext"
     },
     {
@@ -1053,10 +1053,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1248,
-        176
+        4336,
+        180
       ],
-      "id": "687ad17e-d87a-42cb-9dba-c06c05425a2f",
+      "id": "7e94a2eb-c852-477b-9530-41cbe10ef224",
       "name": "Set Data"
     },
     {
@@ -1094,10 +1094,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1248,
-        -224
+        4336,
+        -204
       ],
-      "id": "151a6392-cb62-4710-a2c3-b7bb7a582c64",
+      "id": "d33c9a3a-38c4-4a9b-aa5f-b2730d73a63a",
       "name": "Selected List"
     },
     {
@@ -1140,10 +1140,10 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        5312,
-        -224
+        8400,
+        -204
       ],
-      "id": "937ad3ec-7c99-47c9-9e57-d33147e83718",
+      "id": "1b061d28-28ef-4355-bfc0-57e636edc7da",
       "name": "[5] Create Follow Up Email"
     },
     {
@@ -1181,10 +1181,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2432,
-        -272
+        5520,
+        -256
       ],
-      "id": "fad65292-3927-4ac9-a764-a7f2df35e25d",
+      "id": "70075c59-f760-44e4-8e53-7c44316272ae",
       "name": "Edit Fields1"
     },
     {
@@ -1192,20 +1192,15 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        5088,
-        -224
+        8176,
+        -204
       ],
-      "id": "d3a07eb1-e7e4-46cf-9af8-9a2fcaa6fe48",
+      "id": "3e677797-a7e4-4542-a0f8-fa24f399fa68",
       "name": "Delay for ClickUp",
       "webhookId": "c9493121-b11f-4c68-a43a-c2cadde10d64"
     }
   ],
   "connections": {
-    "Tasks Prompt": {
-      "main": [
-        []
-      ]
-    },
     "OpenAI Chat Model": {
       "ai_languageModel": [
         [
@@ -1629,7 +1624,7 @@
   },
   "staticData": null,
   "meta": null,
-  "versionId": "8a1fe7fd-8854-42a2-b1ff-1d295e4f01b5",
+  "versionId": "cbd3db39-0a13-44a4-a52a-e2f8c45670b8",
   "activeVersionId": null,
   "triggerCount": 0,
   "tags": [
