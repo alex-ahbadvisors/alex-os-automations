@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-03T00:12:23.625Z",
+  "updatedAt": "2026-11-12T00:35:25.052Z",
   "createdAt": "2025-10-24T15:26:09.968Z",
   "id": "b0qRdZcWL16KpRkW",
   "name": "[5] Draft Follow Up Email",
@@ -16,10 +16,10 @@
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
       "position": [
-        13200,
-        -360
+        15936,
+        480
       ],
-      "id": "376edd16-cf7e-4946-ba62-0141576b2e73",
+      "id": "b9373e38-81a3-4691-bae2-dedd9ce02575",
       "name": "Follow Up Email SOP",
       "executeOnce": true,
       "retryOnFail": true,
@@ -47,10 +47,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        16920,
-        -112
+        19888,
+        720
       ],
-      "id": "cf14883c-b086-49f3-9536-4cd01c849352",
+      "id": "370b389d-6e01-43ca-a52a-4e62e0c08a2c",
       "name": "OpenAI Chat Model3",
       "credentials": {
         "openAiApi": {
@@ -77,13 +77,13 @@
           ]
         }
       },
-      "id": "3034ce3a-d756-46e7-9fb5-807b8a45c66c",
+      "id": "406b6c3a-e99d-4aea-924b-aee3e35b2a58",
       "typeVersion": 1.1,
       "name": "Start",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "position": [
-        11408,
-        -624
+        14144,
+        208
       ]
     },
     {
@@ -95,10 +95,10 @@
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
       "position": [
-        12752,
-        -624
+        15488,
+        208
       ],
-      "id": "28222c0e-fa8b-4784-b9b3-bce5bfcac309",
+      "id": "26eed35c-41c1-481f-a502-a76ec404328b",
       "name": "Get a task",
       "credentials": {
         "clickUpOAuth2Api": {
@@ -117,10 +117,10 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        16016,
-        -336
+        18976,
+        496
       ],
-      "id": "ebd726d8-46ca-4458-8bb2-ce60557dc643",
+      "id": "4fc206d0-7560-4e15-bdb4-47f6e0c407c8",
       "name": "Split Out Linked Tasks"
     },
     {
@@ -133,10 +133,10 @@
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
       "position": [
-        16240,
-        -336
+        19200,
+        496
       ],
-      "id": "80862bd9-6caa-4a82-ab92-a9b1634591b4",
+      "id": "ee5ba4fc-c629-41bb-880b-74fa851607bb",
       "name": "Get Linked Task",
       "retryOnFail": true,
       "maxTries": 2,
@@ -163,10 +163,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        13432,
-        -136
+        16176,
+        704
       ],
-      "id": "25f3b5af-9dfc-4cf2-a9f0-aa39b7b2b982",
+      "id": "d7d89f50-35d7-4115-81f8-3f9e8d4c46ce",
       "name": "OpenAI Chat Model",
       "credentials": {
         "openAiApi": {
@@ -181,16 +181,16 @@
         "text": "=<ORGANIZED_BY_ALEX>{{ $('Meeting Note').item.json.organizedByAlex }}</ORGANIZED_BY_ALEX>\n{{ $('Start').item.json.hitlResponse ? '<HITL_RESPONSE>User already provided a HITL response: '+$('Start').item.json.hitlResponse+'</HITL_RESPONSE>' : '' }}\n<BUCKET>\n{{ $('Meeting Note').item.json.bucket }}\n</BUCKET>\n<MEETING_NOTES>\n{{ $('Get a task').item.json.description }}\n</MEETING_NOTES>\n<SOP>\n{{ $json.markdown_description }}\n</SOP>",
         "hasOutputParser": true,
         "options": {
-          "systemMessage": "=Use the embedded SOP (replace `<SOP/>` with the current SOP content) to decide whether this meeting needs an email follow-up and which email template to use. Review meeting notes and meeting type/bucket. Do **not** hardcode SOP rules — read and apply the SOP text provided in `<SOP/>`.\n\nOutput **only one JSON object**.\n\nTASK — produce this exact JSON object:\n\n```json\n{\n  \"needs_follow_up\": true|false,\n  \"reason_for_follow_up\": \"string|null\",\n  \"hitl_needed\": true|false,\n  \"hitl_message\": \"markdown string|null\",\n  \"email_template_name\": \"string|null\",\n  \"email_template_clickup_link\": \"string|null\"\n}\n```\n\nINSTRUCTIONS\n\n1. Read the embedded SOP (`<SOP/>`) first and use it as the authoritative source for deciding follow-up rules, HITL rules, and template mappings. Do not hardcode rules — derive them from `<SOP/>`.\n2. Determine `needs_follow_up` by applying the SOP to the meeting content and classification. If the SOP is ambiguous for this case, prefer conservative behavior (set `needs_follow_up = true` when external communication is plausible and significant actions/decisions exist).\n3. For `reason_for_follow_up` provide a short plain-text rationale derived from the SOP and the notes (1 sentence). If `needs_follow_up = false`, set `reason_for_follow_up = null`.\n4. Determine `hitl_needed` by applying the SOP. If the SOP gives no explicit HITL criteria, use this fallback: require human check (`true`) when the host of the meeting is not Alex, the notes contain sensitive content, or the decision to send is ambiguous. Otherwise set `false`.\n5. If `hitl_needed = true`, populate `hitl_message` with concise, specific questions or action items for Alex (or the user) that explain what the agent needs clarified/approved to proceed (include brief context: which decision/action in the notes triggered the question, and a pointer like “decision X”). If there are no questions to ask despite `hitl_needed = true`, set `hitl_message` to a short instruction for the human (e.g., “Please confirm whether to send external summary for Client X”). If `hitl_needed = false`, set `hitl_message = null`.\n6. Find the best matching email template name and ClickUp URL in the SOP. Set `email_template_name` and `email_template_clickup_link` from the SOP. If the SOP indicates no template or the matching template is not implemented, set both to `null`.\n7. If you decide a follow-up is required but the SOP prescribes human approval before sending, still set `needs_follow_up = true` and set `hitl_needed = true`.\n8. Keep `reason_for_follow_up` concise and SOP-driven (e.g., “Client kickoff with external next steps” — but phrase based on SOP wording).\n\nVALIDATION CHECKLIST (must pass before returning JSON)\n\n* Output exactly one JSON object and nothing else.\n* `needs_follow_up` is boolean.\n* If `needs_follow_up = true`, `reason_for_follow_up` is a non-empty string; otherwise `null`.\n* `hitl_needed` is boolean (`true` or `false`) and follows SOP (or the fallback rule).\n* If `hitl_needed = true`, `hitl_message` is a concise actionable message for Alex; otherwise `null`.\n* `email_template_name` is taken from the SOP or `null`.\n* `email_template_clickup_link` is a URL string from the SOP or `null`.\n"
+          "systemMessage": "=Use the embedded SOP (replace `<SOP/>` with the current SOP content) to decide whether this meeting needs an email follow-up and which email template to use. Review meeting notes and meeting type/bucket. Do **not** hardcode SOP rules — read and apply the SOP text provided in `<SOP/>`.\n\nOutput **only one JSON object**.\n\nTASK — produce this exact JSON object:\n\n```json\n{\n  \"needs_follow_up\": true|false,\n  \"reason_for_follow_up\": \"string|null\",\n  \"hitl_needed\": true|false,\n  \"hitl_message\": \"markdown string|null\",\n  \"email_template_name\": \"string|null\",\n  \"email_template_clickup_link\": \"string|null\"\n}\n```\n\nINSTRUCTIONS\n\n1. Read the embedded SOP (`<SOP/>`) first and use it as the authoritative source for deciding follow-up rules, HITL rules, and template mappings. Do not hardcode rules — derive them from `<SOP/>`.\n2. Determine `needs_follow_up` by applying the SOP to the meeting content and classification. If the SOP is ambiguous for this case, set `needs_follow_up = true` and `hitl_needed = true`, and say in `hitl_message` what is ambiguous, so a person decides.\n3. For `reason_for_follow_up` provide a short plain-text rationale derived from the SOP and the notes (1 sentence). If `needs_follow_up = false`, set `reason_for_follow_up = null`.\n4. Determine `hitl_needed` by applying the SOP. If the SOP gives no explicit HITL criteria, use this fallback: require human check (`true`) when the host of the meeting is not Alex, the notes contain sensitive content, or the decision to send is ambiguous. Otherwise set `false`.\n5. If `hitl_needed = true`, populate `hitl_message` with concise, specific questions or action items for Alex (or the user) that explain what the agent needs clarified/approved to proceed (include brief context: which decision/action in the notes triggered the question, and a pointer like “decision X”). If there are no questions to ask despite `hitl_needed = true`, set `hitl_message` to a short instruction for the human (e.g., “Please confirm whether to send external summary for Client X”). If `hitl_needed = false`, set `hitl_message = null`.\n6. Find the best matching email template name and ClickUp URL in the SOP. Set `email_template_name` and `email_template_clickup_link` from the SOP. If the SOP indicates no template or the matching template is not implemented, set both to `null`.\n7. If you decide a follow-up is required but the SOP prescribes human approval before sending, still set `needs_follow_up = true` and set `hitl_needed = true`.\n8. Keep `reason_for_follow_up` concise and SOP-driven (e.g., “Client kickoff with external next steps” — but phrase based on SOP wording).\n\nVALIDATION CHECKLIST (must pass before returning JSON)\n\n* Output exactly one JSON object and nothing else.\n* `needs_follow_up` is boolean.\n* If `needs_follow_up = true`, `reason_for_follow_up` is a non-empty string; otherwise `null`.\n* `hitl_needed` is boolean (`true` or `false`) and follows SOP (or the fallback rule).\n* If `hitl_needed = true`, `hitl_message` is a concise actionable message for Alex; otherwise `null`.\n* `email_template_name` is taken from the SOP or `null`.\n* `email_template_clickup_link` is a URL string from the SOP or `null`.\n"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
       "position": [
-        13424,
-        -360
+        16160,
+        480
       ],
-      "id": "5b06c617-2329-4e39-9413-16557235c577",
+      "id": "23c4e665-08a9-488c-b297-8d7e0bfb0f24",
       "name": "Decider"
     },
     {
@@ -203,10 +203,10 @@
       "type": "n8n-nodes-base.aggregate",
       "typeVersion": 1,
       "position": [
-        16464,
-        -336
+        19424,
+        496
       ],
-      "id": "6a89e8c9-5169-489b-8883-05a0c34de8dd",
+      "id": "2f7b5456-8bdb-4f79-a97d-ca6780646146",
       "name": "Linked Tasks"
     },
     {
@@ -217,10 +217,10 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        13560,
-        -136
+        16304,
+        704
       ],
-      "id": "4b650085-87ac-4ed7-83a9-042564d78cb7",
+      "id": "2df9e37f-e32e-4757-9eeb-de6889178a13",
       "name": "Structured Output Parser"
     },
     {
@@ -235,10 +235,10 @@
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
       "position": [
-        19408,
-        -528
+        22368,
+        304
       ],
-      "id": "6a57a61a-c8d4-49d2-8c64-357c1da8a9a0",
+      "id": "b012061b-c8ba-4347-9989-1c60511bd115",
       "name": "Create a comment",
       "credentials": {
         "clickUpOAuth2Api": {
@@ -276,10 +276,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        14000,
-        -360
+        16960,
+        480
       ],
-      "id": "3f7c349e-6ebf-4160-ad88-6c8ac8181b12",
+      "id": "3b6896bb-9efd-4e0e-9388-bbf5e644b4f9",
       "name": "If HITL?"
     },
     {
@@ -307,10 +307,10 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        14224,
-        -504
+        17184,
+        336
       ],
-      "id": "e2a390b3-3e0d-40a6-83ad-ed3ef697d33f",
+      "id": "51c502f1-b43b-4807-a22c-73b9caabc748",
       "name": "Send a message",
       "webhookId": "fc55568e-4ab6-45d2-a42c-9701e64aa104",
       "credentials": {
@@ -325,16 +325,16 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        15344,
-        -336
+        18304,
+        496
       ],
-      "id": "104ea50d-a658-4594-b7c7-17b63885ba8d",
+      "id": "3cdf16a1-a1cb-462f-9318-802be4540b72",
       "name": "Draft Context"
     },
     {
       "parameters": {
         "promptType": "define",
-        "text": "={{ $('Draft Context').item.json.output.hitl_response ? `<HITL_MESSAGE>${$('Draft Context').item.json.output.hitl_message }</HITL_MESSAGE><HITL_RESPONSE>${$('Draft Context').item.json.output.hitl_response }</HITL_RESPONSE>` : '' }}\n<EMAIL_TEMPLATE>\n{{ $json.markdown_description }}\n</EMAIL_TEMPLATE>\n<MEETING_NOTES>\n{{ $('Get a task').item.json.description }}\n</MEETING_NOTES>\n{{ $('Linked Tasks').item.json.data?.[0]?.name ? `<ASSOCIATED_TASKS>\\n${$('Linked Tasks').item.json.data.map((t,i) => `TASK ${i+1}: ${t.name} - ${t.markdown_description}`).join('\\n')}\\n</ASSOCIATED_TASKS>` : '' }}\n<MEETING_METADATA>\n{{ $('Meeting Note').item.json.metadata }}\n</MEETING_METADATA>",
+        "text": "={{ $('Draft Context').item.json.output.hitl_response ? `<HITL_MESSAGE>${$('Draft Context').item.json.output.hitl_message }</HITL_MESSAGE><HITL_RESPONSE>${$('Draft Context').item.json.output.hitl_response }</HITL_RESPONSE>` : '' }}\n<EMAIL_TEMPLATE>\n{{ $json.markdown_description }}\n</EMAIL_TEMPLATE>\n<MEETING_NOTES>\n{{ $('Get a task').item.json.description }}\n</MEETING_NOTES>\n{{ $('Linked Tasks').item.json.data?.[0]?.name ? `<ASSOCIATED_TASKS>\\n${$('Linked Tasks').item.json.data.map((t,i) => `TASK ${i+1}: ${t.name} - ${t.markdown_description}`).join('\\n')}\\n</ASSOCIATED_TASKS>` : '' }}\n<MEETING_METADATA>\n{{ $('Meeting Note').item.json.metadata }}\n</MEETING_METADATA>\n<WORD_CEILING>{{ ({'868fkypqb':'200 words, hard limit','868kwthkm':'200 words, hard limit','868kwth55':'100 words, hard limit','868kwthvd':'100 words, hard limit','868fkyrja':'150 words, hard limit'})[$('Get Template').item.json.id] || 'none' }}</WORD_CEILING>\n<DRAFT_RULES>No pricing. No other client named as a precedent. One specific detail from the conversation. If the email asks for time, add Kendra inline (\"Adding my EA Kendra Fidlin to find time\") and never propose slots. Sign off \"Best, Alex\" or \"Alex\". The firm is AHB Advisors, never 3CV.</DRAFT_RULES>",
         "hasOutputParser": true,
         "options": {
           "systemMessage": "=You are an email-drafting assistant for Alex. Your role is to read the full user message (which may contain meeting notes, the selected email template, task lists, metadata, and prior HITL tags) and produce a short, plain email draft in Alex's voice as a JSON object.\n\nYou are not sending emails yourself; you only return a draft for Alex to review and send.\n\nOUTPUT FORMAT (MANDATORY)\n\nReturn exactly ONE JSON object with these keys and nothing else:\n\n- \"subject\": The email subject line.\n- \"content\": The full email body.\n- \"from\": The sender information for Alex.\n  - \"address\": The email address that should be used for Alex.\n  - \"name\": The display name for Alex (usually \"Alex Brownstein\").\n- \"recipients\": An array of recipient objects. Each object must have:\n  - \"address\": The recipient’s email address (string).\n  - \"name\": The recipient’s display name if available, otherwise null.\n  - \"internal\": A boolean flag:\n    - true if the recipient is an internal attendee (for Alex’s company or firms).\n    - false if the recipient is an external or client recipient.\n\nDo not include any explanations, markdown, or tags outside of this JSON object.\n\nINPUTS YOU MAY RECEIVE\n\nThe user message may contain:\n- Meeting notes (often in Markdown), including decisions, actions, and owners.\n- A selected email template that may include structure, placeholders, examples, tone guidance, and sign-off examples.\n- Task lists and subtasks that emerged from the meeting.\n- Metadata (for example, attendees, calendar/invite owner, categorization). Do NOT include metadata directly in the email. Refer to it for a list of attendees and their emails.\n- Optional HITL tags from a previous step:\n  - <HITL_MESSAGE>…</HITL_MESSAGE> — what was asked of the human.\n  - <HITL_RESPONSE>…</HITL_RESPONSE> — the human’s answer.\n\nYou are no longer in an interactive HITL loop. Use all provided information, including any <HITL_RESPONSE>, to resolve ambiguity. If the template requires something the notes do not contain (for example, a distinctive moment the other person said), do not invent it: write the rest of the email and put a short bracketed note where the missing line goes, e.g. [Alex: add the line from Brian that stuck with you]. A human fills it before sending.\n\nCORE RULES\n\n1. Template is authoritative\n- The template's HARD RULES are limits, not suggestions. They override every other instruction in this message, including the tone and context rules below. A draft that breaks one (length, banned phrases, what the email may contain) has failed, however good it sounds.\n- Treat the email template as the primary guide for structure, tone, content, and level of detail.\n- Follow the order of sections the template suggests.\n- If the template includes examples, copy their style, tone, and sign-off pattern as your model.\n- If the template defines a sign-off, use that sign-off.\n\n2. Sign-off behavior when the template does NOT define one\n- If the template does not clearly specify a sign-off style, use Alex’s default sign-off:\n  Best,\n  Alex\n\n3. Subjects\n- If the template includes a subject pattern or examples, follow them.\n- If it does not, create a concise, informative subject line based on the meeting purpose and key outcome (for example: \"Recap and Next Steps from [Project/Topic] Meeting on [Date]\").\n\n4. From field behavior\n- Alex may send email from multiple addresses because he consults through different firms. When setting \"from.address\", prefer one of these addresses:\n  - \"ahbrownstein@gmail.com\"\n  - \"alex@ahbadvisors.com\"\n  - \"alex@clientcatalyzer.com\"\n- Use meeting notes, client names, domains, and context to choose the most appropriate address:\n  - Use \"alex@clientcatalyzer.com\" when the work is for or branded as Client Catalyzer.\n  - Use \"alex@ahbadvisors.com\" when the work is for or branded as AHB Advisors.\n  - Use \"ahbrownstein@gmail.com\" only when the context clearly indicates a personal or non-firm engagement.\n- If you cannot confidently determine which address to use, default to:\n  - \"alex@ahbadvisors.com\"\n- Set \"from.name\" to \"Alex Brownstein\" unless clearly instructed otherwise.\n\n5. Tasks and subtasks\n- Only summarize tasks or next steps if the email template implies that tasks should be included (for example, explicit \"Next Steps\" or \"Action Items\" sections or examples).\n- When you describe tasks, keep them clear and concise. Focus on what the client needs to know.\n- Do NOT include links to internal project management systems (ClickUp, Asana, etc.) in client-facing emails unless the template explicitly shows an example of doing so.\n- Rewrite internal tasks into client-friendly language that does not assume access to internal tools.\n\n6. Recipients\n- Use meeting metadata, attendees, and notes to identify the appropriate recipients.\n- Include recipients for both internal and external attendees when they are relevant to the email.\n- For each recipient you can confidently identify, add an object to the \"recipients\" array:\n  {\n    \"address\": \"recipient@example.com\",\n    \"name\": \"Recipient Name\" or null,\n    \"internal\": true or false\n  }\n- Do NOT invent email addresses.\n- If you cannot confidently identify any appropriate email addresses, set \"recipients\" to an empty array [].\n- The \"internal\" flag is used downstream to determine who is CCed; always set it correctly for each recipient, even if all recipients are internal.\n\n7. HITL handling\n- Treat <HITL_MESSAGE> as background context only.\n- Treat <HITL_RESPONSE> as the definitive human clarification for any ambiguity described in <HITL_MESSAGE>.\n- Use <HITL_RESPONSE> to:\n  - Confirm whether to send a client-facing recap.\n  - Clarify which client or team the email is for.\n  - Clarify any specific instructions about tone, detail, or template choice.\n- Do NOT include the literal <HITL_MESSAGE> or <HITL_RESPONSE> tags or their text in the final email body or subject.\n\n8. Composition rules\n- Write from Alex’s perspective in the first person, unless the template clearly uses \"we\".\n- Write the way Alex writes: plain, specific, short. Say only what the template asks for. Match the length of the template's examples, not longer.\n- Do not restate Alex's background, positioning, services or what he \"brings\" unless the template asks for it. Do not summarize the meeting unless the template is a recap.\n- No filler or effusive words: really, just, very, actually, basically, thing, amazing, huge, excited, thrilled, delighted, \"I really like\", \"feels like\", \"great connecting\", \"sounding board\", \"leverage\". No em-dashes or semicolons.\n- When a client needs context on decisions or next steps, give it only if the template includes that section.\n- Do not fabricate specific facts that conflict with the notes, metadata, or template. When necessary, keep statements slightly general rather than guessing.\n\nFINAL CHECK BEFORE RESPONDING\n\nBefore returning your JSON object, ensure:\n- \"subject\" is a non-empty string.\n- \"content\" is a complete, ready-to-send email body (including sign-off).\n- \"from\" is present with:\n  - a valid-looking email address in \"address\", and\n  - a non-empty \"name\".\n- \"recipients\" is:\n  - an array of zero or more objects with \"address\", \"name\", and \"internal\" keys, and\n  - contains no invented or obviously invalid email addresses.\n- The output is exactly one JSON object and nothing else."
@@ -343,10 +343,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
       "position": [
-        16912,
-        -336
+        19872,
+        496
       ],
-      "id": "0c0a9e30-5ae2-4905-b2c2-9c787c34c614",
+      "id": "f7658dcc-7b83-475c-a6be-61a024491505",
       "name": "Follow Email Draft Agent"
     },
     {
@@ -359,10 +359,10 @@
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
       "position": [
-        16688,
-        -336
+        19648,
+        496
       ],
-      "id": "cb96c52d-a422-417a-85e6-225a292cc511",
+      "id": "3510b2ba-5051-452e-a2ea-1eb3dcb4a2ee",
       "name": "Get Template",
       "credentials": {
         "clickUpOAuth2Api": {
@@ -388,10 +388,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        15792,
-        -336
+        18752,
+        496
       ],
-      "id": "d4384756-4b68-46c6-8b36-55e0cbdbb6f4",
+      "id": "132d4487-51b1-44ad-b82e-19a46412f959",
       "name": "Linked Task Ids"
     },
     {
@@ -402,10 +402,10 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        17048,
-        -112
+        20016,
+        720
       ],
-      "id": "86929c3d-e1f1-4b6e-b4f0-763213940301",
+      "id": "e66074eb-ed5a-46da-a1a4-4e041cc1b5be",
       "name": "Email Draft Structure"
     },
     {
@@ -424,10 +424,10 @@
       "type": "n8n-nodes-base.markdown",
       "typeVersion": 1,
       "position": [
-        18736,
-        -336
+        21696,
+        496
       ],
-      "id": "e39d0795-c05f-4217-92c1-50d63ad2c4b2",
+      "id": "98f16c7b-619b-4f62-838f-d5f2b8f56781",
       "name": "Markdown"
     },
     {
@@ -444,10 +444,10 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        14672,
-        -600
+        17632,
+        240
       ],
-      "id": "056aceb1-07da-428a-b080-599c746e9adb",
+      "id": "eaa5c8cf-213b-49a9-8f1b-c8a6f4eac6f6",
       "name": "Remove form",
       "webhookId": "fc55568e-4ab6-45d2-a42c-9701e64aa104",
       "alwaysOutputData": true,
@@ -474,10 +474,10 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        19408,
-        48
+        22368,
+        880
       ],
-      "id": "8301e678-2cf7-499c-ae34-e532de2f8d36",
+      "id": "fd6b32a9-40be-4967-8877-166ced0e9a48",
       "name": "Add Inbox Icon",
       "webhookId": "fc55568e-4ab6-45d2-a42c-9701e64aa104",
       "credentials": {
@@ -496,10 +496,10 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        14896,
-        -504
+        17856,
+        336
       ],
-      "id": "fafd5ed0-d2f2-4c7d-88a7-b9574a435dce",
+      "id": "de54cc91-86bf-4b3e-b151-64ae26fc9f92",
       "name": "Merge1",
       "alwaysOutputData": true
     },
@@ -517,10 +517,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        18960,
-        -336
+        21920,
+        496
       ],
-      "id": "8a19f56e-ea9e-42e3-a68e-1e509725c9ab",
+      "id": "8ea7e60f-19ac-4b50-9b2d-8e9b4652a1e7",
       "name": "Draft in Missive",
       "credentials": {
         "httpBearerAuth": {
@@ -559,10 +559,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        18288,
-        -336
+        21248,
+        496
       ],
-      "id": "c2bc4d1e-99d4-48aa-b84e-dab4d0703652",
+      "id": "b9035759-e06b-4d38-842c-6ec783564dbd",
       "name": "Split Internal & External Recipients"
     },
     {
@@ -595,10 +595,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        18512,
-        -336
+        21472,
+        496
       ],
-      "id": "4379bc28-fb4e-4745-b0aa-ed7764051806",
+      "id": "a3f951fd-2063-42c2-a21c-1f1d4436233a",
       "name": "Set Missive Recipients"
     },
     {
@@ -618,10 +618,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        19184,
-        -240
+        22144,
+        592
       ],
-      "id": "63403811-9244-42b2-81bb-faab16cd9824",
+      "id": "b158a026-5bc7-4875-854a-87d5be17a605",
       "name": "Missive Confirmation"
     },
     {
@@ -838,10 +838,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        19184,
-        -720
+        22144,
+        112
       ],
-      "id": "30f62508-c520-4563-a628-00851318a335",
+      "id": "09a33832-7a87-4c23-afda-634de4f10dfb",
       "name": "Save Followup Draft Id"
     },
     {
@@ -862,10 +862,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        15120,
-        -120
+        18080,
+        720
       ],
-      "id": "a0d1f068-06ec-41b3-98f1-f35c5c561705",
+      "id": "683523bb-d974-4d94-89f9-f4228bdcdeef",
       "name": "Edit Fields1"
     },
     {
@@ -905,10 +905,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        12976,
-        -696
+        15712,
+        144
       ],
-      "id": "9409a190-178e-4eeb-89d7-6b4e77b7d7be",
+      "id": "ca522dc7-c0ee-4bbe-afe2-c2b089c3ebc6",
       "name": "If"
     },
     {
@@ -918,10 +918,10 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        13200,
-        -624
+        15936,
+        208
       ],
-      "id": "0d13582b-5d3a-4bb1-b886-129f42ed9b68",
+      "id": "693dcbd7-18e1-4a13-a01a-fc1d3225502d",
       "name": "Wait1",
       "webhookId": "83ae7805-751b-48d7-bae3-60e8ca65800d"
     },
@@ -953,10 +953,10 @@
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2.2,
       "position": [
-        13776,
-        -360
+        16736,
+        480
       ],
-      "id": "23ad1351-1d76-4888-af36-d4ecfad65cfd",
+      "id": "64a4ef59-168d-455e-a9c1-e14c367d8683",
       "name": "Is Follow Up Needed?"
     },
     {
@@ -996,10 +996,10 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        12080,
-        -768
+        14816,
+        64
       ],
-      "id": "e7340987-39cc-433c-b762-9de2c80cf84b",
+      "id": "4bc53fc6-a602-4c5f-bb1c-adb0c35da933",
       "name": "Find Calendar Events Across Calendars",
       "alwaysOutputData": true
     },
@@ -1020,10 +1020,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        12304,
-        -696
+        15040,
+        144
       ],
-      "id": "4565042a-6ff9-414f-87ba-896279b01068",
+      "id": "d99f5cbb-6d39-4cd5-b20e-27262948608e",
       "name": "Set Organized By Alex",
       "alwaysOutputData": true
     },
@@ -1055,10 +1055,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        11856,
-        -696
+        14592,
+        144
       ],
-      "id": "7b00de59-6321-4747-be3a-e9efea7690a6",
+      "id": "99e412e1-7eee-4902-8e59-9bd5e56c61fe",
       "name": "HasCalendarEventUid"
     },
     {
@@ -1070,10 +1070,10 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        12528,
-        -624
+        15264,
+        208
       ],
-      "id": "ea19cc03-f668-4150-a2ba-6ea3111854e8",
+      "id": "6061198f-842c-44f5-87bf-ee363669e8d5",
       "name": "Meeting Note"
     },
     {
@@ -1099,10 +1099,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        11632,
-        -624
+        14368,
+        208
       ],
-      "id": "30941b9e-cdcf-4713-be63-42556a414ba9",
+      "id": "685d4637-6662-48a7-9330-24825ba3e102",
       "name": "Find Meeting Note"
     },
     {
@@ -1117,10 +1117,10 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        14448,
-        -504
+        17408,
+        336
       ],
-      "id": "090c899d-e97f-4f67-82f3-e8779749aad0",
+      "id": "e32269f8-4421-417e-bb9f-a65d04817538",
       "name": "Wait For Response",
       "webhookId": "b7c37f30-3015-4c64-88b8-217c24485b9c",
       "credentials": {
@@ -1157,10 +1157,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        15568,
-        -336
+        18528,
+        496
       ],
-      "id": "7f72628e-955a-46d3-b63d-d917e7fee713",
+      "id": "7fe88f13-05ff-46f4-a40d-029ae55dca90",
       "name": "Should Create Draft"
     },
     {
@@ -1172,10 +1172,10 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        15120,
-        -432
+        18080,
+        400
       ],
-      "id": "f7b47c3b-bca0-486b-a1f9-da05bc8b7656",
+      "id": "828e9c55-d745-4545-9fe0-81bed38eb020",
       "name": "Merge"
     },
     {
@@ -1213,10 +1213,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        14672,
-        -408
+        17632,
+        432
       ],
-      "id": "fb66de3e-dba3-4da8-9772-a0cf7d77f7d3",
+      "id": "0ad694a5-bc5c-4e94-985f-3b882fabe3ab",
       "name": "Capture HITL Response",
       "alwaysOutputData": true
     },
@@ -1247,10 +1247,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        19408,
-        -720
+        22368,
+        112
       ],
-      "id": "e2a9df30-9e1f-46c3-bf30-194479e71fff",
+      "id": "c5fed834-fd00-4bbf-9b23-7cd131cb64f9",
       "name": "Slack Msgs",
       "credentials": {
         "slackApi": {
@@ -1267,10 +1267,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        19632,
-        -720
+        22592,
+        112
       ],
-      "id": "2b12daac-ed78-4264-bfda-4326a5bdc193",
+      "id": "65f6548f-bf3a-4caa-a695-8f6178d8b833",
       "name": "Add Missive Button"
     },
     {
@@ -1293,10 +1293,10 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.3,
       "position": [
-        19856,
-        -720
+        22816,
+        112
       ],
-      "id": "6eee6293-114a-4560-9a1f-04e95f802cc3",
+      "id": "dfdebeff-e441-4d82-9d8a-f8cd36d27369",
       "name": "Update a message",
       "webhookId": "c36706a4-a105-489a-bd52-b5c2c34fe6a9",
       "credentials": {
@@ -1320,10 +1320,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        19408,
-        -144
+        22368,
+        688
       ],
-      "id": "983a23ad-15c3-4c1a-944f-6b4a06384008",
+      "id": "6a493637-5edb-41d5-b493-5f48cceef6ba",
       "name": "Missive Notification",
       "credentials": {
         "httpBearerAuth": {
@@ -1342,10 +1342,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        11408,
-        272
+        14144,
+        1104
       ],
-      "id": "ed603657-2c4a-43fa-824c-5b6788ae63d8",
+      "id": "f6f58cb5-58e7-4f2c-bb29-b9a6802c7f7e",
       "name": "Missive Labels",
       "credentials": {
         "httpBearerAuth": {
@@ -1371,10 +1371,10 @@
       "type": "n8n-nodes-base.clickUp",
       "typeVersion": 1,
       "position": [
-        19408,
-        -336
+        22368,
+        496
       ],
-      "id": "634c0930-198f-4145-9944-a73091f34a44",
+      "id": "7e3b116f-8aac-4b5c-b470-47345fc3e844",
       "name": "Create a reminder task",
       "credentials": {
         "clickUpOAuth2Api": {
@@ -1386,15 +1386,15 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "// Draft Check: applies the email template's HARD RULES and Alex's scrub list to\n// the drafted email. Violations send the draft back for one redraft; anything\n// still failing, or needing Alex's input, is flagged in Abel's Missive note.\nconst ATTEMPT = 1;\nconst NUMBERS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };\n\n// Alex's scrub list (skills/alex-profile/references/ai-scrubbing.md in alex-os).\nconst BANNED = [\n  'really', 'just', 'very', 'actually', 'basically', 'literally', 'thing', 'things',\n  \"i'd argue\", 'sort of', 'kind of', 'amazing', 'huge', 'excited to', 'thrilled',\n  'i hope this finds you', 'hope you are well', 'wanted to reach out', 'just following up',\n  'circle back', 'touch base', 'great connecting', 'it was great', 'looking forward to hearing',\n  'feels like', 'i really like', 'delighted', 'synergy', 'leverage', 'sounding board',\n];\n\nfunction body(content) {\n  const lines = String(content || '').trim().split(/\\r?\\n/);\n  // Drop the greeting (\"Brian,\") and the sign-off (\"Alex\", \"Best,\").\n  while (lines.length && /^\\s*$/.test(lines[0])) lines.shift();\n  if (lines.length && /^[^.!?]{1,40},\\s*$/.test(lines[0])) lines.shift();\n  while (lines.length && (/^\\s*$/.test(lines[lines.length - 1]) || /^\\s*(alex|best,?|thanks,?|alex brownstein)\\s*$/i.test(lines[lines.length - 1]))) lines.pop();\n  return lines.join('\\n');\n}\n\nfunction sentenceLimit(template) {\n  const m = String(template || '').match(/\\b(\\w+)\\s+to\\s+(\\w+)\\s+sentences\\b/i);\n  if (!m) return null;\n  const max = NUMBERS[m[2].toLowerCase()] || Number(m[2]);\n  return Number.isFinite(max) ? max : null;\n}\n\nfunction templateBanned(template) {\n  const line = String(template || '').split(/\\r?\\n/).find(l => /banned:/i.test(l)) || '';\n  return [...line.matchAll(/[\"“]([^\"”]+)[\"”]/g)].map(m => m[1].replace(/[.,]$/, '').toLowerCase());\n}\n\nconst template = $('Get Template').item.json.markdown_description || '';\nconst content = String($json.output?.content || '');\nconst text = body(content);\nconst lower = text.toLowerCase();\nconst violations = [];\nconst needs_input = [];\n\nconst max = sentenceLimit(template);\nconst sentences = text.split(/(?<=[.!?])\\s+/).map(s => s.trim()).filter(s => /[a-z]/i.test(s));\nconst words = text.split(/\\s+/).filter(Boolean).length;\n// Short closers (\"No ask here.\", \"Glad we connected.\") don't count toward the limit.\nconst counted = sentences.filter(s => s.split(/\\s+/).length > 4).length;\nif (max && counted > max) violations.push(`${counted} sentences; the template allows ${max}`);\nif (max && words > max * 18) violations.push(`${words} words; keep it under ${max * 18}`);\nconst long = sentences.filter(s => s.split(/\\s+/).length > 30).length;\nif (long) violations.push(`${long} sentence(s) over 30 words`);\nif (/[—–]/.test(text)) violations.push('uses a dash (— or –)');\nif (/;/.test(text)) violations.push('uses a semicolon');\nfor (const phrase of [...new Set([...BANNED, ...templateBanned(template)])]) {\n  const re = new RegExp(`(^|[^a-z'])${phrase.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}([^a-z]|$)`, 'i');\n  if (re.test(lower)) violations.push(`banned phrase \"${phrase}\"`);\n}\nif (/\\[[^\\]]+\\]/.test(text)) needs_input.push('has a [placeholder] for Alex to fill');\nif (!text.trim()) needs_input.push('no draft body');\n\nreturn { json: { ...$json, check: { attempt: ATTEMPT, sentences: sentences.length, words, violations, needs_input } } };\n"
+        "jsCode": "// Draft Check: applies the email template's HARD RULES and Alex's scrub list to\n// the drafted email. Violations send the draft back for one redraft; anything\n// still failing, or needing Alex's input, is flagged in Abel's Missive note.\nconst ATTEMPT = 1;\nconst NUMBERS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };\n\n// Alex's scrub list (skills/alex-profile/references/ai-scrubbing.md in alex-os).\nconst BANNED = [\n  'really', 'just', 'very', 'actually', 'basically', 'literally', 'thing', 'things',\n  \"i'd argue\", 'sort of', 'kind of', 'amazing', 'huge', 'excited to', 'thrilled',\n  'i hope this finds you', 'hope you are well', 'wanted to reach out', 'just following up',\n  'circle back', 'touch base', 'great connecting', 'it was great', 'looking forward to hearing',\n  'feels like', 'i really like', 'delighted', 'synergy', 'leverage', 'sounding board',\n];\n\nfunction body(content) {\n  const lines = String(content || '').trim().split(/\\r?\\n/);\n  // Drop the greeting (\"Brian,\") and the sign-off (\"Alex\", \"Best,\").\n  while (lines.length && /^\\s*$/.test(lines[0])) lines.shift();\n  if (lines.length && /^[^.!?]{1,40},\\s*$/.test(lines[0])) lines.shift();\n  while (lines.length && (/^\\s*$/.test(lines[lines.length - 1]) || /^\\s*(alex|best,?|thanks,?|alex brownstein)\\s*$/i.test(lines[lines.length - 1]))) lines.pop();\n  return lines.join('\\n');\n}\n\nfunction sentenceLimit(template) {\n  const m = String(template || '').match(/\\b(\\w+)\\s+to\\s+(\\w+)\\s+sentences\\b/i);\n  if (!m) return null;\n  const max = NUMBERS[m[2].toLowerCase()] || Number(m[2]);\n  return Number.isFinite(max) ? max : null;\n}\n\nfunction templateBanned(template) {\n  const line = String(template || '').split(/\\r?\\n/).find(l => /banned:/i.test(l)) || '';\n  return [...line.matchAll(/[\"“]([^\"”]+)[\"”]/g)].map(m => m[1].replace(/[.,]$/, '').toLowerCase());\n}\n\nconst template = $('Get Template').item.json.markdown_description || '';\nconst content = String($json.output?.content || '');\nconst text = body(content);\nconst lower = text.toLowerCase();\nconst violations = [];\nconst needs_input = [];\n\nconst max = sentenceLimit(template);\nconst sentences = text.split(/(?<=[.!?])\\s+/).map(s => s.trim()).filter(s => /[a-z]/i.test(s));\nconst words = text.split(/\\s+/).filter(Boolean).length;\n// Short closers (\"No ask here.\", \"Glad we connected.\") don't count toward the limit.\nconst counted = sentences.filter(s => s.split(/\\s+/).length > 4).length;\nif (max && counted > max) violations.push(`${counted} sentences; the template allows ${max}`);\nif (max && words > max * 18) violations.push(`${words} words; keep it under ${max * 18}`);\nconst long = sentences.filter(s => s.split(/\\s+/).length > 30).length;\nif (long) violations.push(`${long} sentence(s) over 30 words`);\nif (/[—–]/.test(text)) violations.push('uses a dash (— or –)');\nif (/;/.test(text)) violations.push('uses a semicolon');\nfor (const phrase of [...new Set([...BANNED, ...templateBanned(template)])]) {\n  const re = new RegExp(`(^|[^a-z'])${phrase.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}([^a-z]|$)`, 'i');\n  if (re.test(lower)) violations.push(`banned phrase \"${phrase}\"`);\n}\n// Word ceiling from router SOP 868fkyv39 §B, keyed on the template Get Template fetched.\nconst CEILINGS = {\n  '868fkypqb': { name: 'Client Email Template', ceiling: 200 },\n  '868kwthkm': { name: 'Prospect Discovery Recap Email Template', ceiling: 200 },\n  '868kwth55': { name: 'Networking Thank You', ceiling: 100 },\n  '868kwthvd': { name: 'Intro & Referral Email Template', ceiling: 100 },\n  '868fkyrja': { name: 'Vendor / Partner Email Template', ceiling: 150 },\n  '868fkyjfj': { name: 'Internal Email Template', ceiling: null },\n};\nconst ceilingRow = CEILINGS[String($('Get Template').item.json.id || '')];\nconst ceiling = ceilingRow ? ceilingRow.ceiling : null;\nif (ceiling && words > ceiling) violations.push(`${words} words; the route's ceiling is ${ceiling}`);\nif (/\\[[^\\]]+\\]/.test(text)) needs_input.push('has a [placeholder] for Alex to fill');\nif (!text.trim()) needs_input.push('no draft body');\n\nreturn { json: { ...$json, check: { attempt: ATTEMPT, sentences: sentences.length, words, violations, needs_input } } };\n"
       },
-      "id": "a44076c3-d364-47df-a44a-b3df61efa82e",
+      "id": "7a2dc8a1-ba90-41fa-b8dc-042c1fa56519",
       "name": "Draft Check",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        17264,
-        -336
+        20224,
+        496
       ]
     },
     {
@@ -1422,19 +1422,19 @@
         },
         "options": {}
       },
-      "id": "84c5f1ab-179a-4910-8a45-b9fb472f1a40",
+      "id": "35256cf4-fdaf-43f1-ac22-6c57891883c8",
       "name": "Redraft?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        17488,
-        -336
+        20448,
+        496
       ]
     },
     {
       "parameters": {
         "promptType": "define",
-        "text": "={{ $('Draft Context').item.json.output.hitl_response ? `<HITL_MESSAGE>${$('Draft Context').item.json.output.hitl_message }</HITL_MESSAGE><HITL_RESPONSE>${$('Draft Context').item.json.output.hitl_response }</HITL_RESPONSE>` : '' }}\n<EMAIL_TEMPLATE>\n{{ $('Get Template').item.json.markdown_description }}\n</EMAIL_TEMPLATE>\n<MEETING_NOTES>\n{{ $('Get a task').item.json.description }}\n</MEETING_NOTES>\n{{ $('Linked Tasks').item.json.data?.[0]?.name ? `<ASSOCIATED_TASKS>\\n${$('Linked Tasks').item.json.data.map((t,i) => `TASK ${i+1}: ${t.name} - ${t.markdown_description}`).join('\\n')}\\n</ASSOCIATED_TASKS>` : '' }}\n<MEETING_METADATA>\n{{ $('Meeting Note').item.json.metadata }}\n</MEETING_METADATA>\n<PREVIOUS_DRAFT>\n{{ $json.output.content }}\n</PREVIOUS_DRAFT>\n<VIOLATIONS>\n{{ $json.check.violations.join('\\n') }}\n</VIOLATIONS>\nYour previous draft broke the template's rules, listed in <VIOLATIONS>. Rewrite it so every violation is gone. Cut, don't pad: keep the one specific moment, the give, and the ask or no-ask. Keep the same recipients, sender and subject unless a rule says otherwise.",
+        "text": "={{ $('Draft Context').item.json.output.hitl_response ? `<HITL_MESSAGE>${$('Draft Context').item.json.output.hitl_message }</HITL_MESSAGE><HITL_RESPONSE>${$('Draft Context').item.json.output.hitl_response }</HITL_RESPONSE>` : '' }}\n<EMAIL_TEMPLATE>\n{{ $('Get Template').item.json.markdown_description }}\n</EMAIL_TEMPLATE>\n<MEETING_NOTES>\n{{ $('Get a task').item.json.description }}\n</MEETING_NOTES>\n{{ $('Linked Tasks').item.json.data?.[0]?.name ? `<ASSOCIATED_TASKS>\\n${$('Linked Tasks').item.json.data.map((t,i) => `TASK ${i+1}: ${t.name} - ${t.markdown_description}`).join('\\n')}\\n</ASSOCIATED_TASKS>` : '' }}\n<MEETING_METADATA>\n{{ $('Meeting Note').item.json.metadata }}\n</MEETING_METADATA>\n<WORD_CEILING>{{ ({'868fkypqb':'200 words, hard limit','868kwthkm':'200 words, hard limit','868kwth55':'100 words, hard limit','868kwthvd':'100 words, hard limit','868fkyrja':'150 words, hard limit'})[$('Get Template').item.json.id] || 'none' }}</WORD_CEILING>\n<DRAFT_RULES>No pricing. No other client named as a precedent. One specific detail from the conversation. If the email asks for time, add Kendra inline (\"Adding my EA Kendra Fidlin to find time\") and never propose slots. Sign off \"Best, Alex\" or \"Alex\". The firm is AHB Advisors, never 3CV.</DRAFT_RULES>\n<PREVIOUS_DRAFT>\n{{ $json.output.content }}\n</PREVIOUS_DRAFT>\n<VIOLATIONS>\n{{ $json.check.violations.join('\\n') }}\n</VIOLATIONS>\nYour previous draft broke the template's rules, listed in <VIOLATIONS>. Rewrite it so every violation is gone. Cut, don't pad: keep the one specific moment, the give, and the ask or no-ask. Keep the same recipients, sender and subject unless a rule says otherwise.",
         "hasOutputParser": true,
         "options": {
           "systemMessage": "=You are an email-drafting assistant for Alex. Your role is to read the full user message (which may contain meeting notes, the selected email template, task lists, metadata, and prior HITL tags) and produce a short, plain email draft in Alex's voice as a JSON object.\n\nYou are not sending emails yourself; you only return a draft for Alex to review and send.\n\nOUTPUT FORMAT (MANDATORY)\n\nReturn exactly ONE JSON object with these keys and nothing else:\n\n- \"subject\": The email subject line.\n- \"content\": The full email body.\n- \"from\": The sender information for Alex.\n  - \"address\": The email address that should be used for Alex.\n  - \"name\": The display name for Alex (usually \"Alex Brownstein\").\n- \"recipients\": An array of recipient objects. Each object must have:\n  - \"address\": The recipient’s email address (string).\n  - \"name\": The recipient’s display name if available, otherwise null.\n  - \"internal\": A boolean flag:\n    - true if the recipient is an internal attendee (for Alex’s company or firms).\n    - false if the recipient is an external or client recipient.\n\nDo not include any explanations, markdown, or tags outside of this JSON object.\n\nINPUTS YOU MAY RECEIVE\n\nThe user message may contain:\n- Meeting notes (often in Markdown), including decisions, actions, and owners.\n- A selected email template that may include structure, placeholders, examples, tone guidance, and sign-off examples.\n- Task lists and subtasks that emerged from the meeting.\n- Metadata (for example, attendees, calendar/invite owner, categorization). Do NOT include metadata directly in the email. Refer to it for a list of attendees and their emails.\n- Optional HITL tags from a previous step:\n  - <HITL_MESSAGE>…</HITL_MESSAGE> — what was asked of the human.\n  - <HITL_RESPONSE>…</HITL_RESPONSE> — the human’s answer.\n\nYou are no longer in an interactive HITL loop. Use all provided information, including any <HITL_RESPONSE>, to resolve ambiguity. If the template requires something the notes do not contain (for example, a distinctive moment the other person said), do not invent it: write the rest of the email and put a short bracketed note where the missing line goes, e.g. [Alex: add the line from Brian that stuck with you]. A human fills it before sending.\n\nCORE RULES\n\n1. Template is authoritative\n- The template's HARD RULES are limits, not suggestions. They override every other instruction in this message, including the tone and context rules below. A draft that breaks one (length, banned phrases, what the email may contain) has failed, however good it sounds.\n- Treat the email template as the primary guide for structure, tone, content, and level of detail.\n- Follow the order of sections the template suggests.\n- If the template includes examples, copy their style, tone, and sign-off pattern as your model.\n- If the template defines a sign-off, use that sign-off.\n\n2. Sign-off behavior when the template does NOT define one\n- If the template does not clearly specify a sign-off style, use Alex’s default sign-off:\n  Best,\n  Alex\n\n3. Subjects\n- If the template includes a subject pattern or examples, follow them.\n- If it does not, create a concise, informative subject line based on the meeting purpose and key outcome (for example: \"Recap and Next Steps from [Project/Topic] Meeting on [Date]\").\n\n4. From field behavior\n- Alex may send email from multiple addresses because he consults through different firms. When setting \"from.address\", prefer one of these addresses:\n  - \"ahbrownstein@gmail.com\"\n  - \"alex@ahbadvisors.com\"\n  - \"alex@clientcatalyzer.com\"\n- Use meeting notes, client names, domains, and context to choose the most appropriate address:\n  - Use \"alex@clientcatalyzer.com\" when the work is for or branded as Client Catalyzer.\n  - Use \"alex@ahbadvisors.com\" when the work is for or branded as AHB Advisors.\n  - Use \"ahbrownstein@gmail.com\" only when the context clearly indicates a personal or non-firm engagement.\n- If you cannot confidently determine which address to use, default to:\n  - \"alex@ahbadvisors.com\"\n- Set \"from.name\" to \"Alex Brownstein\" unless clearly instructed otherwise.\n\n5. Tasks and subtasks\n- Only summarize tasks or next steps if the email template implies that tasks should be included (for example, explicit \"Next Steps\" or \"Action Items\" sections or examples).\n- When you describe tasks, keep them clear and concise. Focus on what the client needs to know.\n- Do NOT include links to internal project management systems (ClickUp, Asana, etc.) in client-facing emails unless the template explicitly shows an example of doing so.\n- Rewrite internal tasks into client-friendly language that does not assume access to internal tools.\n\n6. Recipients\n- Use meeting metadata, attendees, and notes to identify the appropriate recipients.\n- Include recipients for both internal and external attendees when they are relevant to the email.\n- For each recipient you can confidently identify, add an object to the \"recipients\" array:\n  {\n    \"address\": \"recipient@example.com\",\n    \"name\": \"Recipient Name\" or null,\n    \"internal\": true or false\n  }\n- Do NOT invent email addresses.\n- If you cannot confidently identify any appropriate email addresses, set \"recipients\" to an empty array [].\n- The \"internal\" flag is used downstream to determine who is CCed; always set it correctly for each recipient, even if all recipients are internal.\n\n7. HITL handling\n- Treat <HITL_MESSAGE> as background context only.\n- Treat <HITL_RESPONSE> as the definitive human clarification for any ambiguity described in <HITL_MESSAGE>.\n- Use <HITL_RESPONSE> to:\n  - Confirm whether to send a client-facing recap.\n  - Clarify which client or team the email is for.\n  - Clarify any specific instructions about tone, detail, or template choice.\n- Do NOT include the literal <HITL_MESSAGE> or <HITL_RESPONSE> tags or their text in the final email body or subject.\n\n8. Composition rules\n- Write from Alex’s perspective in the first person, unless the template clearly uses \"we\".\n- Write the way Alex writes: plain, specific, short. Say only what the template asks for. Match the length of the template's examples, not longer.\n- Do not restate Alex's background, positioning, services or what he \"brings\" unless the template asks for it. Do not summarize the meeting unless the template is a recap.\n- No filler or effusive words: really, just, very, actually, basically, thing, amazing, huge, excited, thrilled, delighted, \"I really like\", \"feels like\", \"great connecting\", \"sounding board\", \"leverage\". No em-dashes or semicolons.\n- When a client needs context on decisions or next steps, give it only if the template includes that section.\n- Do not fabricate specific facts that conflict with the notes, metadata, or template. When necessary, keep statements slightly general rather than guessing.\n\nFINAL CHECK BEFORE RESPONDING\n\nBefore returning your JSON object, ensure:\n- \"subject\" is a non-empty string.\n- \"content\" is a complete, ready-to-send email body (including sign-off).\n- \"from\" is present with:\n  - a valid-looking email address in \"address\", and\n  - a non-empty \"name\".\n- \"recipients\" is:\n  - an array of zero or more objects with \"address\", \"name\", and \"internal\" keys, and\n  - contains no invented or obviously invalid email addresses.\n- The output is exactly one JSON object and nothing else."
@@ -1443,10 +1443,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
       "position": [
-        17712,
-        -460
+        20672,
+        384
       ],
-      "id": "18e55c46-0459-4cb3-9277-9632670ebc6c",
+      "id": "dd3df860-0542-4e70-928d-63bed53ef9fd",
       "name": "Redraft Agent"
     },
     {
@@ -1465,10 +1465,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        17720,
-        -236
+        20688,
+        608
       ],
-      "id": "3cc50583-da50-4c01-a4db-1cbb372a73eb",
+      "id": "e0872b6a-5ef6-4aeb-b213-99da8eca0c11",
       "name": "OpenAI Chat Model Redraft",
       "credentials": {
         "openAiApi": {
@@ -1485,24 +1485,38 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        17848,
-        -236
+        20816,
+        608
       ],
-      "id": "3a4c60d5-e62c-429a-9fdc-a2f8a4266676",
+      "id": "a33a21ea-7d58-44db-a4ad-082a4efca00c",
       "name": "Email Draft Structure Redraft"
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "// Draft Check: applies the email template's HARD RULES and Alex's scrub list to\n// the drafted email. Violations send the draft back for one redraft; anything\n// still failing, or needing Alex's input, is flagged in Abel's Missive note.\nconst ATTEMPT = 2;\nconst NUMBERS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };\n\n// Alex's scrub list (skills/alex-profile/references/ai-scrubbing.md in alex-os).\nconst BANNED = [\n  'really', 'just', 'very', 'actually', 'basically', 'literally', 'thing', 'things',\n  \"i'd argue\", 'sort of', 'kind of', 'amazing', 'huge', 'excited to', 'thrilled',\n  'i hope this finds you', 'hope you are well', 'wanted to reach out', 'just following up',\n  'circle back', 'touch base', 'great connecting', 'it was great', 'looking forward to hearing',\n  'feels like', 'i really like', 'delighted', 'synergy', 'leverage', 'sounding board',\n];\n\nfunction body(content) {\n  const lines = String(content || '').trim().split(/\\r?\\n/);\n  // Drop the greeting (\"Brian,\") and the sign-off (\"Alex\", \"Best,\").\n  while (lines.length && /^\\s*$/.test(lines[0])) lines.shift();\n  if (lines.length && /^[^.!?]{1,40},\\s*$/.test(lines[0])) lines.shift();\n  while (lines.length && (/^\\s*$/.test(lines[lines.length - 1]) || /^\\s*(alex|best,?|thanks,?|alex brownstein)\\s*$/i.test(lines[lines.length - 1]))) lines.pop();\n  return lines.join('\\n');\n}\n\nfunction sentenceLimit(template) {\n  const m = String(template || '').match(/\\b(\\w+)\\s+to\\s+(\\w+)\\s+sentences\\b/i);\n  if (!m) return null;\n  const max = NUMBERS[m[2].toLowerCase()] || Number(m[2]);\n  return Number.isFinite(max) ? max : null;\n}\n\nfunction templateBanned(template) {\n  const line = String(template || '').split(/\\r?\\n/).find(l => /banned:/i.test(l)) || '';\n  return [...line.matchAll(/[\"“]([^\"”]+)[\"”]/g)].map(m => m[1].replace(/[.,]$/, '').toLowerCase());\n}\n\nconst template = $('Get Template').item.json.markdown_description || '';\nconst content = String($json.output?.content || '');\nconst text = body(content);\nconst lower = text.toLowerCase();\nconst violations = [];\nconst needs_input = [];\n\nconst max = sentenceLimit(template);\nconst sentences = text.split(/(?<=[.!?])\\s+/).map(s => s.trim()).filter(s => /[a-z]/i.test(s));\nconst words = text.split(/\\s+/).filter(Boolean).length;\n// Short closers (\"No ask here.\", \"Glad we connected.\") don't count toward the limit.\nconst counted = sentences.filter(s => s.split(/\\s+/).length > 4).length;\nif (max && counted > max) violations.push(`${counted} sentences; the template allows ${max}`);\nif (max && words > max * 18) violations.push(`${words} words; keep it under ${max * 18}`);\nconst long = sentences.filter(s => s.split(/\\s+/).length > 30).length;\nif (long) violations.push(`${long} sentence(s) over 30 words`);\nif (/[—–]/.test(text)) violations.push('uses a dash (— or –)');\nif (/;/.test(text)) violations.push('uses a semicolon');\nfor (const phrase of [...new Set([...BANNED, ...templateBanned(template)])]) {\n  const re = new RegExp(`(^|[^a-z'])${phrase.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}([^a-z]|$)`, 'i');\n  if (re.test(lower)) violations.push(`banned phrase \"${phrase}\"`);\n}\nif (/\\[[^\\]]+\\]/.test(text)) needs_input.push('has a [placeholder] for Alex to fill');\nif (!text.trim()) needs_input.push('no draft body');\n\nreturn { json: { ...$json, check: { attempt: ATTEMPT, sentences: sentences.length, words, violations, needs_input } } };\n"
+        "jsCode": "// Draft Check: applies the email template's HARD RULES and Alex's scrub list to\n// the drafted email. Violations send the draft back for one redraft; anything\n// still failing, or needing Alex's input, is flagged in Abel's Missive note.\nconst ATTEMPT = 2;\nconst NUMBERS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };\n\n// Alex's scrub list (skills/alex-profile/references/ai-scrubbing.md in alex-os).\nconst BANNED = [\n  'really', 'just', 'very', 'actually', 'basically', 'literally', 'thing', 'things',\n  \"i'd argue\", 'sort of', 'kind of', 'amazing', 'huge', 'excited to', 'thrilled',\n  'i hope this finds you', 'hope you are well', 'wanted to reach out', 'just following up',\n  'circle back', 'touch base', 'great connecting', 'it was great', 'looking forward to hearing',\n  'feels like', 'i really like', 'delighted', 'synergy', 'leverage', 'sounding board',\n];\n\nfunction body(content) {\n  const lines = String(content || '').trim().split(/\\r?\\n/);\n  // Drop the greeting (\"Brian,\") and the sign-off (\"Alex\", \"Best,\").\n  while (lines.length && /^\\s*$/.test(lines[0])) lines.shift();\n  if (lines.length && /^[^.!?]{1,40},\\s*$/.test(lines[0])) lines.shift();\n  while (lines.length && (/^\\s*$/.test(lines[lines.length - 1]) || /^\\s*(alex|best,?|thanks,?|alex brownstein)\\s*$/i.test(lines[lines.length - 1]))) lines.pop();\n  return lines.join('\\n');\n}\n\nfunction sentenceLimit(template) {\n  const m = String(template || '').match(/\\b(\\w+)\\s+to\\s+(\\w+)\\s+sentences\\b/i);\n  if (!m) return null;\n  const max = NUMBERS[m[2].toLowerCase()] || Number(m[2]);\n  return Number.isFinite(max) ? max : null;\n}\n\nfunction templateBanned(template) {\n  const line = String(template || '').split(/\\r?\\n/).find(l => /banned:/i.test(l)) || '';\n  return [...line.matchAll(/[\"“]([^\"”]+)[\"”]/g)].map(m => m[1].replace(/[.,]$/, '').toLowerCase());\n}\n\nconst template = $('Get Template').item.json.markdown_description || '';\nconst content = String($json.output?.content || '');\nconst text = body(content);\nconst lower = text.toLowerCase();\nconst violations = [];\nconst needs_input = [];\n\nconst max = sentenceLimit(template);\nconst sentences = text.split(/(?<=[.!?])\\s+/).map(s => s.trim()).filter(s => /[a-z]/i.test(s));\nconst words = text.split(/\\s+/).filter(Boolean).length;\n// Short closers (\"No ask here.\", \"Glad we connected.\") don't count toward the limit.\nconst counted = sentences.filter(s => s.split(/\\s+/).length > 4).length;\nif (max && counted > max) violations.push(`${counted} sentences; the template allows ${max}`);\nif (max && words > max * 18) violations.push(`${words} words; keep it under ${max * 18}`);\nconst long = sentences.filter(s => s.split(/\\s+/).length > 30).length;\nif (long) violations.push(`${long} sentence(s) over 30 words`);\nif (/[—–]/.test(text)) violations.push('uses a dash (— or –)');\nif (/;/.test(text)) violations.push('uses a semicolon');\nfor (const phrase of [...new Set([...BANNED, ...templateBanned(template)])]) {\n  const re = new RegExp(`(^|[^a-z'])${phrase.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}([^a-z]|$)`, 'i');\n  if (re.test(lower)) violations.push(`banned phrase \"${phrase}\"`);\n}\n// Word ceiling from router SOP 868fkyv39 §B, keyed on the template Get Template fetched.\nconst CEILINGS = {\n  '868fkypqb': { name: 'Client Email Template', ceiling: 200 },\n  '868kwthkm': { name: 'Prospect Discovery Recap Email Template', ceiling: 200 },\n  '868kwth55': { name: 'Networking Thank You', ceiling: 100 },\n  '868kwthvd': { name: 'Intro & Referral Email Template', ceiling: 100 },\n  '868fkyrja': { name: 'Vendor / Partner Email Template', ceiling: 150 },\n  '868fkyjfj': { name: 'Internal Email Template', ceiling: null },\n};\nconst ceilingRow = CEILINGS[String($('Get Template').item.json.id || '')];\nconst ceiling = ceilingRow ? ceilingRow.ceiling : null;\nif (ceiling && words > ceiling) violations.push(`${words} words; the route's ceiling is ${ceiling}`);\nif (/\\[[^\\]]+\\]/.test(text)) needs_input.push('has a [placeholder] for Alex to fill');\nif (!text.trim()) needs_input.push('no draft body');\n\nreturn { json: { ...$json, check: { attempt: ATTEMPT, sentences: sentences.length, words, violations, needs_input } } };\n"
       },
-      "id": "add10c91-7421-41c1-baac-6daa0e0f0e3a",
+      "id": "faf09a81-4cb5-4bbc-b4c8-fc6d6625042a",
       "name": "Draft Check 2",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        18064,
-        -460
+        21024,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const TEMPLATES = {\n  '868fkypqb': { name: 'Client Email Template', ceiling: 200 },\n  '868kwthkm': { name: 'Prospect Discovery Recap Email Template', ceiling: 200 },\n  '868kwth55': { name: 'Networking Thank You', ceiling: 100 },\n  '868kwthvd': { name: 'Intro & Referral Email Template', ceiling: 100 },\n  '868fkyrja': { name: 'Vendor / Partner Email Template', ceiling: 150 },\n  '868fkyjfj': { name: 'Internal Email Template', ceiling: null },\n};\n// Route Guard: the Decider (LLM) picks the route; this node makes the template\n// deterministic. The template id is looked up in a fixed table, so a name or link\n// that is not one of the six live templates can never reach Get Template.\n// Source: router SOP 868fkyv39 §B. Change this table when the route table changes.\nconst out = { ...($json.output || {}) };\nconst bucket = String($('Meeting Note').item.json.bucket || '').trim().toLowerCase();\n\nif (bucket === 'personal') {\n  out.needs_follow_up = false;\n  out.reason_for_follow_up = null;\n  out.route_guard = 'personal bucket: never a follow-up';\n  return { json: { ...$json, output: out } };\n}\n\nif (out.needs_follow_up) {\n  const raw = String(out.email_template_clickup_link || '') + ' ' + String(out.email_template_name || '');\n  const m = raw.match(/(?<![a-z0-9])868[a-z0-9]{6}(?![a-z0-9])/);\n  let id = m && TEMPLATES[m[0]] ? m[0] : null;\n  if (!id) {\n    // No valid id: accept an exact template name, nothing fuzzier.\n    const name = String(out.email_template_name || '').trim().toLowerCase();\n    id = Object.keys(TEMPLATES).find(k => TEMPLATES[k].name.toLowerCase() === name) || null;\n  }\n  if (id) {\n    out.email_template_name = TEMPLATES[id].name;\n    out.email_template_clickup_link = 'https://app.clickup.com/t/' + id;\n    out.word_ceiling = TEMPLATES[id].ceiling;\n    out.route_guard = 'ok';\n  } else {\n    out.hitl_needed = true;\n    const got = (out.email_template_name || out.email_template_clickup_link || 'nothing');\n    out.hitl_message = (out.hitl_message ? out.hitl_message + '\\n\\n' : '') +\n      'Abel picked a template that does not exist (\"' + got + '\"). Reply with the template to use: ' +\n      Object.values(TEMPLATES).map(t => t.name).join(', ') + '.';\n    out.route_guard = 'unknown template: ' + got;\n  }\n}\nreturn { json: { ...$json, output: out } };\n"
+      },
+      "id": "03840b91-f726-435b-95b7-d6f8161c6876",
+      "name": "Route Guard",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        16512,
+        480
       ]
     }
   ],
@@ -1577,7 +1591,7 @@
       "main": [
         [
           {
-            "node": "Is Follow Up Needed?",
+            "node": "Route Guard",
             "type": "main",
             "index": 0
           }
@@ -2075,6 +2089,17 @@
           }
         ]
       ]
+    },
+    "Route Guard": {
+      "main": [
+        [
+          {
+            "node": "Is Follow Up Needed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -2087,7 +2112,7 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "versionId": "009e5420-2d13-47c0-a1e0-1204b290eb6b",
+  "versionId": "91cd27e1-3815-45b2-8c4d-ae67f24d6fa6",
   "activeVersionId": null,
   "triggerCount": 0,
   "tags": [
