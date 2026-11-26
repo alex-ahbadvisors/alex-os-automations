@@ -142,3 +142,14 @@
 - **Tests**: `scripts/tests/test_abel_meeting_pipeline.py` `DraftVoiceCheck` (shipped check code under `node`).
 - **Rollback**: re-import the pre-change JSON from git.
 - **After import**: next follow-up draft, read Abel's Missive note for the check line; open the n8n run to see whether `Redraft Agent` ran.
+
+## Abel + model routing batch — 2026-11-25 (imported by Alex, 11/25 evening)
+
+- **Files**: `~/alex-os-inbox/2026-11-25-n8n-rebased/` (README §5–7, MODEL-INVENTORY.md); rebased on the 11/25 live exports in `~/alex-os-inbox/2026-11-25-n8n-live-exports/` (these are the rollback files). Generator: `~/alex-os-outbox/build-prompts/abel-clickup-dedupe/rebase-2026-11-25/`.
+- **Index Clickup Lists**: allowlist version (Code node "Allowed Sources": Current Clients, Referrals, Content Writing, Business Development 901114096353, AHB Support | Vendors & Partners, Conferences, Reactive Task Pipeline + Shit to Buy, Improve Task Pipeline; sub-folders and archived lists excluded; prune of rows not seen, guarded). File: `~/alex-os-inbox/2026-11-25-index-clickup-lists-allowlist/`. Rollback: `ROLLBACK-original-2026-11-24.json`.
+- **[tool] Abel Find Existing ClickUp Task** (new; native OpenAI nodes on `$vars.Model_Classify`), **[2] Notify of Meeting Tasks**, **[2] Notify of Email To-Dos**, **[4] Create Tasks from Slack**, **[3] Create Tasks from Slack (EMAIL TO DO)**: Abel duplicate check (ships OFF: `Abel_Dedupe_Enabled=false`); Kendra (U09M2QMJACF) counted with Alex as approver; owners limited to Alex / Kendra / Jay / AHB-Agents / FYI-no-owner (no silent default); priority and due date from the transcript, shown at the list step; `skip N` thread reply; failed check posts to #meeting-flups; classifier models on `$vars.Model_Classify`.
+- **[5] Draft Follow Up Email**: drafting nodes swapped to Anthropic (`Claude Draft Model`, `Claude Redraft Model`, `$vars.Model_Draft` = claude-opus-5-5, credential `2026.11.25-anthropic-api-key`); Decider on `$vars.Model_Classify`. Route Guard (11/10) was already live. 13 pre-existing validator highs unchanged.
+- **Abel Dedupe weekly count**: new, active.
+- **Variables added**: `Abel_Dedupe_Enabled`, `Abel_Dedupe_CrossOwner`, `Abel_Dedupe_Approver_Slack_IDs`, `Model_Classify`, `Model_Draft`. Data table: `Abel Dedupe Log`. People tables: Jay (87474712), AHB-Agents (87493089).
+- **Validator**: 0 high on all but [5] (13 pre-existing).
+- **Live check pending**: first real meeting (list-picker shows meeting name; Due lines; owners; Claude draft in Missive).
